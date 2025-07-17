@@ -21,10 +21,15 @@ import {
   TrendingUp,
   Globe
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import Navigation from "@/components/Navigation";
 
 const Index = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-background">
+      <Navigation />
       {/* Hero Section */}
       <section className="relative py-20 px-4 bg-gradient-hero">
         <div className="container mx-auto max-w-6xl">
