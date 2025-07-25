@@ -7,6 +7,8 @@ import Index from "./pages/Index";
 import Diagnostic from "./pages/Diagnostic";
 import RepairCenters from "./pages/RepairCenters";
 import PickupRequest from "./pages/PickupRequest";
+import Admin from "./pages/Admin";
+import RepairCenterApplication from "./pages/RepairCenterApplication";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +24,8 @@ const App = () => (
           <Route path="/diagnostic" element={<Diagnostic />} />
           <Route path="/repair-centers" element={<RepairCenters />} />
           <Route path="/pickup-request" element={<PickupRequest />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/apply-repair-center" element={<RepairCenterApplication />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
