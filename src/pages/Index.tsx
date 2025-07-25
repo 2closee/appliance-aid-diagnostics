@@ -37,105 +37,122 @@ const Index = () => {
             <div className="flex items-center justify-center mb-6">
               <Wrench className="h-12 w-12 text-primary mr-4" />
               <h1 className="text-4xl md:text-6xl font-bold text-foreground">
-                🛠️ MVP Specification
+                Meranos Fixgadget
               </h1>
             </div>
             <h2 className="text-2xl md:text-3xl font-semibold text-primary mb-4">
-              AI Diagnostic Agent for Appliance Repair
+              Smart Appliance Diagnosis & Repair Solutions
             </h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              A comprehensive technical specification for building an AI-powered diagnostic agent 
-              that enables remote appliance troubleshooting and seamless repair scheduling.
+              Experience the future of appliance repair with our AI-powered diagnostic platform. 
+              Get instant troubleshooting, connect with verified repair centers, and schedule convenient pickup services.
             </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" onClick={() => navigate('/diagnostic')} className="animate-float">
+                Start Diagnosis
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button variant="outline" size="lg" onClick={() => navigate('/repair-centers')}>
+                Find Repair Centers
+                <MapPin className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </section>
 
       <div className="container mx-auto max-w-6xl px-4 py-12 space-y-12">
-        {/* Project Overview */}
+        {/* About Meranos Fixgadget */}
         <Card className="shadow-medium animate-fade-in">
           <CardHeader>
             <CardTitle className="flex items-center text-2xl">
               <Target className="h-6 w-6 mr-3 text-primary" />
-              1. Project Overview
+              About Meranos Fixgadget
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground text-lg">
-              We are a household appliance repair service specializing in <strong>TVs and common home electronics</strong>. 
-              We aim to build a <strong>Minimum Viable Product (MVP)</strong> that allows users to 
-              <strong> diagnose appliance issues from home</strong> using an <strong>AI-powered agent</strong>, 
-              and if needed, <strong>schedule a pickup</strong> to our nearest repair center.
+              Since 2014, <strong>Meranos Fixgadget</strong> has been a state-of-the-art device repair, service, and sales chain 
+              specializing in <strong>consumer electronics and household appliances</strong>. Based in Port Harcourt, Rivers State, 
+              we offer comprehensive after-sales technical support with our motto <em>"...no excuses!"</em>
+            </p>
+            <p className="text-muted-foreground text-lg">
+              Our expertise spans <strong>AC repairs, TV diagnostics, and various home electronics</strong>. 
+              With this innovative AI-powered platform, we're revolutionizing how customers access our services, 
+              making appliance diagnosis and repair more accessible than ever before.
             </p>
           </CardContent>
         </Card>
 
-        {/* MVP Objectives */}
+        {/* How Our Platform Works */}
         <Card className="shadow-medium animate-fade-in">
           <CardHeader>
             <CardTitle className="flex items-center text-2xl">
               <CheckCircle className="h-6 w-6 mr-3 text-success" />
-              2. MVP Objectives
+              How Our Platform Works
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-3 text-muted-foreground">
               <li className="flex items-start">
                 <ArrowRight className="h-5 w-5 text-primary mt-0.5 mr-3 flex-shrink-0" />
-                Enable users to <strong>self-diagnose</strong> appliance issues.
+                <strong>Instant AI Diagnosis:</strong> Get immediate troubleshooting for your appliances through our intelligent diagnostic system.
               </li>
               <li className="flex items-start">
                 <ArrowRight className="h-5 w-5 text-primary mt-0.5 mr-3 flex-shrink-0" />
-                Reduce unnecessary physical visits by filtering out software issues.
+                <strong>Smart Problem Filtering:</strong> Our AI determines if issues can be resolved remotely or require professional intervention.
               </li>
               <li className="flex items-start">
                 <ArrowRight className="h-5 w-5 text-primary mt-0.5 mr-3 flex-shrink-0" />
-                If hardware-related, <strong>suggest the nearest repair center</strong>.
+                <strong>Verified Repair Centers:</strong> Connect with our network of certified technicians and authorized service centers.
               </li>
               <li className="flex items-start">
                 <ArrowRight className="h-5 w-5 text-primary mt-0.5 mr-3 flex-shrink-0" />
-                Allow users to <strong>submit a pickup request</strong>.
+                <strong>Convenient Pickup Service:</strong> Schedule hassle-free device pickup and delivery directly from your location.
               </li>
               <li className="flex items-start">
                 <ArrowRight className="h-5 w-5 text-primary mt-0.5 mr-3 flex-shrink-0" />
-                Automatically <strong>notify the office</strong> via email with pickup details.
+                <strong>Seamless Communication:</strong> Stay updated throughout the entire repair process with automated notifications.
               </li>
             </ul>
           </CardContent>
         </Card>
 
-        {/* Target Users */}
+        {/* Why Choose Meranos Fixgadget */}
         <Card className="shadow-medium animate-fade-in">
           <CardHeader>
             <CardTitle className="flex items-center text-2xl">
               <Users className="h-6 w-6 mr-3 text-primary" />
-              3. Target Users
+              Why Choose Meranos Fixgadget?
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-gradient-card rounded-lg">
-                <h4 className="font-semibold mb-2">Homeowners</h4>
-                <p className="text-sm text-muted-foreground">With malfunctioning TVs or home appliances</p>
+                <Clock className="h-8 w-8 text-primary mx-auto mb-3" />
+                <h4 className="font-semibold mb-2">10+ Years Experience</h4>
+                <p className="text-sm text-muted-foreground">Trusted repair services since 2014 with proven expertise</p>
               </div>
               <div className="text-center p-4 bg-gradient-card rounded-lg">
-                <h4 className="font-semibold mb-2">Quick Diagnostics</h4>
-                <p className="text-sm text-muted-foreground">Users seeking fast, no-contact diagnostics</p>
+                <CheckCircle className="h-8 w-8 text-success mx-auto mb-3" />
+                <h4 className="font-semibold mb-2">Verified Technicians</h4>
+                <p className="text-sm text-muted-foreground">Only certified professionals handle your valuable devices</p>
               </div>
               <div className="text-center p-4 bg-gradient-card rounded-lg">
-                <h4 className="font-semibold mb-2">Digital-First</h4>
-                <p className="text-sm text-muted-foreground">Customers who prefer digital interaction before service</p>
+                <Zap className="h-8 w-8 text-primary mx-auto mb-3" />
+                <h4 className="font-semibold mb-2">AI-Powered Diagnosis</h4>
+                <p className="text-sm text-muted-foreground">Instant, accurate problem identification saves time and money</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Core Features */}
+        {/* Our Services */}
         <Card className="shadow-medium animate-fade-in">
           <CardHeader>
             <CardTitle className="flex items-center text-2xl">
               <Cog className="h-6 w-6 mr-3 text-primary" />
-              4. Core Features
+              Our Services
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -143,56 +160,56 @@ const Index = () => {
               <div className="p-6 bg-gradient-card rounded-lg border">
                 <div className="flex items-center mb-4">
                   <Bot className="h-8 w-8 text-primary mr-3" />
-                  <h3 className="text-xl font-semibold">AI Diagnostic Agent</h3>
+                  <h3 className="text-xl font-semibold">AI Diagnostic Assistant</h3>
                 </div>
                 <p className="text-muted-foreground mb-4">
-                  Ask users guided questions to determine the issue. Text-based with optional voice input.
+                  Our intelligent system asks targeted questions to identify your appliance issues quickly and accurately.
                 </p>
                 <div className="space-y-2">
-                  <Badge variant="outline">Rule-based decision tree</Badge>
-                  <Badge variant="outline">Upgradeable to ML</Badge>
+                  <Badge variant="outline">Instant Analysis</Badge>
+                  <Badge variant="outline">24/7 Available</Badge>
                 </div>
               </div>
 
               <div className="p-6 bg-gradient-card rounded-lg border">
                 <div className="flex items-center mb-4">
                   <Zap className="h-8 w-8 text-primary mr-3" />
-                  <h3 className="text-xl font-semibold">Smart Routing</h3>
+                  <h3 className="text-xl font-semibold">Expert Repair Services</h3>
                 </div>
                 <p className="text-muted-foreground mb-4">
-                  Route users based on diagnosis: software issues get troubleshooting, hardware issues get repair options.
+                  Professional repair for AC units, TVs, home electronics, and consumer appliances by certified technicians.
                 </p>
                 <div className="space-y-2">
-                  <Badge variant="outline">Software troubleshooting</Badge>
-                  <Badge variant="outline">Hardware repair routing</Badge>
+                  <Badge variant="outline">AC Repairs</Badge>
+                  <Badge variant="outline">TV & Electronics</Badge>
                 </div>
               </div>
 
               <div className="p-6 bg-gradient-card rounded-lg border">
                 <div className="flex items-center mb-4">
                   <MapPin className="h-8 w-8 text-primary mr-3" />
-                  <h3 className="text-xl font-semibold">Repair Center Locator</h3>
+                  <h3 className="text-xl font-semibold">Verified Service Centers</h3>
                 </div>
                 <p className="text-muted-foreground mb-4">
-                  Find nearest repair center based on location with contact details and map integration.
+                  Access our network of authorized repair centers across Nigeria with real-time availability and ratings.
                 </p>
                 <div className="space-y-2">
-                  <Badge variant="outline">GPS Location</Badge>
-                  <Badge variant="outline">Maps Integration</Badge>
+                  <Badge variant="outline">Certified Partners</Badge>
+                  <Badge variant="outline">Quality Assured</Badge>
                 </div>
               </div>
 
               <div className="p-6 bg-gradient-card rounded-lg border">
                 <div className="flex items-center mb-4">
                   <Mail className="h-8 w-8 text-primary mr-3" />
-                  <h3 className="text-xl font-semibold">Pickup Request & Email</h3>
+                  <h3 className="text-xl font-semibold">Convenient Pickup & Delivery</h3>
                 </div>
                 <p className="text-muted-foreground mb-4">
-                  Collect user details and automatically notify the office via email with all pickup information.
+                  Schedule device pickup from your location with real-time tracking and guaranteed safe handling.
                 </p>
                 <div className="space-y-2">
-                  <Badge variant="outline">Automated emails</Badge>
-                  <Badge variant="outline">Customer confirmation</Badge>
+                  <Badge variant="outline">Door-to-Door Service</Badge>
+                  <Badge variant="outline">Insured Transport</Badge>
                 </div>
               </div>
             </div>
