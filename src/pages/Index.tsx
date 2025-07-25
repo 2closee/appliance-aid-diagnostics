@@ -37,7 +37,7 @@ const Index = () => {
             <div className="flex items-center justify-center mb-6">
               <Wrench className="h-12 w-12 text-primary mr-4" />
               <h1 className="text-4xl md:text-6xl font-bold text-foreground">
-                Meranos Fixgadget
+                Fixbudi
               </h1>
             </div>
             <h2 className="text-2xl md:text-3xl font-semibold text-primary mb-4">
@@ -67,12 +67,12 @@ const Index = () => {
           <CardHeader>
             <CardTitle className="flex items-center text-2xl">
               <Target className="h-6 w-6 mr-3 text-primary" />
-              About Meranos Fixgadget
+              About Fixbudi
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground text-lg">
-              Since 2014, <strong>Meranos Fixgadget</strong> has been a state-of-the-art device repair, service, and sales chain 
+              Since 2014, <strong>Fixbudi</strong> has been a state-of-the-art device repair, service, and sales chain 
               specializing in <strong>consumer electronics and household appliances</strong>. Based in Port Harcourt, Rivers State, 
               we offer comprehensive after-sales technical support with our motto <em>"...no excuses!"</em>
             </p>
@@ -123,7 +123,7 @@ const Index = () => {
           <CardHeader>
             <CardTitle className="flex items-center text-2xl">
               <Users className="h-6 w-6 mr-3 text-primary" />
-              Why Choose Meranos Fixgadget?
+              Why Choose Fixbudi?
             </CardTitle>
           </CardHeader>
           <CardContent>
