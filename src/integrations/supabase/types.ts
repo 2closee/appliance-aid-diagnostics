@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      "Repair Center": {
+        Row: {
+          address: string | null
+          email: string | null
+          hours: string | null
+          id: number
+          name: string | null
+          phone: string | null
+          specialties: string | null
+        }
+        Insert: {
+          address?: string | null
+          email?: string | null
+          hours?: string | null
+          id: number
+          name?: string | null
+          phone?: string | null
+          specialties?: string | null
+        }
+        Update: {
+          address?: string | null
+          email?: string | null
+          hours?: string | null
+          id?: number
+          name?: string | null
+          phone?: string | null
+          specialties?: string | null
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          key: string
+          value: string
+        }
+        Insert: {
+          key?: string
+          value?: string
+        }
+        Update: {
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
