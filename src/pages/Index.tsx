@@ -19,13 +19,22 @@ import {
   Cog,
   Calendar,
   TrendingUp,
-  Globe
+  Globe,
+  LogIn,
+  LogOut,
+  Shield
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/Navigation";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, isAdmin, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -214,6 +223,69 @@ const Index = () => {
                 <div className="space-y-2">
                   <Badge variant="outline">Door-to-Door Service</Badge>
                   <Badge variant="outline">Insured Transport</Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Authentication Section */}
+        <Card className="shadow-medium animate-fade-in">
+          <CardHeader>
+            <CardTitle className="flex items-center text-2xl">
+              <Shield className="h-6 w-6 mr-3 text-primary" />
+              Account & Admin Access
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-6">
+              {user ? (
+                <div className="p-6 bg-gradient-card rounded-lg border">
+                  <div className="flex items-center mb-4">
+                    <LogOut className="h-8 w-8 text-primary mr-3" />
+                    <h3 className="text-xl font-semibold">Welcome back!</h3>
+                  </div>
+                  <p className="text-muted-foreground mb-4">
+                    You are signed in as: {user.email}
+                  </p>
+                  <div className="space-y-2">
+                    <Button onClick={handleSignOut} variant="outline" className="w-full">
+                      Sign Out
+                    </Button>
+                    {isAdmin && (
+                      <Button onClick={() => navigate('/admin')} className="w-full">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Admin Panel
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 bg-gradient-card rounded-lg border">
+                  <div className="flex items-center mb-4">
+                    <LogIn className="h-8 w-8 text-primary mr-3" />
+                    <h3 className="text-xl font-semibold">Sign In</h3>
+                  </div>
+                  <p className="text-muted-foreground mb-4">
+                    Access your account or create a new one to manage your repair requests.
+                  </p>
+                  <Button onClick={() => navigate('/auth')} className="w-full">
+                    Sign In / Sign Up
+                  </Button>
+                </div>
+              )}
+              
+              <div className="p-6 bg-gradient-card rounded-lg border">
+                <div className="flex items-center mb-4">
+                  <Settings className="h-8 w-8 text-primary mr-3" />
+                  <h3 className="text-xl font-semibold">Admin Features</h3>
+                </div>
+                <p className="text-muted-foreground mb-4">
+                  Manage repair centers, view analytics, and configure global settings.
+                </p>
+                <div className="space-y-2">
+                  <Badge variant="outline">Repair Center Management</Badge>
+                  <Badge variant="outline">Global Settings</Badge>
                 </div>
               </div>
             </div>

@@ -47,7 +47,7 @@ const Admin = () => {
     try {
       const { error } = await supabase
         .from("Repair Center")
-        .insert([newCenter]);
+        .insert(newCenter);
 
       if (error) {
         toast({
@@ -134,9 +134,15 @@ const Admin = () => {
             <Settings className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold">Fixbudi Admin Panel</h1>
           </div>
-          <Button onClick={() => window.history.back()} variant="outline">
-            Back to App
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleSignOut} variant="outline">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+            <Button onClick={() => navigate("/")} variant="outline">
+              Back to App
+            </Button>
+          </div>
         </div>
 
         {/* Global Email Settings */}

@@ -28,7 +28,7 @@ export type Database = {
           address?: string | null
           email?: string | null
           hours?: string | null
-          id: number
+          id?: number
           name?: string | null
           phone?: string | null
           specialties?: string | null
