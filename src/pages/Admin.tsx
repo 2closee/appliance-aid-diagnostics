@@ -1,14 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Plus, MapPin, Mail } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Settings, Plus, MapPin, Mail, LogOut } from "lucide-react";
 
 const Admin = () => {
   const { toast } = useToast();
+  const { user, isAdmin, isLoading, signOut } = useAuth();
+  const navigate = useNavigate();
   const [newCenter, setNewCenter] = useState({
     name: "",
     address: "",
@@ -19,31 +24,107 @@ const Admin = () => {
   });
   const [globalEmail, setGlobalEmail] = useState("");
 
-  const handleAddCenter = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!isLoading) {
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+      if (!isAdmin) {
+        toast({
+          title: "Access Denied",
+          description: "You need admin privileges to access this page.",
+          variant: "destructive",
+        });
+        navigate("/");
+        return;
+      }
+    }
+  }, [user, isAdmin, isLoading, navigate, toast]);
+
+  const handleAddCenter = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This will be connected to Supabase once integrated
-    toast({
-      title: "Success",
-      description: "Repair center added successfully",
-    });
-    setNewCenter({
-      name: "",
-      address: "",
-      phone: "",
-      hours: "",
-      specialties: "",
-      email: ""
-    });
+    try {
+      const { error } = await supabase
+        .from("Repair Center")
+        .insert([newCenter]);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to add repair center: " + error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Repair center added successfully",
+        });
+        setNewCenter({
+          name: "",
+          address: "",
+          phone: "",
+          hours: "",
+          specialties: "",
+          email: ""
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleUpdateGlobalEmail = (e: React.FormEvent) => {
+  const handleUpdateGlobalEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This will be connected to Supabase once integrated
-    toast({
-      title: "Success",
-      description: "Global email updated successfully",
-    });
+    try {
+      const { error } = await supabase
+        .from("settings")
+        .upsert({ key: "global_email", value: globalEmail }, { onConflict: "key" });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update global email: " + error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Global email updated successfully",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold mb-2">Loading...</h2>
+          <p className="text-muted-foreground">Checking your permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background p-6">
