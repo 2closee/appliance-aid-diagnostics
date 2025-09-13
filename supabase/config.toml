@@ -1,1 +1,10 @@
 project_id = "esbqtuljvejvrzawsqgk"
+
+[functions.create-repair-payment]
+verify_jwt = true
+
+[functions.update-job-status]
+verify_jwt = true
+
+[functions.get-revenue-analytics]
+verify_jwt = true

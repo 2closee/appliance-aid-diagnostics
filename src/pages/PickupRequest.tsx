@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,9 +20,11 @@ import {
   AlertCircle,
   Send
 } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 type FormData = {
   firstName: string;
@@ -31,8 +33,11 @@ type FormData = {
   phone: string;
   address: string;
   city: string;
+  state: string;
   zipCode: string;
+  repairCenter: string;
   applianceType: string;
+  applianceBrand: string;
   applianceModel: string;
   issueDescription: string;
   preferredDate: string;
@@ -41,9 +46,18 @@ type FormData = {
   agreeToTerms: boolean;
 };
 
+interface RepairCenter {
+  id: number;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+}
+
 const PickupRequest = () => {
   const location = useLocation();
   const { toast } = useToast();
+  const { user, isLoading } = useAuth();
   const selectedCenter = location.state?.selectedCenter;
   
   const [formData, setFormData] = useState<FormData>({
@@ -53,8 +67,11 @@ const PickupRequest = () => {
     phone: '',
     address: '',
     city: '',
+    state: '',
     zipCode: '',
+    repairCenter: '',
     applianceType: '',
+    applianceBrand: '',
     applianceModel: '',
     issueDescription: '',
     preferredDate: '',
@@ -63,8 +80,38 @@ const PickupRequest = () => {
     agreeToTerms: false
   });
 
+  const [repairCenters, setRepairCenters] = useState<RepairCenter[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  useEffect(() => {
+    fetchRepairCenters();
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || '',
+      }));
+    }
+  }, [user]);
+
+  const fetchRepairCenters = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("Repair Center")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      setRepairCenters(data || []);
+      
+      // Set selected center if passed from repair centers page
+      if (selectedCenter) {
+        setFormData(prev => ({ ...prev, repairCenter: selectedCenter.id.toString() }));
+      }
+    } catch (error) {
+      console.error("Error fetching repair centers:", error);
+    }
+  };
 
   const handleInputChange = (field: keyof FormData, value: string | boolean) => {
     setFormData(prev => ({
@@ -85,32 +132,60 @@ const PickupRequest = () => {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to submit a repair request.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.repairCenter) {
+      toast({
+        title: "Repair Center Required",
+        description: "Please select a repair center.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Simulate API call - this would normally send to your backend
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Here you would normally send email notification to the office
-      const emailData = {
-        ...formData,
-        repairCenter: selectedCenter?.name || 'Not specified',
-        submittedAt: new Date().toISOString(),
-        pickupId: `PU-${Date.now()}`
-      };
+      // Create repair job
+      const { data, error } = await supabase
+        .from("repair_jobs")
+        .insert({
+          user_id: user.id,
+          repair_center_id: parseInt(formData.repairCenter),
+          customer_name: `${formData.firstName} ${formData.lastName}`,
+          customer_email: formData.email,
+          customer_phone: formData.phone,
+          pickup_address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
+          appliance_type: formData.applianceType,
+          appliance_brand: formData.applianceBrand,
+          appliance_model: formData.applianceModel,
+          issue_description: formData.issueDescription,
+          pickup_date: formData.preferredDate ? new Date(formData.preferredDate).toISOString() : null,
+          job_status: "requested"
+        })
+        .select()
+        .single();
 
-      console.log('Pickup request submitted:', emailData);
+      if (error) throw error;
       
-      toast({
-        title: "Request Submitted!",
-        description: "We'll contact you within 24 hours to confirm your pickup.",
-      });
-
       setIsSubmitted(true);
-    } catch (error) {
+      
       toast({
-        title: "Submission Failed",
-        description: "Please try again or contact support.",
+        title: "Request Submitted Successfully!",
+        description: "We've received your pickup request. You'll be contacted within 24 hours.",
+      });
+    } catch (error) {
+      console.error("Error submitting repair request:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit request. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -143,9 +218,14 @@ const PickupRequest = () => {
                     <li>• You'll receive updates on the repair progress</li>
                   </ul>
                 </div>
-                <Button onClick={() => window.location.href = '/'}>
-                  Return to Home
-                </Button>
+                <div className="flex gap-4 justify-center">
+                  <Link to="/repair-jobs">
+                    <Button>View My Repair Jobs</Button>
+                  </Link>
+                  <Link to="/">
+                    <Button variant="outline">Return to Home</Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
           </div>
