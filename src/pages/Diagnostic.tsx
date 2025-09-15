@@ -14,10 +14,12 @@ import {
   AlertCircle,
   ArrowRight,
   RotateCcw,
-  MapPin
+  MapPin,
+  MessageCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
+import AIChatInterface from "@/components/AIChatInterface";
 
 type ApplianceType = 'tv' | 'smartphone' | 'headphones' | 'monitor';
 type DiagnosticStep = {
@@ -36,6 +38,7 @@ const Diagnostic = () => {
     message: '',
     recommendations: []
   });
+  const [showAIChat, setShowAIChat] = useState(false);
 
   const appliances = [
     { id: 'tv', name: 'TV', icon: Tv, description: 'Smart TV, LED, OLED' },
@@ -160,6 +163,15 @@ const Diagnostic = () => {
     setCurrentStep(0);
     setAnswers([]);
     setDiagnosis({ type: '', message: '', recommendations: [] });
+    setShowAIChat(false);
+  };
+
+  const handleDiagnosisUpdate = (newDiagnosis: string, recommendations: string[]) => {
+    setDiagnosis({
+      type: 'hardware', // Assume hardware since AI determined need for update
+      message: newDiagnosis,
+      recommendations
+    });
   };
 
   const progress = selectedAppliance ? ((currentStep + 1) / diagnosticFlow[selectedAppliance].length) * 100 : 0;
@@ -168,38 +180,39 @@ const Diagnostic = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-4 flex items-center justify-center">
-              <Bot className="h-10 w-10 text-primary mr-4" />
+      <main className="container mx-auto px-4 py-6 lg:py-8">
+        <div className="max-w-6xl mx-auto">
+          <header className="text-center mb-6 lg:mb-8">
+            <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-3 lg:mb-4 flex items-center justify-center flex-wrap gap-2">
+              <Bot className="h-8 w-8 lg:h-10 lg:w-10 text-primary" />
               AI Diagnostic Agent
             </h1>
-            <p className="text-lg text-muted-foreground">
-              Get instant diagnosis for your appliance issues with our AI-powered diagnostic tool
+            <p className="text-base lg:text-lg text-muted-foreground leading-relaxed max-w-3xl mx-auto">
+              Get instant diagnosis for your appliance issues with our AI-powered diagnostic tool. 
+              Upload videos, use voice commands, or chat with our AI for comprehensive analysis.
             </p>
-          </div>
+          </header>
 
           {!selectedAppliance && (
             <Card className="shadow-medium">
-              <CardHeader>
-                <CardTitle className="text-2xl">Select Your Appliance</CardTitle>
-                <CardDescription>
+              <CardHeader className="text-center lg:text-left">
+                <CardTitle className="text-xl lg:text-2xl">Select Your Appliance</CardTitle>
+                <CardDescription className="text-sm lg:text-base">
                   Choose the appliance you're having trouble with to start the diagnostic process
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {appliances.map((appliance) => (
                     <Card 
                       key={appliance.id}
-                      className="cursor-pointer hover:shadow-medium transition-shadow border-2 hover:border-primary"
+                      className="cursor-pointer hover:shadow-medium transition-all duration-300 border-2 hover:border-primary hover:scale-105 group"
                       onClick={() => handleApplianceSelect(appliance.id as ApplianceType)}
                     >
-                      <CardContent className="p-6 text-center">
-                        <appliance.icon className="h-12 w-12 text-primary mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold mb-2">{appliance.name}</h3>
-                        <p className="text-muted-foreground text-sm">{appliance.description}</p>
+                      <CardContent className="p-4 lg:p-6 text-center">
+                        <appliance.icon className="h-10 w-10 lg:h-12 lg:w-12 text-primary mx-auto mb-3 lg:mb-4 group-hover:scale-110 transition-transform" />
+                        <h3 className="text-lg lg:text-xl font-semibold mb-2 leading-tight">{appliance.name}</h3>
+                        <p className="text-muted-foreground text-xs lg:text-sm leading-relaxed">{appliance.description}</p>
                       </CardContent>
                     </Card>
                   ))}
@@ -208,35 +221,37 @@ const Diagnostic = () => {
             </Card>
           )}
 
-          {selectedAppliance && !diagnosis.type && (
+          {selectedAppliance && !diagnosis.type && !showAIChat && (
             <Card className="shadow-medium">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-2xl">Diagnostic Questions</CardTitle>
-                  <Button variant="outline" onClick={resetDiagnosis}>
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <div className="space-y-2">
+                    <CardTitle className="text-xl lg:text-2xl">Diagnostic Questions</CardTitle>
+                    <CardDescription className="text-sm lg:text-base">
+                      Step {currentStep + 1} of {diagnosticFlow[selectedAppliance].length}
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" onClick={resetDiagnosis} size="sm" className="self-start lg:self-auto">
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Start Over
                   </Button>
                 </div>
-                <CardDescription>
-                  Step {currentStep + 1} of {diagnosticFlow[selectedAppliance].length}
-                </CardDescription>
                 <Progress value={progress} className="mt-4" />
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">
+                  <h3 className="text-lg lg:text-xl font-semibold mb-4 leading-relaxed">
                     {diagnosticFlow[selectedAppliance][currentStep].question}
                   </h3>
-                  <div className="space-y-3">
+                  <div className="grid gap-3">
                     {diagnosticFlow[selectedAppliance][currentStep].options.map((option, index) => (
                       <Button
                         key={index}
                         variant="outline"
-                        className="w-full justify-start h-auto p-4 text-left"
+                        className="w-full justify-start h-auto p-4 text-left leading-relaxed hover:bg-primary/5 hover:border-primary transition-colors"
                         onClick={() => handleAnswer(option)}
                       >
-                        {option}
+                        <span className="text-sm lg:text-base">{option}</span>
                       </Button>
                     ))}
                   </div>
@@ -244,12 +259,12 @@ const Diagnostic = () => {
 
                 {answers.length > 0 && (
                   <div>
-                    <h4 className="font-semibold mb-3">Your Previous Answers:</h4>
+                    <h4 className="font-semibold mb-3 text-base lg:text-lg">Your Previous Answers:</h4>
                     <div className="space-y-2">
                       {answers.map((answer, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <CheckCircle className="h-4 w-4 text-success" />
-                          <span className="text-sm">{answer}</span>
+                        <div key={index} className="flex items-start space-x-3 p-2 rounded-lg bg-muted/50">
+                          <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                          <span className="text-sm lg:text-base leading-relaxed">{answer}</span>
                         </div>
                       ))}
                     </div>
@@ -259,54 +274,87 @@ const Diagnostic = () => {
             </Card>
           )}
 
-          {diagnosis.type && (
+          {diagnosis.type && !showAIChat && (
             <Card className="shadow-medium">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-2xl flex items-center">
-                    {diagnosis.type === 'software' ? (
-                      <CheckCircle className="h-8 w-8 text-success mr-3" />
-                    ) : (
-                      <AlertCircle className="h-8 w-8 text-warning mr-3" />
-                    )}
-                    Diagnosis Complete
-                  </CardTitle>
-                  <Button variant="outline" onClick={resetDiagnosis}>
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Start Over
-                  </Button>
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <div className="space-y-2">
+                    <CardTitle className="text-xl lg:text-2xl flex items-center flex-wrap gap-2">
+                      {diagnosis.type === 'software' ? (
+                        <CheckCircle className="h-6 w-6 lg:h-8 lg:w-8 text-success" />
+                      ) : (
+                        <AlertCircle className="h-6 w-6 lg:h-8 lg:w-8 text-warning" />
+                      )}
+                      <span>Diagnosis Complete</span>
+                    </CardTitle>
+                    <CardDescription>
+                      <Badge variant={diagnosis.type === 'software' ? 'default' : 'secondary'} className="text-xs lg:text-sm">
+                        {diagnosis.type === 'software' ? 'Software Issue' : 'Hardware Issue'}
+                      </Badge>
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowAIChat(true)} 
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Chat with AI
+                    </Button>
+                    <Button variant="outline" onClick={resetDiagnosis} size="sm">
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Start Over
+                    </Button>
+                  </div>
                 </div>
-                <CardDescription>
-                  <Badge variant={diagnosis.type === 'software' ? 'default' : 'secondary'}>
-                    {diagnosis.type === 'software' ? 'Software Issue' : 'Hardware Issue'}
-                  </Badge>
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">Diagnosis Result:</h3>
-                  <p className="text-muted-foreground">{diagnosis.message}</p>
+                  <h3 className="text-lg lg:text-xl font-semibold mb-3">Diagnosis Result:</h3>
+                  <p className="text-muted-foreground leading-relaxed text-sm lg:text-base">{diagnosis.message}</p>
                 </div>
 
                 <Separator />
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">Recommendations:</h3>
-                  <ul className="space-y-2">
+                  <h3 className="text-lg lg:text-xl font-semibold mb-3">Recommendations:</h3>
+                  <ul className="space-y-3">
                     {diagnosis.recommendations.map((rec, index) => (
-                      <li key={index} className="flex items-start space-x-2">
+                      <li key={index} className="flex items-start space-x-3 p-3 rounded-lg bg-muted/50">
                         <ArrowRight className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">{rec}</span>
+                        <span className="text-sm lg:text-base leading-relaxed">{rec}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
+                <div className="bg-gradient-to-r from-primary/5 to-accent/5 p-4 lg:p-6 rounded-lg border border-primary/20">
+                  <h3 className="text-lg lg:text-xl font-semibold mb-3 text-center lg:text-left">
+                    Need More Help?
+                  </h3>
+                  <p className="text-muted-foreground mb-4 text-sm lg:text-base leading-relaxed text-center lg:text-left">
+                    If this diagnosis doesn't cover your specific issues, chat with our AI assistant. 
+                    You can upload videos, use voice commands, or describe your problems in detail.
+                  </p>
+                  <div className="flex justify-center lg:justify-start">
+                    <Button 
+                      onClick={() => setShowAIChat(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Get Personalized Help
+                    </Button>
+                  </div>
+                </div>
+
                 {diagnosis.type === 'hardware' && (
-                  <div className="bg-gradient-card p-6 rounded-lg border">
-                    <h3 className="text-lg font-semibold mb-4">Next Steps</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Since this appears to be a hardware issue, we recommend visiting our repair center or scheduling a pickup.
+                  <div className="bg-gradient-card p-4 lg:p-6 rounded-lg border">
+                    <h3 className="text-lg lg:text-xl font-semibold mb-4 text-center lg:text-left">Next Steps</h3>
+                    <p className="text-muted-foreground mb-4 text-sm lg:text-base leading-relaxed text-center lg:text-left">
+                      Since this appears to be a hardware issue, we recommend visiting our repair center or scheduling a pickup. 
+                      Any videos or audio you share will help technicians better understand the problem.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3">
                       <Button onClick={() => navigate('/repair-centers')} className="flex-1">
@@ -323,8 +371,30 @@ const Diagnostic = () => {
               </CardContent>
             </Card>
           )}
+
+          {showAIChat && selectedAppliance && (
+            <div className="space-y-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                  <h2 className="text-xl lg:text-2xl font-bold">AI Assistant Chat</h2>
+                  <p className="text-muted-foreground text-sm lg:text-base">
+                    Get personalized help with voice, text, or video
+                  </p>
+                </div>
+                <Button variant="outline" onClick={() => setShowAIChat(false)} size="sm">
+                  Back to Diagnosis
+                </Button>
+              </div>
+              
+              <AIChatInterface
+                appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
+                initialDiagnosis={diagnosis.message || 'Initial diagnostic questions completed'}
+                onDiagnosisUpdate={handleDiagnosisUpdate}
+              />
+            </div>
+          )}
         </div>
-      </div>
+      </main>
     </div>
   );
 };
