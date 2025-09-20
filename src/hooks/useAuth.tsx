@@ -7,6 +7,9 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isAdmin: boolean;
+  isRepairCenterStaff: boolean;
+  repairCenterId: number | null;
+  userRole: 'admin' | 'repair_center' | 'customer' | null;
   signOut: () => Promise<void>;
 }
 
@@ -15,6 +18,9 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   isLoading: true,
   isAdmin: false,
+  isRepairCenterStaff: false,
+  repairCenterId: null,
+  userRole: null,
   signOut: async () => {},
 });
 
@@ -31,6 +37,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isRepairCenterStaff, setIsRepairCenterStaff] = useState(false);
+  const [repairCenterId, setRepairCenterId] = useState<number | null>(null);
+  const [userRole, setUserRole] = useState<'admin' | 'repair_center' | 'customer' | null>(null);
 
   useEffect(() => {
     // Set up auth state listener first
@@ -39,11 +48,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Check admin status when user changes
+        // Check user roles when user changes
         if (session?.user) {
-          checkAdminStatus(session.user.id);
+          checkUserRoles(session.user.id);
         } else {
-          setIsAdmin(false);
+          resetUserRoles();
         }
         
         setIsLoading(false);
@@ -56,7 +65,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        checkAdminStatus(session.user.id);
+        checkUserRoles(session.user.id);
       }
       
       setIsLoading(false);
@@ -65,25 +74,58 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const checkAdminStatus = async (userId: string) => {
+  const checkUserRoles = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      // Check if user is admin
+      const { data: adminData, error: adminError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId)
         .eq("role", "admin")
         .maybeSingle();
 
-      if (error) {
-        console.error("Error checking admin status:", error);
-        setIsAdmin(false);
+      if (adminError) {
+        console.error("Error checking admin status:", adminError);
+      }
+
+      const isAdminUser = !!adminData;
+      setIsAdmin(isAdminUser);
+
+      // Check if user is repair center staff
+      const { data: staffData, error: staffError } = await supabase
+        .from("repair_center_staff")
+        .select("repair_center_id, role")
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (staffError) {
+        console.error("Error checking repair center staff status:", staffError);
+      }
+
+      const isStaff = !!staffData;
+      setIsRepairCenterStaff(isStaff);
+      setRepairCenterId(staffData?.repair_center_id || null);
+
+      // Determine primary user role
+      if (isAdminUser) {
+        setUserRole('admin');
+      } else if (isStaff) {
+        setUserRole('repair_center');
       } else {
-        setIsAdmin(!!data);
+        setUserRole('customer');
       }
     } catch (error) {
-      console.error("Error checking admin status:", error);
-      setIsAdmin(false);
+      console.error("Error checking user roles:", error);
+      resetUserRoles();
     }
+  };
+
+  const resetUserRoles = () => {
+    setIsAdmin(false);
+    setIsRepairCenterStaff(false);
+    setRepairCenterId(null);
+    setUserRole(null);
   };
 
   const signOut = async () => {
@@ -91,7 +133,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, isAdmin, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      isLoading, 
+      isAdmin, 
+      isRepairCenterStaff, 
+      repairCenterId, 
+      userRole, 
+      signOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );

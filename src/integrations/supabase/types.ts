@@ -141,6 +141,44 @@ export type Database = {
         }
         Relationships: []
       }
+      repair_center_staff: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          repair_center_id: number
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          repair_center_id: number
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          repair_center_id?: number
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repair_center_staff_repair_center_id_fkey"
+            columns: ["repair_center_id"]
+            isOneToOne: false
+            referencedRelation: "Repair Center"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       repair_jobs: {
         Row: {
           app_commission: number | null
@@ -259,11 +297,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_repair_center: {
+        Args: { _user_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_repair_center_admin: {
+        Args: { _repair_center_id: number; _user_id: string }
         Returns: boolean
       }
     }

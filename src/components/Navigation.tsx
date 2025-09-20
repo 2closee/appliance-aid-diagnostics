@@ -6,16 +6,21 @@ import {
   Mail, 
   Home,
   Menu,
-  X
+  X,
+  LayoutDashboard,
+  LogOut
 } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Navigation = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   const navItems = [
     { path: "/", label: "Home", icon: Home },
+    ...(user ? [{ path: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] : []),
     { path: "/diagnostic", label: "AI Diagnostic", icon: Bot },
     { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
     { path: "/pickup-request", label: "Pickup Request", icon: Mail },
@@ -45,6 +50,20 @@ const Navigation = () => {
                 </Button>
               </Link>
             ))}
+            {user ? (
+              <Button
+                variant="ghost"
+                onClick={signOut}
+                className="flex items-center space-x-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Sign Out</span>
+              </Button>
+            ) : (
+              <Link to="/auth">
+                <Button variant="outline">Sign In</Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -72,6 +91,23 @@ const Navigation = () => {
                 </Button>
               </Link>
             ))}
+            {user ? (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  signOut();
+                  setIsMenuOpen(false);
+                }}
+                className="w-full justify-start flex items-center space-x-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Sign Out</span>
+              </Button>
+            ) : (
+              <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                <Button variant="outline" className="w-full">Sign In</Button>
+              </Link>
+            )}
           </div>
         )}
       </div>
