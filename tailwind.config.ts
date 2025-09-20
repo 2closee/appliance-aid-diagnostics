@@ -138,7 +138,11 @@ export default {
 			boxShadow: {
 				'soft': 'var(--shadow-soft)',
 				'medium': 'var(--shadow-medium)',
-				'strong': 'var(--shadow-strong)'
+				'strong': 'var(--shadow-strong)',
+				'luxury': 'var(--shadow-luxury)'
+			},
+			dropShadow: {
+				'luxury': '0 8px 32px rgba(34, 43, 69, 0.3)'
 			},
 			transitionDuration: {
 				'smooth': 'var(--transition-smooth)'

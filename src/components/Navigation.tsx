@@ -33,8 +33,11 @@ const Navigation = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center space-x-2">
-            <Bot className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-foreground">TechFix AI</span>
+            <img 
+              src="/src/assets/fixbudi-logo.png" 
+              alt="Fixbudi" 
+              className="h-8 w-auto object-contain"
+            />
           </Link>
 
           {/* Desktop Navigation */}
