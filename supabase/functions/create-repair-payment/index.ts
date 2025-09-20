@@ -83,7 +83,7 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/repair-jobs/${repair_job_id}?payment=success`,
+      success_url: `${req.headers.get("origin")}/repair-jobs/${repair_job_id}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/repair-jobs/${repair_job_id}?payment=cancelled`,
       metadata: {
         repair_job_id: repair_job_id,
@@ -103,7 +103,7 @@ serve(async (req) => {
         currency: "usd",
         payment_type: "repair_service",
         payment_status: "pending",
-        commission_rate: 0.05
+        commission_rate: 0.075
       });
 
     if (paymentError) {

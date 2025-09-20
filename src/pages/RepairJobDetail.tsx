@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CreditCard, CheckCircle, Clock, MapPin, Phone, Mail } from "lucide-react";
+import { ArrowLeft, CreditCard, CheckCircle, Clock, MapPin, Phone, Mail, Loader2, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
@@ -71,18 +71,34 @@ const statusColors = {
 
 const RepairJobDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const [job, setJob] = useState<RepairJob | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   useEffect(() => {
     if (user && id) {
       fetchJobDetails();
       fetchStatusHistory();
+      
+      // Handle payment success/failure from URL parameters
+      const payment = searchParams.get('payment');
+      const sessionId = searchParams.get('session_id');
+      
+      if (payment === 'success' && sessionId) {
+        verifyPaymentStatus(sessionId);
+      } else if (payment === 'cancelled') {
+        toast({
+          title: "Payment Cancelled",
+          description: "You can try again when you're ready to pay.",
+          variant: "default",
+        });
+      }
     }
-  }, [user, id]);
+  }, [user, id, searchParams]);
 
   const fetchJobDetails = async () => {
     try {
@@ -125,9 +141,43 @@ const RepairJobDetail = () => {
     }
   };
 
+  const verifyPaymentStatus = async (sessionId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-payment-status", {
+        body: { session_id: sessionId }
+      });
+
+      if (error) throw error;
+
+      if (data.payment_status === 'completed') {
+        toast({
+          title: "Payment Successful!",
+          description: "Your payment has been processed and the repair is now complete.",
+        });
+        
+        // Refresh job details to get updated status
+        fetchJobDetails();
+      } else if (data.payment_status === 'failed') {
+        toast({
+          title: "Payment Failed",
+          description: "There was an issue processing your payment. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error verifying payment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to verify payment status",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handlePayment = async () => {
     if (!job?.final_cost) return;
     
+    setPaymentLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-repair-payment", {
         body: {
@@ -139,7 +189,14 @@ const RepairJobDetail = () => {
       if (error) throw error;
 
       if (data.url) {
+        // Add session_id to the success URL for verification
+        const successUrl = new URL(data.url);
         window.open(data.url, '_blank');
+        
+        toast({
+          title: "Redirecting to Payment",
+          description: "You'll be redirected to complete your payment securely.",
+        });
       }
     } catch (error) {
       console.error("Error creating payment:", error);
@@ -148,6 +205,8 @@ const RepairJobDetail = () => {
         description: "Failed to create payment session",
         variant: "destructive",
       });
+    } finally {
+      setPaymentLoading(false);
     }
   };
 
@@ -398,9 +457,9 @@ const RepairJobDetail = () => {
                         <span className="text-sm text-muted-foreground">Final Cost</span>
                         <span className="font-medium">${job.final_cost.toFixed(2)}</span>
                       </div>
-                      {job.app_commission && (
+                       {job.app_commission && (
                         <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Service Fee (5%)</span>
+                          <span className="text-sm text-muted-foreground">Service Fee (7.5%)</span>
                           <span className="font-medium">${job.app_commission.toFixed(2)}</span>
                         </div>
                       )}
@@ -420,10 +479,30 @@ const RepairJobDetail = () => {
                   <Button 
                     className="w-full"
                     onClick={handlePayment}
+                    disabled={paymentLoading}
                   >
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Pay ${job.final_cost.toFixed(2)}
+                    {paymentLoading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <CreditCard className="w-4 h-4 mr-2" />
+                    )}
+                    {paymentLoading ? "Processing..." : `Pay $${job.final_cost.toFixed(2)}`}
                   </Button>
+                )}
+
+                {/* Payment Status Indicators */}
+                {searchParams.get('payment') === 'success' && (
+                  <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-green-800">Payment completed successfully!</span>
+                  </div>
+                )}
+
+                {searchParams.get('payment') === 'cancelled' && (
+                  <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-yellow-600" />
+                    <span className="text-sm text-yellow-800">Payment was cancelled. You can try again anytime.</span>
+                  </div>
                 )}
 
                 {job.job_status === "returned" && !job.customer_confirmed && (
