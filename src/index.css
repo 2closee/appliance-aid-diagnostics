@@ -8,57 +8,63 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Classic luxury color palette - inspired by premium brands */
-    --background: 45 33% 96%;
-    --foreground: 220 15% 15%;
+    /* Professional appliance repair color palette */
+    --background: 0 0% 98%;
+    --foreground: 210 12% 16%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 15%;
+    --card-foreground: 210 12% 16%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 15%;
+    --popover-foreground: 210 12% 16%;
 
-    /* Rich navy blue - classic and trustworthy */
-    --primary: 215 25% 27%;
-    --primary-foreground: 45 33% 96%;
-    --primary-glow: 215 25% 40%;
+    /* Deep professional blue - trustworthy and technical */
+    --primary: 215 28% 32%;
+    --primary-foreground: 0 0% 98%;
+    --primary-glow: 215 28% 45%;
 
-    /* Warm cream/champagne - luxury feel */
-    --secondary: 45 25% 92%;
-    --secondary-foreground: 220 15% 15%;
+    /* Clean technical gray - professional and modern */
+    --secondary: 210 8% 92%;
+    --secondary-foreground: 210 12% 16%;
 
-    /* Soft neutral */
-    --muted: 45 15% 94%;
-    --muted-foreground: 220 9% 46%;
+    /* Soft neutral with slight blue undertone */
+    --muted: 210 8% 95%;
+    --muted-foreground: 210 8% 46%;
 
-    /* Deep charcoal - professional accent */
-    --accent: 220 15% 25%;
-    --accent-foreground: 45 33% 96%;
+    /* Electric blue accent - technical innovation */
+    --accent: 206 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Safety orange for urgent repairs */
+    --urgent: 16 100% 55%;
+    --urgent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 45 33% 96%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 45 15% 88%;
-    --input: 45 15% 88%;
-    --ring: 215 25% 27%;
+    --border: 210 8% 88%;
+    --input: 210 8% 88%;
+    --ring: 215 28% 32%;
 
-    --success: 142 76% 36%;
+    /* Enhanced success green for completed repairs */
+    --success: 145 70% 41%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    /* Professional warning amber */
+    --warning: 38 95% 55%;
     --warning-foreground: 0 0% 100%;
 
-    /* Luxury gradients */
+    /* Technical gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--accent) / 0.05));
-    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(var(--secondary) / 0.4));
-    --gradient-luxury: linear-gradient(135deg, hsl(215 25% 27%) 0%, hsl(220 15% 25%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary) / 0.06), hsl(var(--accent) / 0.04));
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(var(--secondary) / 0.5));
+    --gradient-technical: linear-gradient(135deg, hsl(215 28% 32%) 0%, hsl(206 100% 50% / 0.8) 100%);
 
-    /* Elegant shadows */
+    /* Professional shadows */
     --shadow-soft: 0 2px 12px -2px hsl(var(--primary) / 0.08);
-    --shadow-medium: 0 8px 25px -5px hsl(var(--primary) / 0.12);
-    --shadow-strong: 0 16px 40px -8px hsl(var(--primary) / 0.15);
-    --shadow-luxury: 0 8px 32px -4px hsl(215 25% 27% / 0.3);
+    --shadow-medium: 0 8px 25px -5px hsl(var(--primary) / 0.15);
+    --shadow-strong: 0 16px 40px -8px hsl(var(--primary) / 0.20);
+    --shadow-technical: 0 8px 32px -4px hsl(206 100% 50% / 0.15);
 
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -82,35 +88,40 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* Dark mode with luxury feel */
-    --background: 220 15% 8%;
-    --foreground: 45 25% 92%;
+    /* Dark mode with technical feel */
+    --background: 210 15% 7%;
+    --foreground: 210 8% 94%;
 
-    --card: 220 15% 10%;
-    --card-foreground: 45 25% 92%;
+    --card: 210 15% 9%;
+    --card-foreground: 210 8% 94%;
 
-    --popover: 220 15% 10%;
-    --popover-foreground: 45 25% 92%;
+    --popover: 210 15% 9%;
+    --popover-foreground: 210 8% 94%;
 
-    /* Gold accent for dark mode luxury */
-    --primary: 45 70% 65%;
-    --primary-foreground: 220 15% 8%;
+    /* Bright electric blue for dark mode */
+    --primary: 206 100% 65%;
+    --primary-foreground: 210 15% 7%;
 
-    --secondary: 220 10% 15%;
-    --secondary-foreground: 45 25% 92%;
+    --secondary: 210 10% 14%;
+    --secondary-foreground: 210 8% 94%;
 
-    --muted: 220 10% 15%;
-    --muted-foreground: 45 10% 65%;
+    --muted: 210 10% 14%;
+    --muted-foreground: 210 8% 65%;
 
-    --accent: 45 60% 60%;
-    --accent-foreground: 220 15% 8%;
+    /* Bright technical accent */
+    --accent: 206 100% 60%;
+    --accent-foreground: 210 15% 7%;
 
-    --destructive: 0 75% 60%;
-    --destructive-foreground: 45 25% 92%;
+    /* Enhanced urgent color for dark mode */
+    --urgent: 16 100% 60%;
+    --urgent-foreground: 210 15% 7%;
 
-    --border: 220 10% 18%;
-    --input: 220 10% 18%;
-    --ring: 45 70% 65%;
+    --destructive: 0 75% 65%;
+    --destructive-foreground: 210 8% 94%;
+
+    --border: 210 10% 18%;
+    --input: 210 10% 18%;
+    --ring: 206 100% 65%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
