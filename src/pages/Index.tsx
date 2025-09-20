@@ -44,11 +44,14 @@ const Index = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center animate-fade-in">
             <div className="flex items-center justify-center mb-6">
-              <img 
-                src="/src/assets/fixbudi-logo.png" 
-                alt="Fixbudi - No excuses..." 
-                className="h-20 md:h-24 w-auto object-contain drop-shadow-luxury"
-              />
+              <div className="flex items-center space-x-3 group">
+                <div className="p-3 bg-primary rounded-xl group-hover:scale-105 transition-transform shadow-lg">
+                  <Wrench className="h-8 w-8 text-primary-foreground" />
+                </div>
+                <span className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
+                  Fixbudi
+                </span>
+              </div>
             </div>
             <h2 className="text-2xl md:text-3xl font-semibold text-primary mb-4">
               Smart Appliance Diagnosis & Repair Solutions
