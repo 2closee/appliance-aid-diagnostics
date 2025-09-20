@@ -8,7 +8,8 @@ import {
   Menu,
   X,
   LayoutDashboard,
-  LogOut
+  LogOut,
+  Wrench
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,12 +33,15 @@ const Navigation = () => {
     <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center space-x-2">
-            <img 
-              src="/src/assets/fixbudi-logo.png" 
-              alt="Fixbudi" 
-              className="h-8 w-auto object-contain"
-            />
+          <Link to="/" className="flex items-center space-x-2 group">
+            <div className="flex items-center space-x-2">
+              <div className="p-1.5 bg-primary rounded-lg group-hover:scale-105 transition-transform">
+                <Wrench className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <span className="text-xl font-bold text-foreground tracking-tight">
+                Fixbudi
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
