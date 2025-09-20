@@ -69,10 +69,12 @@ const Index = () => {
                 Find Repair Centers
                 <MapPin className="ml-2 h-5 w-5" />
               </Button>
-              <Button variant="secondary" size="lg" onClick={() => navigate('/apply-repair-center')}>
-                Join as Repair Center
-                <Settings className="ml-2 h-5 w-5" />
-              </Button>
+              {!user && (
+                <Button variant="secondary" size="lg" onClick={() => navigate('/apply-repair-center')}>
+                  Join as Repair Center
+                  <Settings className="ml-2 h-5 w-5" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -110,28 +112,196 @@ const Index = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-3 text-muted-foreground">
-              <li className="flex items-start">
-                <ArrowRight className="h-5 w-5 text-primary mt-0.5 mr-3 flex-shrink-0" />
-                <strong>Instant AI Diagnosis:</strong> Get immediate troubleshooting for your appliances through our intelligent diagnostic system.
-              </li>
-              <li className="flex items-start">
-                <ArrowRight className="h-5 w-5 text-primary mt-0.5 mr-3 flex-shrink-0" />
-                <strong>Smart Problem Filtering:</strong> Our AI determines if issues can be resolved remotely or require professional intervention.
-              </li>
-              <li className="flex items-start">
-                <ArrowRight className="h-5 w-5 text-primary mt-0.5 mr-3 flex-shrink-0" />
-                <strong>Verified Repair Centers:</strong> Connect with our network of certified technicians and authorized service centers.
-              </li>
-              <li className="flex items-start">
-                <ArrowRight className="h-5 w-5 text-primary mt-0.5 mr-3 flex-shrink-0" />
-                <strong>Convenient Pickup Service:</strong> Schedule hassle-free device pickup and delivery directly from your location.
-              </li>
-              <li className="flex items-start">
-                <ArrowRight className="h-5 w-5 text-primary mt-0.5 mr-3 flex-shrink-0" />
-                <strong>Seamless Communication:</strong> Stay updated throughout the entire repair process with automated notifications.
-              </li>
-            </ul>
+            {/* Mobile - Single Column */}
+            <div className="block sm:hidden space-y-4">
+              <div className="flex items-start space-x-4 p-4 bg-gradient-card rounded-lg">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Bot className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2 text-lg">1. Instant AI Diagnosis</h4>
+                  <p className="text-muted-foreground">Get immediate troubleshooting for your appliances through our intelligent diagnostic system.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 p-4 bg-gradient-card rounded-lg">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Target className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2 text-lg">2. Smart Problem Filtering</h4>
+                  <p className="text-muted-foreground">Our AI determines if issues can be resolved remotely or require professional intervention.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 p-4 bg-gradient-card rounded-lg">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Users className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2 text-lg">3. Verified Repair Centers</h4>
+                  <p className="text-muted-foreground">Connect with our network of certified technicians and authorized service centers.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 p-4 bg-gradient-card rounded-lg">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Calendar className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2 text-lg">4. Convenient Pickup Service</h4>
+                  <p className="text-muted-foreground">Schedule hassle-free device pickup and delivery directly from your location.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 p-4 bg-gradient-card rounded-lg">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Smartphone className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2 text-lg">5. Phone Number Sharing</h4>
+                  <p className="text-muted-foreground">Your contact details are automatically shared with assigned repair centers for direct communication.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 p-4 bg-gradient-card rounded-lg">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Globe className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2 text-lg">6. Seamless Communication</h4>
+                  <p className="text-muted-foreground">Stay updated throughout the entire repair process with automated notifications.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Tablet - Two Columns */}
+            <div className="hidden sm:block lg:hidden grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-start space-x-3 p-4 bg-gradient-card rounded-lg">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Bot className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">1. AI Diagnosis</h4>
+                    <p className="text-sm text-muted-foreground">Get immediate troubleshooting through our intelligent system.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3 p-4 bg-gradient-card rounded-lg">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Target className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">2. Smart Filtering</h4>
+                    <p className="text-sm text-muted-foreground">AI determines if issues can be resolved remotely or need professional help.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3 p-4 bg-gradient-card rounded-lg">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Users className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">3. Verified Centers</h4>
+                    <p className="text-sm text-muted-foreground">Connect with our network of certified technicians.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3 p-4 bg-gradient-card rounded-lg">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Calendar className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">4. Pickup Service</h4>
+                    <p className="text-sm text-muted-foreground">Schedule hassle-free device pickup and delivery.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3 p-4 bg-gradient-card rounded-lg">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Smartphone className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">5. Phone Sharing</h4>
+                    <p className="text-sm text-muted-foreground">Contact details automatically shared with repair centers.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3 p-4 bg-gradient-card rounded-lg">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Globe className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">6. Communication</h4>
+                    <p className="text-sm text-muted-foreground">Stay updated with automated notifications.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop - Three Columns */}
+            <div className="hidden lg:grid grid-cols-3 gap-6">
+              <div className="flex items-start space-x-4 p-4 bg-gradient-card rounded-lg">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Bot className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">1. Instant AI Diagnosis</h4>
+                  <p className="text-sm text-muted-foreground">Get immediate troubleshooting for your appliances through our intelligent diagnostic system.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 p-4 bg-gradient-card rounded-lg">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Target className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">2. Smart Problem Filtering</h4>
+                  <p className="text-sm text-muted-foreground">Our AI determines if issues can be resolved remotely or require professional intervention.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 p-4 bg-gradient-card rounded-lg">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">3. Verified Repair Centers</h4>
+                  <p className="text-sm text-muted-foreground">Connect with our network of certified technicians and authorized service centers.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 p-4 bg-gradient-card rounded-lg">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Calendar className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">4. Convenient Pickup Service</h4>
+                  <p className="text-sm text-muted-foreground">Schedule hassle-free device pickup and delivery directly from your location.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 p-4 bg-gradient-card rounded-lg">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Smartphone className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">5. Phone Number Sharing</h4>
+                  <p className="text-sm text-muted-foreground">Your contact details are automatically shared with assigned repair centers for direct communication.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 p-4 bg-gradient-card rounded-lg">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Globe className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">6. Seamless Communication</h4>
+                  <p className="text-sm text-muted-foreground">Stay updated throughout the entire repair process with automated notifications.</p>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
