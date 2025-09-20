@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { 
   Bot, 
   MapPin, 
@@ -9,15 +10,19 @@ import {
   X,
   LayoutDashboard,
   LogOut,
-  Wrench
+  Wrench,
+  Moon,
+  Sun
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "next-themes";
 
 const Navigation = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const navItems = [
     { path: "/", label: "Home", icon: Home },
@@ -44,8 +49,21 @@ const Navigation = () => {
             </div>
           </Link>
 
+          {/* Dark Mode Toggle - Mobile & Tablet */}
+          <div className="flex items-center space-x-3 lg:hidden">
+            <div className="flex items-center space-x-2">
+              <Sun className="h-4 w-4 text-muted-foreground" />
+              <Switch
+                checked={theme === 'dark'}
+                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                className="data-[state=checked]:bg-primary"
+              />
+              <Moon className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
+
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden lg:flex items-center space-x-1">
             {navItems.map((item) => (
               <Link key={item.path} to={item.path}>
                 <Button
@@ -77,7 +95,7 @@ const Navigation = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            className="lg:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -86,7 +104,7 @@ const Navigation = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 space-y-2">
+          <div className="lg:hidden py-4 space-y-2">
             {navItems.map((item) => (
               <Link key={item.path} to={item.path} onClick={() => setIsMenuOpen(false)}>
                 <Button
