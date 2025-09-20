@@ -20,6 +20,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import AIChatInterface from "@/components/AIChatInterface";
+import { useAuth } from "@/hooks/useAuth";
 
 type ApplianceType = 'tv' | 'smartphone' | 'headphones' | 'monitor';
 type DiagnosticStep = {
@@ -30,6 +31,7 @@ type DiagnosticStep = {
 
 const Diagnostic = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedAppliance, setSelectedAppliance] = useState<ApplianceType | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
@@ -357,11 +359,11 @@ const Diagnostic = () => {
                       Any videos or audio you share will help technicians better understand the problem.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <Button onClick={() => navigate('/repair-centers')} className="flex-1">
+                      <Button onClick={() => user ? navigate('/repair-centers') : navigate('/auth')} className="flex-1">
                         <MapPin className="h-4 w-4 mr-2" />
                         Find Repair Center
                       </Button>
-                      <Button onClick={() => navigate('/pickup-request')} variant="outline" className="flex-1">
+                      <Button onClick={() => user ? navigate('/pickup-request') : navigate('/auth')} variant="outline" className="flex-1">
                         <ArrowRight className="h-4 w-4 mr-2" />
                         Schedule Pickup
                       </Button>

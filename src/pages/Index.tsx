@@ -65,7 +65,7 @@ const Index = () => {
                 Start Diagnosis
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate('/repair-centers')}>
+              <Button variant="outline" size="lg" onClick={() => user ? navigate('/repair-centers') : navigate('/auth')}>
                 Find Repair Centers
                 <MapPin className="ml-2 h-5 w-5" />
               </Button>
