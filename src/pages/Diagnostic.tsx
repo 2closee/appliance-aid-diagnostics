@@ -389,16 +389,6 @@ const Diagnostic = () => {
             </Card>
           )}
 
-          {/* Debug info */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="bg-yellow-100 p-4 rounded-lg text-sm">
-              <p>Debug: showChatOptions = {showChatOptions.toString()}</p>
-              <p>Debug: selectedAppliance = {selectedAppliance || 'null'}</p>
-              <p>Debug: showAIChat = {showAIChat.toString()}</p>
-              <p>Debug: showRepairCenterChat = {showRepairCenterChat.toString()}</p>
-            </div>
-          )}
-
           {showChatOptions && selectedAppliance && (
             <Card className="shadow-medium">
               <CardHeader>
