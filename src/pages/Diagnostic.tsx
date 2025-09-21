@@ -15,11 +15,14 @@ import {
   ArrowRight,
   RotateCcw,
   MapPin,
-  MessageCircle
+  MessageCircle,
+  Users,
+  Truck
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import AIChatInterface from "@/components/AIChatInterface";
+import RepairCenterChatInterface from "@/components/RepairCenterChatInterface";
 import { useAuth } from "@/hooks/useAuth";
 
 type ApplianceType = 'tv' | 'smartphone' | 'headphones' | 'monitor';
@@ -41,6 +44,8 @@ const Diagnostic = () => {
     recommendations: []
   });
   const [showAIChat, setShowAIChat] = useState(false);
+  const [showRepairCenterChat, setShowRepairCenterChat] = useState(false);
+  const [showChatOptions, setShowChatOptions] = useState(false);
 
   const appliances = [
     { id: 'tv', name: 'TV', icon: Tv, description: 'Smart TV, LED, OLED' },
@@ -166,6 +171,8 @@ const Diagnostic = () => {
     setAnswers([]);
     setDiagnosis({ type: '', message: '', recommendations: [] });
     setShowAIChat(false);
+    setShowRepairCenterChat(false);
+    setShowChatOptions(false);
   };
 
   const handleDiagnosisUpdate = (newDiagnosis: string, recommendations: string[]) => {
@@ -276,7 +283,7 @@ const Diagnostic = () => {
             </Card>
           )}
 
-          {diagnosis.type && !showAIChat && (
+          {diagnosis.type && !showAIChat && !showRepairCenterChat && !showChatOptions && (
             <Card className="shadow-medium">
               <CardHeader>
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -298,12 +305,12 @@ const Diagnostic = () => {
                   <div className="flex gap-2 flex-wrap">
                     <Button 
                       variant="outline" 
-                      onClick={() => setShowAIChat(true)} 
+                      onClick={() => setShowChatOptions(true)} 
                       size="sm"
                       className="flex items-center gap-2"
                     >
                       <MessageCircle className="h-4 w-4" />
-                      Chat with AI
+                      Get Personalized Help
                     </Button>
                     <Button variant="outline" onClick={resetDiagnosis} size="sm">
                       <RotateCcw className="h-4 w-4 mr-2" />
@@ -332,25 +339,6 @@ const Diagnostic = () => {
                   </ul>
                 </div>
 
-                <div className="bg-gradient-to-r from-primary/5 to-accent/5 p-4 lg:p-6 rounded-lg border border-primary/20">
-                  <h3 className="text-lg lg:text-xl font-semibold mb-3 text-center lg:text-left">
-                    Need More Help?
-                  </h3>
-                  <p className="text-muted-foreground mb-4 text-sm lg:text-base leading-relaxed text-center lg:text-left">
-                    If this diagnosis doesn't cover your specific issues, chat with our AI assistant. 
-                    You can upload videos, use voice commands, or describe your problems in detail.
-                  </p>
-                  <div className="flex justify-center lg:justify-start">
-                    <Button 
-                      onClick={() => setShowAIChat(true)}
-                      className="flex items-center gap-2"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      Get Personalized Help
-                    </Button>
-                  </div>
-                </div>
-
                 {diagnosis.type === 'hardware' && (
                   <div className="bg-gradient-card p-4 lg:p-6 rounded-lg border">
                     <h3 className="text-lg lg:text-xl font-semibold mb-4 text-center lg:text-left">Next Steps</h3>
@@ -370,6 +358,25 @@ const Diagnostic = () => {
                     </div>
                   </div>
                 )}
+
+                <div className="bg-gradient-to-r from-primary/5 to-accent/5 p-4 lg:p-6 rounded-lg border border-primary/20">
+                  <h3 className="text-lg lg:text-xl font-semibold mb-3 text-center lg:text-left">
+                    Need More Help?
+                  </h3>
+                  <p className="text-muted-foreground mb-4 text-sm lg:text-base leading-relaxed text-center lg:text-left">
+                    If this diagnosis doesn't cover your specific issues, get personalized assistance. 
+                    You can upload videos, use voice commands, or describe your problems in detail.
+                  </p>
+                  <div className="flex justify-center lg:justify-start">
+                    <Button 
+                      onClick={() => setShowChatOptions(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Get Personalized Help
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -384,7 +391,7 @@ const Diagnostic = () => {
                   </p>
                 </div>
                 <Button variant="outline" onClick={() => setShowAIChat(false)} size="sm">
-                  Back to Diagnosis
+                  Back to Options
                 </Button>
               </div>
               
@@ -392,6 +399,29 @@ const Diagnostic = () => {
                 appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
                 initialDiagnosis={diagnosis.message || 'Initial diagnostic questions completed'}
                 onDiagnosisUpdate={handleDiagnosisUpdate}
+              />
+            </div>
+          )}
+
+          {showRepairCenterChat && selectedAppliance && (
+            <div className="space-y-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                  <h2 className="text-xl lg:text-2xl font-bold">Repair Center Chat</h2>
+                  <p className="text-muted-foreground text-sm lg:text-base">
+                    Connect with local repair experts
+                  </p>
+                </div>
+                <Button variant="outline" onClick={() => setShowRepairCenterChat(false)} size="sm">
+                  Back to Options
+                </Button>
+              </div>
+              
+              <RepairCenterChatInterface
+                appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
+                diagnosis={diagnosis.message}
+                onSchedulePickup={() => user ? navigate('/pickup-request') : navigate('/auth')}
+                onFindRepairCenter={() => user ? navigate('/repair-centers') : navigate('/auth')}
               />
             </div>
           )}
