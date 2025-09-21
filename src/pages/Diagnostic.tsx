@@ -305,7 +305,10 @@ const Diagnostic = () => {
                   <div className="flex gap-2 flex-wrap">
                     <Button 
                       variant="outline" 
-                      onClick={() => setShowChatOptions(true)} 
+                      onClick={() => {
+                        console.log("Get Personalized Help clicked, showChatOptions:", showChatOptions);
+                        setShowChatOptions(true);
+                      }} 
                       size="sm"
                       className="flex items-center gap-2"
                     >
@@ -369,13 +372,83 @@ const Diagnostic = () => {
                   </p>
                   <div className="flex justify-center lg:justify-start">
                     <Button 
-                      onClick={() => setShowChatOptions(true)}
+                      onClick={() => {
+                        console.log("Get Personalized Help clicked, current showChatOptions:", showChatOptions);
+                        console.log("selectedAppliance:", selectedAppliance);
+                        setShowChatOptions(true);
+                        console.log("After setting showChatOptions to true");
+                      }}
                       className="flex items-center gap-2"
                     >
                       <MessageCircle className="h-4 w-4" />
                       Get Personalized Help
                     </Button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Debug info */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="bg-yellow-100 p-4 rounded-lg text-sm">
+              <p>Debug: showChatOptions = {showChatOptions.toString()}</p>
+              <p>Debug: selectedAppliance = {selectedAppliance || 'null'}</p>
+              <p>Debug: showAIChat = {showAIChat.toString()}</p>
+              <p>Debug: showRepairCenterChat = {showRepairCenterChat.toString()}</p>
+            </div>
+          )}
+
+          {showChatOptions && selectedAppliance && (
+            <Card className="shadow-medium">
+              <CardHeader>
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-xl lg:text-2xl">Choose Your Help Option</CardTitle>
+                    <CardDescription className="text-sm lg:text-base">
+                      Select how you'd like to get personalized assistance
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" onClick={() => setShowChatOptions(false)} size="sm">
+                    Back to Diagnosis
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card 
+                    className="cursor-pointer hover:shadow-medium transition-all duration-300 border-2 hover:border-primary hover:scale-105 group"
+                    onClick={() => {
+                      console.log("AI Chat option clicked");
+                      setShowChatOptions(false);
+                      setShowAIChat(true);
+                    }}
+                  >
+                    <CardContent className="p-6 text-center">
+                      <Bot className="h-12 w-12 text-primary mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                      <h3 className="text-lg font-semibold mb-2">Chat with AI Assistant</h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        Get instant AI-powered assistance with voice, video, and text support
+                      </p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card 
+                    className="cursor-pointer hover:shadow-medium transition-all duration-300 border-2 hover:border-primary hover:scale-105 group"
+                    onClick={() => {
+                      console.log("Repair Center Chat option clicked");
+                      setShowChatOptions(false);
+                      setShowRepairCenterChat(true);
+                    }}
+                  >
+                    <CardContent className="p-6 text-center">
+                      <Users className="h-12 w-12 text-primary mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                      <h3 className="text-lg font-semibold mb-2">Chat with Repair Center</h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        Connect with local repair experts for professional assistance
+                      </p>
+                    </CardContent>
+                  </Card>
                 </div>
               </CardContent>
             </Card>
