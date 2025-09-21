@@ -31,24 +31,37 @@ interface Message {
   }[];
 }
 
+interface RepairCenter {
+  id: number;
+  name: string;
+  address: string;
+  phone: string;
+  hours: string;
+  rating: number;
+  specialties: string[];
+  distance: number;
+}
+
 interface RepairCenterChatInterfaceProps {
   appliance: string;
   diagnosis: string;
   onSchedulePickup: () => void;
   onFindRepairCenter: () => void;
+  selectedCenter?: RepairCenter;
 }
 
 const RepairCenterChatInterface = ({ 
   appliance, 
   diagnosis, 
   onSchedulePickup, 
-  onFindRepairCenter 
+  onFindRepairCenter,
+  selectedCenter 
 }: RepairCenterChatInterfaceProps) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: `Hello! I'm Sarah from TechFix Repair Center. I see you're having issues with your ${appliance}. Based on the initial diagnosis: "${diagnosis}". I'm here to help! Can you describe the problem in more detail or share a video/audio of the issue?`,
+      content: `Hello! I'm a technician from ${selectedCenter?.name || 'our repair center'}. I see you're having issues with your ${appliance}. Based on the initial diagnosis: "${diagnosis}". I'm here to help! Can you describe the problem in more detail or share a video/audio of the issue?`,
       sender: 'repair-center',
       timestamp: new Date()
     }
@@ -171,26 +184,35 @@ const RepairCenterChatInterface = ({
   return (
     <div className="space-y-6">
       {/* Repair Center Info */}
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <Users className="h-5 w-5 text-primary" />
-                <span className="font-semibold">TechFix Repair Center</span>
-                <Badge variant="secondary" className="text-xs">
-                  <Clock className="h-3 w-3 mr-1" />
-                  Online
-                </Badge>
+      {selectedCenter && (
+        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
+          <CardContent className="p-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <span className="font-semibold">{selectedCenter.name}</span>
+                  <Badge variant="secondary" className="text-xs">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Online
+                  </Badge>
+                </div>
+                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {selectedCenter.address}
+                </div>
+                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  {selectedCenter.phone}
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <span>{selectedCenter.distance} mi away</span>
               </div>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <Phone className="h-4 w-4" />
-              <span>0.5 miles away</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Chat Interface */}
       <Card className="shadow-medium">

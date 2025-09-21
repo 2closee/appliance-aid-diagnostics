@@ -24,6 +24,7 @@ import Navigation from "@/components/Navigation";
 import AIChatInterface from "@/components/AIChatInterface";
 import RepairCenterChatInterface from "@/components/RepairCenterChatInterface";
 import { useAuth } from "@/hooks/useAuth";
+import RepairCenterSelector from "@/components/RepairCenterSelector";
 
 type ApplianceType = 'tv' | 'smartphone' | 'headphones' | 'monitor';
 type DiagnosticStep = {
@@ -46,6 +47,8 @@ const Diagnostic = () => {
   const [showAIChat, setShowAIChat] = useState(false);
   const [showRepairCenterChat, setShowRepairCenterChat] = useState(false);
   const [showChatOptions, setShowChatOptions] = useState(false);
+  const [showRepairCenterSelector, setShowRepairCenterSelector] = useState(false);
+  const [selectedRepairCenter, setSelectedRepairCenter] = useState<any>(null);
 
   const appliances = [
     { id: 'tv', name: 'TV', icon: Tv, description: 'Smart TV, LED, OLED' },
@@ -173,6 +176,8 @@ const Diagnostic = () => {
     setShowAIChat(false);
     setShowRepairCenterChat(false);
     setShowChatOptions(false);
+    setShowRepairCenterSelector(false);
+    setSelectedRepairCenter(null);
   };
 
   const handleDiagnosisUpdate = (newDiagnosis: string, recommendations: string[]) => {
@@ -283,7 +288,7 @@ const Diagnostic = () => {
             </Card>
           )}
 
-          {diagnosis.type && !showAIChat && !showRepairCenterChat && !showChatOptions && (
+          {diagnosis.type && !showAIChat && !showRepairCenterChat && !showChatOptions && !showRepairCenterSelector && (
             <Card className="shadow-medium">
               <CardHeader>
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -428,7 +433,7 @@ const Diagnostic = () => {
                     onClick={() => {
                       console.log("Repair Center Chat option clicked");
                       setShowChatOptions(false);
-                      setShowRepairCenterChat(true);
+                      setShowRepairCenterSelector(true);
                     }}
                   >
                     <CardContent className="p-6 text-center">
@@ -485,8 +490,23 @@ const Diagnostic = () => {
                 diagnosis={diagnosis.message}
                 onSchedulePickup={() => user ? navigate('/pickup-request') : navigate('/auth')}
                 onFindRepairCenter={() => user ? navigate('/repair-centers') : navigate('/auth')}
+                selectedCenter={selectedRepairCenter}
               />
             </div>
+          )}
+
+          {showRepairCenterSelector && selectedAppliance && (
+            <RepairCenterSelector
+              onSelectCenter={(center) => {
+                setSelectedRepairCenter(center);
+                setShowRepairCenterSelector(false);
+                setShowRepairCenterChat(true);
+              }}
+              onBack={() => {
+                setShowRepairCenterSelector(false);
+                setShowChatOptions(true);
+              }}
+            />
           )}
         </div>
       </main>
