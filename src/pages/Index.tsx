@@ -75,6 +75,12 @@ const Index = () => {
                   <Settings className="ml-2 h-5 w-5" />
                 </Button>
               )}
+              {isAdmin && (
+                <Button variant="destructive" size="lg" onClick={() => navigate('/admin')}>
+                  Admin Panel
+                  <Shield className="ml-2 h-5 w-5" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
