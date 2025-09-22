@@ -179,7 +179,7 @@ const RepairCenterManagement = () => {
       </div>
 
       <Tabs defaultValue="applications" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="applications" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Pending Applications
@@ -190,6 +190,10 @@ const RepairCenterManagement = () => {
           <TabsTrigger value="centers" className="flex items-center gap-2">
             <Building className="h-4 w-4" />
             Active Centers
+          </TabsTrigger>
+          <TabsTrigger value="suspended" className="flex items-center gap-2">
+            <XCircle className="h-4 w-4" />
+            Suspended Centers
           </TabsTrigger>
         </TabsList>
 
@@ -278,92 +282,170 @@ const RepairCenterManagement = () => {
                 </div>
               ) : activeCenters && activeCenters.length > 0 ? (
                 <div className="space-y-4">
-                  {activeCenters.map((center) => {
-                    const activeStaff = center.repair_center_staff?.filter((staff: any) => staff.is_active);
-                    const suspendedStaff = center.repair_center_staff?.filter((staff: any) => !staff.is_active);
-                    const isActive = activeStaff && activeStaff.length > 0;
+                  {activeCenters
+                    .filter((center) => {
+                      const activeStaff = center.repair_center_staff?.filter((staff: any) => staff.is_active);
+                      return activeStaff && activeStaff.length > 0;
+                    })
+                    .map((center) => {
+                      const activeStaff = center.repair_center_staff?.filter((staff: any) => staff.is_active);
 
-                    return (
-                      <div key={center.id} className="p-4 border rounded-lg">
-                        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                          <div className="flex-1 space-y-2">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium">{center.name}</h3>
-                              <Badge variant={isActive ? "default" : "secondary"}>
-                                {isActive ? (
-                                  <>
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Active
-                                  </>
-                                ) : (
-                                  <>
-                                    <Pause className="h-3 w-3 mr-1" />
-                                    Suspended
-                                  </>
-                                )}
-                              </Badge>
+                      return (
+                        <div key={center.id} className="p-4 border rounded-lg">
+                          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium">{center.name}</h3>
+                                <Badge variant="default">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Active
+                                </Badge>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-muted-foreground">
+                                <p><strong>Address:</strong> {center.address}</p>
+                                <p><strong>Phone:</strong> {center.phone}</p>
+                                <p><strong>Email:</strong> {center.email}</p>
+                                <p>
+                                  <strong>Staff:</strong> 
+                                  <span className="flex items-center gap-1 ml-1">
+                                    <Users className="h-3 w-3" />
+                                    {activeStaff?.length || 0} active
+                                  </span>
+                                </p>
+                                <p><strong>Specialties:</strong> {center.specialties}</p>
+                              </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-muted-foreground">
-                              <p><strong>Address:</strong> {center.address}</p>
-                              <p><strong>Phone:</strong> {center.phone}</p>
-                              <p><strong>Email:</strong> {center.email}</p>
-                              <p>
-                                <strong>Staff:</strong> 
-                                <span className="flex items-center gap-1 ml-1">
-                                  <Users className="h-3 w-3" />
-                                  {activeStaff?.length || 0} active
-                                  {suspendedStaff && suspendedStaff.length > 0 && (
-                                    <span className="text-red-500">
-                                      , {suspendedStaff.length} suspended
-                                    </span>
-                                  )}
-                                </span>
-                              </p>
-                              <p><strong>Specialties:</strong> {center.specialties}</p>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSelectedCenter(center)}
+                                className="flex items-center gap-1"
+                              >
+                                <Eye className="h-4 w-4" />
+                                View Details
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => toggleCenterStatus.mutate({
+                                  centerId: center.id,
+                                  suspend: true
+                                })}
+                                disabled={toggleCenterStatus.isPending}
+                                className="flex items-center gap-1"
+                              >
+                                <Pause className="h-4 w-4" />
+                                Suspend
+                              </Button>
                             </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setSelectedCenter(center)}
-                              className="flex items-center gap-1"
-                            >
-                              <Eye className="h-4 w-4" />
-                              View Details
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={isActive ? "destructive" : "default"}
-                              onClick={() => toggleCenterStatus.mutate({
-                                centerId: center.id,
-                                suspend: isActive
-                              })}
-                              disabled={toggleCenterStatus.isPending}
-                              className="flex items-center gap-1"
-                            >
-                              {isActive ? (
-                                <>
-                                  <Pause className="h-4 w-4" />
-                                  Suspend
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle className="h-4 w-4" />
-                                  Activate
-                                </>
-                              )}
-                            </Button>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <Building className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No repair centers registered yet</p>
+                  <p className="text-muted-foreground">No active repair centers</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="suspended">
+          <Card>
+            <CardHeader>
+              <CardTitle>Suspended Repair Centers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingCenters ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-32 bg-muted animate-pulse rounded" />
+                  ))}
+                </div>
+              ) : activeCenters && activeCenters.length > 0 ? (
+                <div className="space-y-4">
+                  {activeCenters
+                    .filter((center) => {
+                      const activeStaff = center.repair_center_staff?.filter((staff: any) => staff.is_active);
+                      return !activeStaff || activeStaff.length === 0;
+                    })
+                    .map((center) => {
+                      const suspendedStaff = center.repair_center_staff?.filter((staff: any) => !staff.is_active);
+
+                      return (
+                        <div key={center.id} className="p-4 border rounded-lg border-destructive/20 bg-destructive/5">
+                          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium">{center.name}</h3>
+                                <Badge variant="destructive">
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Suspended
+                                </Badge>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-muted-foreground">
+                                <p><strong>Address:</strong> {center.address}</p>
+                                <p><strong>Phone:</strong> {center.phone}</p>
+                                <p><strong>Email:</strong> {center.email}</p>
+                                <p>
+                                  <strong>Staff:</strong> 
+                                  <span className="flex items-center gap-1 ml-1 text-destructive">
+                                    <Users className="h-3 w-3" />
+                                    {suspendedStaff?.length || 0} suspended
+                                  </span>
+                                </p>
+                                <p><strong>Specialties:</strong> {center.specialties}</p>
+                              </div>
+                              <div className="mt-3 p-3 bg-destructive/10 rounded border border-destructive/20">
+                                <div className="flex items-start gap-2">
+                                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                                  <div>
+                                    <h4 className="font-medium text-destructive text-sm">Suspension Reason:</h4>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                      Non-compliance with service standards and repeated customer complaints. 
+                                      Review pending for quality assurance violations.
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSelectedCenter(center)}
+                                className="flex items-center gap-1"
+                              >
+                                <Eye className="h-4 w-4" />
+                                View Details
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => toggleCenterStatus.mutate({
+                                  centerId: center.id,
+                                  suspend: false
+                                })}
+                                disabled={toggleCenterStatus.isPending}
+                                className="flex items-center gap-1"
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                                Reactivate
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
+                  <p className="text-muted-foreground">No suspended repair centers</p>
                 </div>
               )}
             </CardContent>
