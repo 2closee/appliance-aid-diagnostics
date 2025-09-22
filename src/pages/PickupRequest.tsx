@@ -49,9 +49,11 @@ type FormData = {
 interface RepairCenter {
   id: number;
   name: string;
-  address: string;
-  phone: string;
-  email: string;
+  general_location: string;
+  hours: string;
+  specialties: string;
+  number_of_staff: number;
+  years_of_experience: number;
 }
 
 const PickupRequest = () => {
@@ -97,7 +99,7 @@ const PickupRequest = () => {
   const fetchRepairCenters = async () => {
     try {
       const { data, error } = await supabase
-        .from("Repair Center")
+        .from("repair_centers_public")
         .select("*")
         .order("name");
 
@@ -259,9 +261,9 @@ const PickupRequest = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-semibold">{selectedCenter.name}</p>
-                    <p className="text-sm text-muted-foreground">{selectedCenter.address}</p>
+                    <p className="text-sm text-muted-foreground">{selectedCenter.general_location}</p>
                   </div>
-                  <Badge variant="outline">{selectedCenter.distance} mi</Badge>
+                  <Badge variant="outline">{selectedCenter.years_of_experience} years exp.</Badge>
                 </div>
               </CardContent>
             </Card>
