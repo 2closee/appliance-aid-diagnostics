@@ -16,6 +16,7 @@ import RevenueAnalytics from "./pages/RevenueAnalytics";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import RepairCenterApplication from "./pages/RepairCenterApplication";
+import RepairCenterAdmin from "./pages/RepairCenterAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/apply-repair-center" element={<RepairCenterApplication />} />
+            <Route path="/repair-center-admin" element={<RepairCenterAdmin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

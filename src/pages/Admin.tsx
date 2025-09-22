@@ -261,12 +261,14 @@ const Admin = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Center management features will be available once Supabase integration is completed.
-            </p>
-            <Button variant="outline" disabled>
-              View All Centers
-            </Button>
+            <div className="space-y-4">
+              <Button onClick={() => navigate("/dashboard")} className="w-full">
+                View All Centers & Analytics
+              </Button>
+              <Button onClick={() => navigate("/repair-center-admin")} variant="outline" className="w-full">
+                Repair Center Admin Portal
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
