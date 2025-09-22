@@ -198,6 +198,13 @@ export type Database = {
             referencedRelation: "Repair Center"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "repair_center_staff_repair_center_id_fkey"
+            columns: ["repair_center_id"]
+            isOneToOne: false
+            referencedRelation: "repair_centers_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       repair_jobs: {
@@ -278,6 +285,13 @@ export type Database = {
             referencedRelation: "Repair Center"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "repair_jobs_repair_center_id_fkey"
+            columns: ["repair_center_id"]
+            isOneToOne: false
+            referencedRelation: "repair_centers_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       settings: {
@@ -315,7 +329,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      repair_centers_public: {
+        Row: {
+          general_location: string | null
+          hours: string | null
+          id: number | null
+          name: string | null
+          number_of_staff: number | null
+          specialties: string | null
+          years_of_experience: number | null
+        }
+        Insert: {
+          general_location?: never
+          hours?: string | null
+          id?: number | null
+          name?: string | null
+          number_of_staff?: number | null
+          specialties?: string | null
+          years_of_experience?: number | null
+        }
+        Update: {
+          general_location?: never
+          hours?: string | null
+          id?: number | null
+          name?: string | null
+          number_of_staff?: number | null
+          specialties?: string | null
+          years_of_experience?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_user_repair_center: {
