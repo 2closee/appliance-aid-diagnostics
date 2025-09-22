@@ -16,6 +16,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RepairCenterManagement from "./RepairCenterManagement";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -154,7 +155,7 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-500">
-                ${stats?.totalRevenue.toFixed(2) || '0.00'}
+                ₦{stats?.totalRevenue.toFixed(2) || '0.00'}
               </div>
               <p className="text-xs text-muted-foreground">Service revenue</p>
             </CardContent>
@@ -167,7 +168,7 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-500">
-                ${stats?.totalCommission.toFixed(2) || '0.00'}
+                ₦{stats?.totalCommission.toFixed(2) || '0.00'}
               </div>
               <p className="text-xs text-muted-foreground">Platform earnings</p>
             </CardContent>
@@ -209,9 +210,10 @@ const AdminDashboard = () => {
 
         {/* Tabs for detailed views */}
         <Tabs defaultValue="recent-jobs" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="recent-jobs">Recent Jobs</TabsTrigger>
             <TabsTrigger value="repair-centers">Repair Centers</TabsTrigger>
+            <TabsTrigger value="center-management">Center Management</TabsTrigger>
           </TabsList>
           
           <TabsContent value="recent-jobs">
@@ -246,9 +248,9 @@ const AdminDashboard = () => {
                             <p className="text-sm text-muted-foreground">{job.issue_description}</p>
                             <div className="flex flex-wrap gap-4 text-sm">
                               <span><strong>Customer:</strong> {job.customer_name}</span>
-                              {job.estimated_cost && (
-                                <span><strong>Cost:</strong> ${job.estimated_cost}</span>
-                              )}
+                               {job.estimated_cost && (
+                                 <span><strong>Cost:</strong> ₦{job.estimated_cost}</span>
+                               )}
                             </div>
                           </div>
                           <div className="text-sm text-muted-foreground">
@@ -312,6 +314,10 @@ const AdminDashboard = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="center-management">
+            <RepairCenterManagement />
           </TabsContent>
         </Tabs>
       </main>

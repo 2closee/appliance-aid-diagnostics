@@ -21,15 +21,17 @@ import { useTheme } from "next-themes";
 const Navigation = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, signOut, userRole } = useAuth();
   const { theme, setTheme } = useTheme();
 
   const navItems = [
     { path: "/", label: "Home", icon: Home },
     ...(user ? [{ path: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] : []),
-    { path: "/diagnostic", label: "AI Diagnostic", icon: Bot },
-    { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
-    { path: "/pickup-request", label: "Pickup Request", icon: Mail },
+    ...(userRole === 'customer' || !user ? [
+      { path: "/diagnostic", label: "AI Diagnostic", icon: Bot },
+      { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
+      { path: "/pickup-request", label: "Pickup Request", icon: Mail },
+    ] : []),
   ];
 
   const isActive = (path: string) => location.pathname === path;

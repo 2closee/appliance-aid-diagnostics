@@ -167,7 +167,7 @@ const RepairCenterDashboard = () => {
               <DollarSign className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-500">${statsData.totalRevenue.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-green-500">₦{statsData.totalRevenue.toFixed(2)}</div>
             </CardContent>
           </Card>
         </div>
