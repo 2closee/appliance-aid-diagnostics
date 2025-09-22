@@ -27,7 +27,7 @@ const AdminDashboard = () => {
     queryFn: async () => {
       const [jobsResult, centersResult, usersResult] = await Promise.all([
         supabase.from("repair_jobs").select("*"),
-        supabase.from("Repair Center").select("*"),
+        supabase.from("Repair Center").select("*"), // Admin can access full table
         supabase.from("user_roles").select("*")
       ]);
 
@@ -80,7 +80,7 @@ const AdminDashboard = () => {
     queryKey: ["admin-repair-centers"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("Repair Center")
+        .from("Repair Center") // Admin can access full table
         .select("*")
         .order("name", { ascending: true });
 

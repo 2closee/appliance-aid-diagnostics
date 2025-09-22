@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { 
   MapPin, 
   Phone, 
@@ -17,16 +19,11 @@ import {
 interface RepairCenter {
   id: number;
   name: string;
-  address: string;
-  phone: string;
+  general_location: string;
   hours: string;
-  rating: number;
-  specialties: string[];
-  distance: number;
-  coordinates: {
-    lat: number;
-    lng: number;
-  };
+  specialties: string;
+  number_of_staff: number;
+  years_of_experience: number;
 }
 
 interface RepairCenterSelectorProps {
@@ -39,53 +36,18 @@ const RepairCenterSelector = ({ onSelectCenter, onBack }: RepairCenterSelectorPr
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationError, setLocationError] = useState("");
 
-  // Sample repair centers data
-  const repairCenters: RepairCenter[] = [
-    {
-      id: 1,
-      name: "TechFix Pro",
-      address: "123 Main St, Downtown",
-      phone: "+1 (555) 123-4567",
-      hours: "Mon-Fri: 9AM-6PM, Sat: 10AM-4PM",
-      rating: 4.8,
-      specialties: ["TV", "Smartphone", "Monitor"],
-      distance: 0.8,
-      coordinates: { lat: 40.7589, lng: -73.9851 }
+  // Fetch repair centers from secure public view
+  const { data: repairCenters = [], isLoading } = useQuery({
+    queryKey: ["public-repair-centers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("repair_centers_public")
+        .select("*");
+      
+      if (error) throw error;
+      return data || [];
     },
-    {
-      id: 2,
-      name: "ElectroRepair Center",
-      address: "456 Oak Ave, Midtown",
-      phone: "+1 (555) 987-6543",
-      hours: "Mon-Sat: 8AM-7PM",
-      rating: 4.6,
-      specialties: ["TV", "Headphones", "Monitor"],
-      distance: 1.2,
-      coordinates: { lat: 40.7505, lng: -73.9934 }
-    },
-    {
-      id: 3,
-      name: "Smart Device Solutions",
-      address: "789 Pine St, Uptown",
-      phone: "+1 (555) 456-7890",
-      hours: "Tue-Sun: 10AM-8PM",
-      rating: 4.9,
-      specialties: ["Smartphone", "Headphones"],
-      distance: 2.1,
-      coordinates: { lat: 40.7831, lng: -73.9712 }
-    },
-    {
-      id: 4,
-      name: "QuickFix Electronics",
-      address: "321 Elm Dr, Southside",
-      phone: "+1 (555) 234-5678",
-      hours: "Mon-Fri: 8AM-6PM",
-      rating: 4.4,
-      specialties: ["TV", "Monitor", "Smartphone"],
-      distance: 2.8,
-      coordinates: { lat: 40.7282, lng: -74.0776 }
-    }
-  ];
+  });
 
   useEffect(() => {
     // Get user's current location
@@ -111,32 +73,20 @@ const RepairCenterSelector = ({ onSelectCenter, onBack }: RepairCenterSelectorPr
   const filteredCenters = repairCenters
     .filter(center => 
       searchLocation === "" || 
-      center.address.toLowerCase().includes(searchLocation.toLowerCase()) ||
+      center.general_location.toLowerCase().includes(searchLocation.toLowerCase()) ||
       center.name.toLowerCase().includes(searchLocation.toLowerCase())
-    )
-    .sort((a, b) => a.distance - b.distance);
+    );
 
   const handleGetDirections = (center: RepairCenter) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(center.address)}`;
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(center.name + ' ' + center.general_location)}`;
     window.open(url, '_blank');
   };
 
-  const renderStarRating = (rating: number) => {
+  const renderExperienceBadge = (years: number) => {
     return (
       <div className="flex items-center gap-1">
-        {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            className={`h-4 w-4 ${
-              i < Math.floor(rating) 
-                ? 'text-yellow-400 fill-current' 
-                : i < rating 
-                  ? 'text-yellow-400 fill-current opacity-50'
-                  : 'text-gray-300'
-            }`}
-          />
-        ))}
-        <span className="text-sm text-muted-foreground ml-1">({rating})</span>
+        <Star className="h-4 w-4 text-primary" />
+        <span className="text-sm text-muted-foreground">{years} years experience</span>
       </div>
     );
   };
@@ -184,7 +134,19 @@ const RepairCenterSelector = ({ onSelectCenter, onBack }: RepairCenterSelectorPr
 
         {/* Repair Centers List */}
         <div className="space-y-4">
-          {filteredCenters.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="p-6">
+                  <div className="animate-pulse space-y-3">
+                    <div className="h-4 bg-muted rounded w-1/3"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
+                    <div className="h-3 bg-muted rounded w-2/3"></div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : filteredCenters.length === 0 ? (
             <Card className="p-6 text-center">
               <p className="text-muted-foreground">No repair centers found matching your search.</p>
             </Card>
@@ -198,21 +160,17 @@ const RepairCenterSelector = ({ onSelectCenter, onBack }: RepairCenterSelectorPr
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                         <div>
                           <h3 className="text-lg font-semibold">{center.name}</h3>
-                          {renderStarRating(center.rating)}
+                          {renderExperienceBadge(center.years_of_experience)}
                         </div>
                         <Badge variant="outline" className="self-start">
-                          {center.distance} mi away
+                          {center.number_of_staff} staff members
                         </Badge>
                       </div>
 
                       <div className="space-y-2 text-sm text-muted-foreground">
                         <div className="flex items-start gap-2">
                           <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                          <span>{center.address}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 flex-shrink-0" />
-                          <span>{center.phone}</span>
+                          <span>{center.general_location}</span>
                         </div>
                         <div className="flex items-start gap-2">
                           <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -222,9 +180,9 @@ const RepairCenterSelector = ({ onSelectCenter, onBack }: RepairCenterSelectorPr
 
                       {/* Specialties */}
                       <div className="flex flex-wrap gap-2">
-                        {center.specialties.map((specialty) => (
-                          <Badge key={specialty} variant="secondary" className="text-xs">
-                            {specialty}
+                        {center.specialties && center.specialties.split(',').map((specialty) => (
+                          <Badge key={specialty.trim()} variant="secondary" className="text-xs">
+                            {specialty.trim()}
                           </Badge>
                         ))}
                       </div>
