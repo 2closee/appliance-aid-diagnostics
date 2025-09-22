@@ -20,7 +20,12 @@ const RepairCenterAdmin = () => {
     password: "", 
     centerName: "",
     contactName: "",
-    phone: ""
+    phone: "",
+    numberOfStaff: "",
+    yearsOfExperience: "",
+    cacName: "",
+    cacNumber: "",
+    taxId: ""
   });
   const [isSigningUp, setIsSigningUp] = useState(false);
 
@@ -115,7 +120,18 @@ const RepairCenterAdmin = () => {
           description: "Your repair center application has been submitted. Please check your email for verification, then wait for admin approval.",
         });
         
-        setSignupData({ email: "", password: "", centerName: "", contactName: "", phone: "" });
+        setSignupData({ 
+          email: "", 
+          password: "", 
+          centerName: "", 
+          contactName: "", 
+          phone: "",
+          numberOfStaff: "",
+          yearsOfExperience: "",
+          cacName: "",
+          cacNumber: "",
+          taxId: ""
+        });
       }
     } catch (error) {
       toast({
@@ -174,17 +190,32 @@ const RepairCenterAdmin = () => {
                     <p><strong>Your Role:</strong> {repairCenterInfo.role}</p>
                   </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold mb-2">Quick Actions</h3>
-                  <div className="space-y-2">
-                    <Button onClick={() => navigate("/dashboard")} className="w-full">
-                      View Jobs & Analytics
-                    </Button>
-                    <Button onClick={() => navigate("/repair-jobs")} variant="outline" className="w-full">
-                      Manage Repair Jobs
-                    </Button>
+                  <div>
+                    <h3 className="font-semibold mb-2">Quick Actions</h3>
+                    <div className="space-y-2">
+                      <Button onClick={() => navigate("/dashboard")} className="w-full">
+                        View Jobs & Analytics
+                      </Button>
+                      <Button onClick={() => navigate("/repair-jobs")} variant="outline" className="w-full">
+                        Manage Repair Jobs
+                      </Button>
+                      {repairCenterInfo.is_owner && (
+                        <Button 
+                          onClick={() => {
+                            // TODO: Implement staff management
+                            toast({
+                              title: "Staff Management",
+                              description: "Staff management feature will be available soon.",
+                            });
+                          }} 
+                          variant="secondary" 
+                          className="w-full"
+                        >
+                          Manage Staff
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -316,6 +347,61 @@ const RepairCenterAdmin = () => {
                       placeholder="+234 xxx xxx xxxx"
                       required
                     />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="numberOfStaff">Number of Staff</Label>
+                      <Input
+                        id="numberOfStaff"
+                        type="number"
+                        value={signupData.numberOfStaff}
+                        onChange={(e) => setSignupData({...signupData, numberOfStaff: e.target.value})}
+                        placeholder="5"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="yearsOfExperience">Years of Experience</Label>
+                      <Input
+                        id="yearsOfExperience"
+                        type="number"
+                        value={signupData.yearsOfExperience}
+                        onChange={(e) => setSignupData({...signupData, yearsOfExperience: e.target.value})}
+                        placeholder="10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="cacName">CAC Name</Label>
+                    <Input
+                      id="cacName"
+                      value={signupData.cacName}
+                      onChange={(e) => setSignupData({...signupData, cacName: e.target.value})}
+                      placeholder="Corporate Affairs Commission Registered Name"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="cacNumber">CAC Number</Label>
+                      <Input
+                        id="cacNumber"
+                        value={signupData.cacNumber}
+                        onChange={(e) => setSignupData({...signupData, cacNumber: e.target.value})}
+                        placeholder="RC123456"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="taxId">Tax ID (Optional)</Label>
+                      <Input
+                        id="taxId"
+                        value={signupData.taxId}
+                        onChange={(e) => setSignupData({...signupData, taxId: e.target.value})}
+                        placeholder="Enter Tax Identification Number"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="signupEmail">Email</Label>

@@ -114,38 +114,55 @@ export type Database = {
       "Repair Center": {
         Row: {
           address: string | null
+          cac_name: string | null
+          cac_number: string | null
           email: string | null
           hours: string | null
           id: number
           name: string | null
+          number_of_staff: number | null
           phone: string | null
           specialties: string | null
+          tax_id: string | null
+          years_of_experience: number | null
         }
         Insert: {
           address?: string | null
+          cac_name?: string | null
+          cac_number?: string | null
           email?: string | null
           hours?: string | null
           id?: number
           name?: string | null
+          number_of_staff?: number | null
           phone?: string | null
           specialties?: string | null
+          tax_id?: string | null
+          years_of_experience?: number | null
         }
         Update: {
           address?: string | null
+          cac_name?: string | null
+          cac_number?: string | null
           email?: string | null
           hours?: string | null
           id?: number
           name?: string | null
+          number_of_staff?: number | null
           phone?: string | null
           specialties?: string | null
+          tax_id?: string | null
+          years_of_experience?: number | null
         }
         Relationships: []
       }
       repair_center_staff: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
           is_active: boolean
+          is_owner: boolean | null
           repair_center_id: number
           role: string
           updated_at: string
@@ -153,8 +170,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
           is_active?: boolean
+          is_owner?: boolean | null
           repair_center_id: number
           role?: string
           updated_at?: string
@@ -162,8 +181,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
           is_active?: boolean
+          is_owner?: boolean | null
           repair_center_id?: number
           role?: string
           updated_at?: string

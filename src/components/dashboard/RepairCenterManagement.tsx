@@ -13,9 +13,12 @@ import {
   Eye,
   AlertTriangle,
   Clock,
-  Users
+  Users,
+  Settings,
+  Play
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const RepairCenterManagement = () => {
   const { toast } = useToast();
@@ -338,7 +341,7 @@ const RepairCenterManagement = () => {
                               className="flex items-center gap-1"
                             >
                               <Eye className="h-4 w-4" />
-                              View Details
+                              Manage
                             </Button>
                             <Button
                               size="sm"
@@ -431,7 +434,7 @@ const RepairCenterManagement = () => {
                               className="flex items-center gap-1"
                             >
                               <Eye className="h-4 w-4" />
-                              View Details
+                              Manage
                             </Button>
                             <Button
                               size="sm"
@@ -462,6 +465,96 @@ const RepairCenterManagement = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Manage Center Dialog */}
+      {selectedCenter && (
+        <Dialog open={!!selectedCenter} onOpenChange={() => setSelectedCenter(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Manage {selectedCenter.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Center Details</h4>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p><strong>Name:</strong> {selectedCenter.name}</p>
+                    <p><strong>Address:</strong> {selectedCenter.address}</p>
+                    <p><strong>Phone:</strong> {selectedCenter.phone}</p>
+                    <p><strong>Email:</strong> {selectedCenter.email}</p>
+                    <p><strong>Hours:</strong> {selectedCenter.hours}</p>
+                    <p><strong>Specialties:</strong> {selectedCenter.specialties}</p>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Staff Information</h4>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p><strong>Active Staff:</strong> {selectedCenter.repair_center_staff?.filter((staff: any) => staff.is_active).length || 0}</p>
+                    <p><strong>Total Staff:</strong> {selectedCenter.repair_center_staff?.length || 0}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-3">Management Actions</h4>
+                <div className="flex flex-wrap gap-3">
+                  {activeCenters.some(center => center.id === selectedCenter.id) ? (
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        toggleCenterStatus.mutate({
+                          centerId: selectedCenter.id,
+                          suspend: true
+                        });
+                        setSelectedCenter(null);
+                      }}
+                      disabled={toggleCenterStatus.isPending}
+                      className="flex items-center gap-2"
+                    >
+                      <Pause className="h-4 w-4" />
+                      Suspend Center
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="default"
+                      onClick={() => {
+                        toggleCenterStatus.mutate({
+                          centerId: selectedCenter.id,
+                          suspend: false
+                        });
+                        setSelectedCenter(null);
+                      }}
+                      disabled={toggleCenterStatus.isPending}
+                      className="flex items-center gap-2"
+                    >
+                      <Play className="h-4 w-4" />
+                      Reactivate Center
+                    </Button>
+                  )}
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      // TODO: Add review functionality
+                      toast({
+                        title: "Review Feature",
+                        description: "Center review functionality will be implemented soon.",
+                      });
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Review Performance
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
