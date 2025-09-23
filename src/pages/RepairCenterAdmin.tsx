@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Building, LogOut, Shield, Mail } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -97,11 +97,6 @@ const RepairCenterAdmin = () => {
         password: signupData.password,
         options: {
           emailRedirectTo: `${window.location.origin}/repair-center-admin`,
-          data: {
-            center_name: signupData.centerName,
-            contact_name: signupData.contactName,
-            phone: signupData.phone
-          }
         }
       });
 
@@ -115,6 +110,43 @@ const RepairCenterAdmin = () => {
       }
 
       if (authData.user) {
+        // Create a basic repair center entry for quick applications
+        const { data: centerData, error: centerError } = await supabase
+          .from("Repair Center")
+          .insert({
+            name: signupData.centerName,
+            address: "TBD - Application pending completion",
+            phone: signupData.phone,
+            email: signupData.email,
+            hours: "TBD",
+            specialties: "TBD",
+            number_of_staff: 0,
+            years_of_experience: 0,
+          })
+          .select()
+          .single();
+
+        if (centerError) {
+          console.error("Center creation error:", centerError);
+        }
+
+        // Create repair center staff record (initially inactive, pending approval)
+        if (centerData) {
+          const { error: staffError } = await supabase
+            .from("repair_center_staff")
+            .insert({
+              user_id: authData.user.id,
+              repair_center_id: centerData.id,
+              is_active: false, // Pending approval
+              is_owner: true,
+              role: 'admin'
+            });
+
+          if (staffError) {
+            console.error("Staff record error:", staffError);
+          }
+        }
+
         toast({
           title: "Application Submitted",
           description: "Your repair center application has been submitted. Please check your email for verification, then wait for admin approval.",
@@ -314,7 +346,13 @@ const RepairCenterAdmin = () => {
           <TabsContent value="apply">
             <Card>
               <CardHeader>
-                <CardTitle>Apply to Join Our Network</CardTitle>
+                <CardTitle>Quick Application</CardTitle>
+                <p className="text-muted-foreground text-sm">
+                  For a detailed application with more fields, use our{" "}
+                  <Link to="/repair-center-application" className="text-primary hover:underline">
+                    full application form
+                  </Link>
+                </p>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSignup} className="space-y-4">
@@ -348,61 +386,6 @@ const RepairCenterAdmin = () => {
                       required
                     />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="numberOfStaff">Number of Staff</Label>
-                      <Input
-                        id="numberOfStaff"
-                        type="number"
-                        value={signupData.numberOfStaff}
-                        onChange={(e) => setSignupData({...signupData, numberOfStaff: e.target.value})}
-                        placeholder="5"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="yearsOfExperience">Years of Experience</Label>
-                      <Input
-                        id="yearsOfExperience"
-                        type="number"
-                        value={signupData.yearsOfExperience}
-                        onChange={(e) => setSignupData({...signupData, yearsOfExperience: e.target.value})}
-                        placeholder="10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="cacName">CAC Name</Label>
-                    <Input
-                      id="cacName"
-                      value={signupData.cacName}
-                      onChange={(e) => setSignupData({...signupData, cacName: e.target.value})}
-                      placeholder="Corporate Affairs Commission Registered Name"
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="cacNumber">CAC Number</Label>
-                      <Input
-                        id="cacNumber"
-                        value={signupData.cacNumber}
-                        onChange={(e) => setSignupData({...signupData, cacNumber: e.target.value})}
-                        placeholder="RC123456"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="taxId">Tax ID (Optional)</Label>
-                      <Input
-                        id="taxId"
-                        value={signupData.taxId}
-                        onChange={(e) => setSignupData({...signupData, taxId: e.target.value})}
-                        placeholder="Enter Tax Identification Number"
-                      />
-                    </div>
-                  </div>
                   <div>
                     <Label htmlFor="signupEmail">Email</Label>
                     <Input
@@ -426,7 +409,7 @@ const RepairCenterAdmin = () => {
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={isSigningUp}>
-                    {isSigningUp ? "Submitting Application..." : "Submit Application"}
+                    {isSigningUp ? "Submitting Quick Application..." : "Submit Quick Application"}
                   </Button>
                 </form>
                 <p className="text-xs text-muted-foreground mt-4">

@@ -6,54 +6,152 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Phone, Clock, Star, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const RepairCenterApplication = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [application, setApplication] = useState({
+    // Business Information
     businessName: "",
     ownerName: "",
     email: "",
     phone: "",
+    website: "",
+    // Location Information
     address: "",
     city: "",
     state: "",
     zipCode: "",
-    businessLicense: "",
-    yearsInBusiness: "",
+    // Business Details
     operatingHours: "",
     specialties: "",
     certifications: "",
     description: "",
-    website: ""
+    // Registration Details
+    cacName: "",
+    cacNumber: "",
+    taxId: "",
+    // Experience
+    yearsInBusiness: "",
+    numberOfStaff: "",
+    // Account Creation
+    password: ""
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This will be connected to Supabase once integrated
-    toast({
-      title: "Application Submitted",
-      description: "We'll review your application and get back to you within 2-3 business days.",
-    });
-    
-    // Reset form
-    setApplication({
-      businessName: "",
-      ownerName: "",
-      email: "",
-      phone: "",
-      address: "",
-      city: "",
-      state: "",
-      zipCode: "",
-      businessLicense: "",
-      yearsInBusiness: "",
-      operatingHours: "",
-      specialties: "",
-      certifications: "",
-      description: "",
-      website: ""
-    });
+    setIsSubmitting(true);
+
+    try {
+      // First create the user account
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: application.email,
+        password: application.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/repair-center-admin`,
+        }
+      });
+
+      if (signUpError) {
+        toast({
+          title: "Application Failed",
+          description: signUpError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (authData.user) {
+        // Create a repair center entry (initially with placeholder data)
+        const { data: centerData, error: centerError } = await supabase
+          .from("Repair Center")
+          .insert({
+            name: application.businessName,
+            address: `${application.address}, ${application.city}, ${application.state} ${application.zipCode}`.trim(),
+            phone: application.phone,
+            email: application.email,
+            hours: application.operatingHours,
+            specialties: application.specialties,
+            number_of_staff: parseInt(application.numberOfStaff) || 0,
+            years_of_experience: parseInt(application.yearsInBusiness) || 0,
+            cac_name: application.cacName,
+            cac_number: application.cacNumber,
+            tax_id: application.taxId || null
+          })
+          .select()
+          .single();
+
+        if (centerError) {
+          console.error("Center creation error:", centerError);
+          toast({
+            title: "Application Partially Submitted",
+            description: "Account created but repair center details need review. Please contact support.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Create repair center staff record (initially inactive, pending approval)
+        const { error: staffError } = await supabase
+          .from("repair_center_staff")
+          .insert({
+            user_id: authData.user.id,
+            repair_center_id: centerData.id,
+            is_active: false, // Pending approval
+            is_owner: true,
+            role: 'admin'
+          });
+
+        if (staffError) {
+          console.error("Staff record error:", staffError);
+        }
+
+        toast({
+          title: "Application Submitted Successfully!",
+          description: "Your repair center application has been submitted. Check your email for verification, then wait for admin approval.",
+        });
+
+        // Reset form
+        setApplication({
+          businessName: "",
+          ownerName: "",
+          email: "",
+          phone: "",
+          website: "",
+          address: "",
+          city: "",
+          state: "",
+          zipCode: "",
+          operatingHours: "",
+          specialties: "",
+          certifications: "",
+          description: "",
+          cacName: "",
+          cacNumber: "",
+          taxId: "",
+          yearsInBusiness: "",
+          numberOfStaff: "",
+          password: ""
+        });
+
+        // Redirect to repair center admin portal
+        setTimeout(() => {
+          navigate("/repair-center-admin");
+        }, 2000);
+      }
+    } catch (error: any) {
+      console.error("Application error:", error);
+      toast({
+        title: "Application Failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -169,13 +267,13 @@ const RepairCenterApplication = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="yearsInBusiness">Years in Business *</Label>
+                    <Label htmlFor="password">Create Password *</Label>
                     <Input
-                      id="yearsInBusiness"
-                      type="number"
-                      value={application.yearsInBusiness}
-                      onChange={(e) => setApplication({...application, yearsInBusiness: e.target.value})}
-                      placeholder="5"
+                      id="password"
+                      type="password"
+                      value={application.password}
+                      onChange={(e) => setApplication({...application, password: e.target.value})}
+                      placeholder="Choose a secure password"
                       required
                     />
                   </div>
@@ -231,6 +329,30 @@ const RepairCenterApplication = () => {
               {/* Business Details */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Business Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="yearsInBusiness">Years in Business *</Label>
+                    <Input
+                      id="yearsInBusiness"
+                      type="number"
+                      value={application.yearsInBusiness}
+                      onChange={(e) => setApplication({...application, yearsInBusiness: e.target.value})}
+                      placeholder="5"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="numberOfStaff">Number of Staff *</Label>
+                    <Input
+                      id="numberOfStaff"
+                      type="number"
+                      value={application.numberOfStaff}
+                      onChange={(e) => setApplication({...application, numberOfStaff: e.target.value})}
+                      placeholder="5"
+                      required
+                    />
+                  </div>
+                </div>
                 <div>
                   <Label htmlFor="operatingHours">Operating Hours *</Label>
                   <Input
@@ -271,8 +393,44 @@ const RepairCenterApplication = () => {
                 </div>
               </div>
 
-              <Button type="submit" size="lg" className="w-full">
-                Submit Application
+              {/* Registration Details */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Registration Information</h3>
+                <div>
+                  <Label htmlFor="cacName">CAC Registered Name *</Label>
+                  <Input
+                    id="cacName"
+                    value={application.cacName}
+                    onChange={(e) => setApplication({...application, cacName: e.target.value})}
+                    placeholder="Corporate Affairs Commission Registered Name"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="cacNumber">CAC Number *</Label>
+                    <Input
+                      id="cacNumber"
+                      value={application.cacNumber}
+                      onChange={(e) => setApplication({...application, cacNumber: e.target.value})}
+                      placeholder="RC123456"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="taxId">Tax ID (Optional)</Label>
+                    <Input
+                      id="taxId"
+                      value={application.taxId}
+                      onChange={(e) => setApplication({...application, taxId: e.target.value})}
+                      placeholder="Enter Tax Identification Number"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Submitting Application..." : "Submit Application"}
               </Button>
             </form>
           </CardContent>

@@ -73,38 +73,19 @@ const RepairCenterManagement = () => {
   const approveApplication = useMutation({
     mutationFn: async ({ staffId, centerId }: { staffId: string, centerId: number }) => {
       // First, create the repair center if it doesn't exist
-      const { data: centerData, error: centerError } = await supabase
-        .from("Repair Center")
-        .select("id")
-        .eq("id", centerId)
-        .maybeSingle();
-
-      if (centerError) throw centerError;
-
-      if (!centerData) {
-        // Create repair center from staff application metadata
-        const { data: staffData, error: staffError } = await supabase
-          .from("repair_center_staff")
-          .select("*")
-          .eq("id", staffId)
-          .single();
-
-        if (staffError) throw staffError;
-
-        const { error: createCenterError } = await supabase
+        // The repair center should already exist since we now create it during application
+        // Just verify it exists
+        const { data: centerData, error: centerError } = await supabase
           .from("Repair Center")
-          .insert({
-            id: centerId,
-            name: "New Repair Center", // This should come from application data
-            address: "TBD",
-            phone: "TBD",
-            email: "TBD",
-            hours: "Mon-Sat: 8AM-6PM",
-            specialties: "General repairs"
-          });
+          .select("id")
+          .eq("id", centerId)
+          .maybeSingle();
 
-        if (createCenterError) throw createCenterError;
-      }
+        if (centerError) throw centerError;
+
+        if (!centerData) {
+          throw new Error("Repair center not found. Please contact support.");
+        }
 
       // Activate the staff member
       const { error } = await supabase
@@ -238,7 +219,7 @@ const RepairCenterManagement = () => {
                     <div key={application.id} className="p-4 border rounded-lg">
                       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2">
+                           <div className="flex items-center gap-2">
                             <h3 className="font-medium">
                               Repair Center Application #{application.repair_center_id}
                             </h3>
@@ -251,6 +232,7 @@ const RepairCenterManagement = () => {
                             <p><strong>Role:</strong> {application.role}</p>
                             <p><strong>Applied:</strong> {new Date(application.created_at).toLocaleDateString()}</p>
                             <p><strong>Center ID:</strong> #{application.repair_center_id}</p>
+                            <p><strong>User ID:</strong> {application.user_id}</p>
                           </div>
                         </div>
                         <div className="flex gap-2">
