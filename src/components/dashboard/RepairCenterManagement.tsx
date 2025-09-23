@@ -25,13 +25,28 @@ const RepairCenterManagement = () => {
   const queryClient = useQueryClient();
   const [selectedCenter, setSelectedCenter] = useState<any>(null);
 
-  // Fetch repair center applications (pending users)
+  // Fetch repair center applications (pending users) with center details
   const { data: pendingApplications, isLoading: loadingApplications } = useQuery({
     queryKey: ["pending-applications"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("repair_center_staff")
-        .select("*")
+        .select(`
+          *,
+          repair_center:repair_center_id (
+            id,
+            name,
+            address,
+            phone,
+            email,
+            specialties,
+            cac_name,
+            cac_number,
+            tax_id,
+            years_of_experience,
+            number_of_staff
+          )
+        `)
         .eq("is_active", false)
         .order("created_at", { ascending: false });
 
@@ -71,22 +86,13 @@ const RepairCenterManagement = () => {
 
   // Approve repair center application
   const approveApplication = useMutation({
-    mutationFn: async ({ staffId, centerId }: { staffId: string, centerId: number }) => {
-      // First, create the repair center if it doesn't exist
-        // The repair center should already exist since we now create it during application
-        // Just verify it exists
-        const { data: centerData, error: centerError } = await supabase
-          .from("Repair Center")
-          .select("id")
-          .eq("id", centerId)
-          .maybeSingle();
-
-        if (centerError) throw centerError;
-
-        if (!centerData) {
-          throw new Error("Repair center not found. Please contact support.");
-        }
-
+    mutationFn: async ({ staffId, centerId, email, name, centerName }: { 
+      staffId: string, 
+      centerId: number, 
+      email: string, 
+      name: string, 
+      centerName: string 
+    }) => {
       // Activate the staff member
       const { error } = await supabase
         .from("repair_center_staff")
@@ -94,6 +100,22 @@ const RepairCenterManagement = () => {
         .eq("id", staffId);
 
       if (error) throw error;
+
+      // Send approval email
+      try {
+        await supabase.functions.invoke("send-confirmation-email", {
+          body: {
+            email,
+            name,
+            centerName,
+            type: "approval"
+          }
+        });
+      } catch (emailError) {
+        console.error("Failed to send approval email:", emailError);
+        // Don't fail the whole operation if email fails
+      }
+
       return { staffId, centerId };
     },
     onSuccess: () => {
@@ -115,13 +137,43 @@ const RepairCenterManagement = () => {
 
   // Reject repair center application
   const rejectApplication = useMutation({
-    mutationFn: async (staffId: string) => {
-      const { error } = await supabase
+    mutationFn: async ({ staffId, centerId, email, name, centerName }: { 
+      staffId: string, 
+      centerId: number, 
+      email: string, 
+      name: string, 
+      centerName: string 
+    }) => {
+      // Delete both the staff record and the repair center
+      const { error: staffError } = await supabase
         .from("repair_center_staff")
         .delete()
         .eq("id", staffId);
 
-      if (error) throw error;
+      if (staffError) throw staffError;
+
+      const { error: centerError } = await supabase
+        .from("Repair Center")
+        .delete()
+        .eq("id", centerId);
+
+      if (centerError) throw centerError;
+
+      // Send rejection email
+      try {
+        await supabase.functions.invoke("send-confirmation-email", {
+          body: {
+            email,
+            name,
+            centerName,
+            type: "rejection"
+          }
+        });
+      } catch (emailError) {
+        console.error("Failed to send rejection email:", emailError);
+        // Don't fail the whole operation if email fails
+      }
+
       return staffId;
     },
     onSuccess: () => {
@@ -156,7 +208,6 @@ const RepairCenterManagement = () => {
         title: data.suspend ? "Center Suspended" : "Center Activated",
         description: `Repair center has been ${data.suspend ? 'suspended' : 'activated'} successfully.`,
       });
-      // Invalidate queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ["all-centers"] });
       queryClient.invalidateQueries({ queryKey: ["pending-applications"] });
     },
@@ -164,6 +215,44 @@ const RepairCenterManagement = () => {
       toast({
         title: "Error",
         description: `Failed to update center status: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete repair center permanently
+  const deleteCenter = useMutation({
+    mutationFn: async (centerId: number) => {
+      // First delete all staff records
+      const { error: staffError } = await supabase
+        .from("repair_center_staff")
+        .delete()
+        .eq("repair_center_id", centerId);
+
+      if (staffError) throw staffError;
+
+      // Then delete the center
+      const { error: centerError } = await supabase
+        .from("Repair Center")
+        .delete()
+        .eq("id", centerId);
+
+      if (centerError) throw centerError;
+
+      return centerId;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Center Deleted",
+        description: "Repair center has been permanently deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["all-centers"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-applications"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete center: ${error.message}`,
         variant: "destructive",
       });
     },
@@ -219,20 +308,25 @@ const RepairCenterManagement = () => {
                     <div key={application.id} className="p-4 border rounded-lg">
                       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <div className="flex-1 space-y-2">
-                           <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2">
                             <h3 className="font-medium">
-                              Repair Center Application #{application.repair_center_id}
+                              {application.repair_center?.name || `Application #${application.repair_center_id}`}
                             </h3>
                             <Badge variant="outline">
                               <Clock className="h-3 w-3 mr-1" />
                               Pending Review
                             </Badge>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                            <p><strong>Role:</strong> {application.role}</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-muted-foreground">
+                            <p><strong>Business:</strong> {application.repair_center?.name}</p>
+                            <p><strong>Email:</strong> {application.repair_center?.email}</p>
+                            <p><strong>Phone:</strong> {application.repair_center?.phone}</p>
+                            <p><strong>Address:</strong> {application.repair_center?.address}</p>
+                            <p><strong>Specialties:</strong> {application.repair_center?.specialties}</p>
                             <p><strong>Applied:</strong> {new Date(application.created_at).toLocaleDateString()}</p>
-                            <p><strong>Center ID:</strong> #{application.repair_center_id}</p>
-                            <p><strong>User ID:</strong> {application.user_id}</p>
+                            <p><strong>Years Experience:</strong> {application.repair_center?.years_of_experience}</p>
+                            <p><strong>Staff Count:</strong> {application.repair_center?.number_of_staff}</p>
+                            <p><strong>CAC Number:</strong> {application.repair_center?.cac_number}</p>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -240,7 +334,10 @@ const RepairCenterManagement = () => {
                             size="sm"
                             onClick={() => approveApplication.mutate({
                               staffId: application.id,
-                              centerId: application.repair_center_id
+                              centerId: application.repair_center_id,
+                              email: application.repair_center?.email || '',
+                              name: application.repair_center?.name || '',
+                              centerName: application.repair_center?.name || ''
                             })}
                             disabled={approveApplication.isPending}
                             className="flex items-center gap-1"
@@ -251,7 +348,13 @@ const RepairCenterManagement = () => {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => rejectApplication.mutate(application.id)}
+                            onClick={() => rejectApplication.mutate({
+                              staffId: application.id,
+                              centerId: application.repair_center_id,
+                              email: application.repair_center?.email || '',
+                              name: application.repair_center?.name || '',
+                              centerName: application.repair_center?.name || ''
+                            })}
                             disabled={rejectApplication.isPending}
                             className="flex items-center gap-1"
                           >
@@ -337,6 +440,16 @@ const RepairCenterManagement = () => {
                             >
                               <Pause className="h-4 w-4" />
                               Suspend
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => deleteCenter.mutate(center.id)}
+                              disabled={deleteCenter.isPending}
+                              className="flex items-center gap-1 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                            >
+                              <XCircle className="h-4 w-4" />
+                              Delete
                             </Button>
                           </div>
                         </div>

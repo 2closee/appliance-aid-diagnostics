@@ -110,6 +110,21 @@ const RepairCenterApplication = () => {
           console.error("Staff record error:", staffError);
         }
 
+        // Send confirmation email
+        try {
+          await supabase.functions.invoke("send-confirmation-email", {
+            body: {
+              email: application.email,
+              name: application.ownerName,
+              centerName: application.businessName,
+              type: "application"
+            }
+          });
+        } catch (emailError) {
+          console.error("Failed to send confirmation email:", emailError);
+          // Don't fail the whole operation if email fails
+        }
+
         toast({
           title: "Application submitted and pending review and approval after center verification is complete",
           description: "Check your email for verification, then wait for admin approval.",
