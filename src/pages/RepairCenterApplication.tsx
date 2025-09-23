@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Phone, Clock, Star, ArrowLeft } from "lucide-react";
+import { MapPin, Phone, Clock, Star, ArrowLeft, CheckCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,6 +13,7 @@ const RepairCenterApplication = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [application, setApplication] = useState({
     // Business Information
     businessName: "",
@@ -110,9 +111,11 @@ const RepairCenterApplication = () => {
         }
 
         toast({
-          title: "Application Submitted Successfully!",
-          description: "Your repair center application has been submitted. Check your email for verification, then wait for admin approval.",
+          title: "Application submitted and pending review and approval after center verification is complete",
+          description: "Check your email for verification, then wait for admin approval.",
         });
+
+        setIsSubmitted(true);
 
         // Reset form
         setApplication({
@@ -153,6 +156,36 @@ const RepairCenterApplication = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Show success page if application submitted
+  if (isSubmitted) {
+    return (
+      <div className="min-h-screen bg-green-50 dark:bg-green-950">
+        <div className="max-w-2xl mx-auto px-6 py-24 text-center">
+          <CheckCircle className="h-24 w-24 text-green-600 mx-auto mb-8" />
+          <h1 className="text-4xl font-bold text-green-800 dark:text-green-200 mb-4">
+            Application Submitted Successfully!
+          </h1>
+          <p className="text-xl text-green-700 dark:text-green-300 mb-8">
+            Your repair center application has been submitted and is pending review and approval after center verification is complete.
+          </p>
+          <div className="bg-white dark:bg-green-900 rounded-lg p-6 shadow-lg mb-8">
+            <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2">What happens next?</h3>
+            <ul className="text-green-700 dark:text-green-300 space-y-2 text-left">
+              <li>• Check your email for verification link</li>
+              <li>• Our team will review your application</li>
+              <li>• We'll verify your repair center details</li>
+              <li>• You'll receive approval notification within 3-5 business days</li>
+            </ul>
+          </div>
+          <Button onClick={() => navigate("/")} className="bg-green-600 hover:bg-green-700">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
