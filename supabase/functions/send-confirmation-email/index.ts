@@ -13,7 +13,10 @@ interface ConfirmationEmailRequest {
   email: string;
   name: string;
   centerName: string;
-  type: "application" | "approval" | "rejection";
+  type: "application" | "approval" | "rejection" | "custom";
+  subject?: string;
+  message?: string;
+  centerId?: number;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -23,12 +26,26 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, name, centerName, type }: ConfirmationEmailRequest = await req.json();
+    const { email, name, centerName, type, subject: customSubject, message: customMessage }: ConfirmationEmailRequest = await req.json();
 
     let subject: string;
     let html: string;
 
     switch (type) {
+      case "custom":
+        subject = customSubject || "Message from FixBudi Admin";
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #2563eb;">Message from FixBudi Admin</h1>
+            <p>Dear ${name},</p>
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              ${customMessage ? customMessage.replace(/\n/g, '<br>') : 'You have received a message from the FixBudi Admin team.'}
+            </div>
+            <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+            <p>Best regards,<br>The FixBudi Admin Team</p>
+          </div>
+        `;
+        break;
       case "application":
         subject = "Repair Center Application Received";
         html = `

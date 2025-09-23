@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { DollarSign, TrendingUp, Package, CheckCircle, BarChart3 } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import CurrencySelector from "@/components/CurrencySelector";
+import { formatCurrency, CURRENCY_SYMBOLS, DEFAULT_CURRENCY } from "@/lib/currency";
 
 interface Analytics {
   total_completed_jobs: number;
@@ -22,6 +24,7 @@ const RevenueAnalytics = () => {
   const { toast } = useToast();
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedCurrency, setSelectedCurrency] = useState<keyof typeof CURRENCY_SYMBOLS>(DEFAULT_CURRENCY);
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -97,8 +100,19 @@ const RevenueAnalytics = () => {
       <Navigation />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Revenue Analytics</h1>
-          <p className="text-muted-foreground">Monitor app revenue and commission tracking</p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Revenue Analytics</h1>
+              <p className="text-muted-foreground">Monitor app revenue and commission tracking</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Currency:</span>
+              <CurrencySelector 
+                value={selectedCurrency} 
+                onValueChange={setSelectedCurrency} 
+              />
+            </div>
+          </div>
         </div>
 
         {/* Key Metrics */}
@@ -109,7 +123,7 @@ const RevenueAnalytics = () => {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${analytics.total_app_commission.toFixed(2)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(analytics.total_app_commission, selectedCurrency)}</div>
               <p className="text-xs text-muted-foreground">
                 {analytics.commission_rate * 100}% of completed repairs
               </p>
@@ -122,7 +136,7 @@ const RevenueAnalytics = () => {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${analytics.total_service_revenue.toFixed(2)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(analytics.total_service_revenue, selectedCurrency)}</div>
               <p className="text-xs text-muted-foreground">
                 Revenue from {analytics.total_completed_jobs} completed jobs
               </p>
@@ -148,7 +162,7 @@ const RevenueAnalytics = () => {
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${analytics.average_job_value.toFixed(2)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(analytics.average_job_value, selectedCurrency)}</div>
               <p className="text-xs text-muted-foreground">
                 Average repair cost per job
               </p>
@@ -174,7 +188,7 @@ const RevenueAnalytics = () => {
                       })}
                     </div>
                     <div className="text-right">
-                      <div className="font-bold">${revenue.toFixed(2)}</div>
+                      <div className="font-bold">{formatCurrency(revenue, selectedCurrency)}</div>
                     </div>
                   </div>
                 ))}
@@ -243,7 +257,7 @@ const RevenueAnalytics = () => {
             <div className="grid gap-4 md:grid-cols-3">
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <div className="text-lg font-semibold text-green-700">
-                  ${(analytics.total_app_commission / Math.max(analytics.total_completed_jobs, 1)).toFixed(2)}
+                  {formatCurrency(analytics.total_app_commission / Math.max(analytics.total_completed_jobs, 1), selectedCurrency)}
                 </div>
                 <p className="text-sm text-green-600">Commission per completed job</p>
               </div>

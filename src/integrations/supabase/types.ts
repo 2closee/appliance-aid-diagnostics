@@ -123,6 +123,7 @@ export type Database = {
           number_of_staff: number | null
           phone: string | null
           specialties: string | null
+          status: string
           tax_id: string | null
           years_of_experience: number | null
         }
@@ -137,6 +138,7 @@ export type Database = {
           number_of_staff?: number | null
           phone?: string | null
           specialties?: string | null
+          status?: string
           tax_id?: string | null
           years_of_experience?: number | null
         }
@@ -151,6 +153,7 @@ export type Database = {
           number_of_staff?: number | null
           phone?: string | null
           specialties?: string | null
+          status?: string
           tax_id?: string | null
           years_of_experience?: number | null
         }

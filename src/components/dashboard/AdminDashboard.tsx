@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import RepairCenterManagement from "./RepairCenterManagement";
 import { useToast } from "@/hooks/use-toast";
+import EmailComposerDialog from "@/components/EmailComposerDialog";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -97,42 +99,61 @@ const AdminDashboard = () => {
     },
   });
 
-  const handleCenterAction = async (centerId: number, action: string, centerName: string) => {
+  const [emailDialog, setEmailDialog] = useState<{
+    open: boolean;
+    centerName: string;
+    centerEmail: string;
+    centerId: number;
+  }>({
+    open: false,
+    centerName: "",
+    centerEmail: "",
+    centerId: 0,
+  });
+
+  const handleCenterAction = async (centerId: number, action: string, centerName: string, centerEmail?: string) => {
     try {
       switch (action) {
         case 'delete':
-          await supabase.from("Repair Center").delete().eq('id', centerId);
+          const { error: deleteError } = await supabase
+            .from("Repair Center")
+            .delete()
+            .eq('id', centerId);
+          if (deleteError) throw deleteError;
           toast({ title: "Success", description: `${centerName} has been deleted` });
           break;
         case 'suspend':
-          // For suspend, we would need to add a status field to the schema
-          toast({ title: "Info", description: `Suspend feature requires database update` });
+          const { error: suspendError } = await supabase
+            .from("Repair Center")
+            .update({ status: 'suspended' })
+            .eq('id', centerId);
+          if (suspendError) throw suspendError;
+          toast({ title: "Success", description: `${centerName} has been suspended` });
           break;
         case 'activate':
-          // For activate, we would need to add a status field to the schema  
-          toast({ title: "Info", description: `Activate feature requires database update` });
+          const { error: activateError } = await supabase
+            .from("Repair Center")
+            .update({ status: 'active' })
+            .eq('id', centerId);
+          if (activateError) throw activateError;
+          toast({ title: "Success", description: `${centerName} has been activated` });
           break;
         case 'email':
-          // Trigger email sending edge function
-          const { error } = await supabase.functions.invoke('send-confirmation-email', {
-            body: {
-              email: 'center@example.com', // Would get from center data
-              name: centerName,
-              centerName: centerName,
-              type: 'application'
-            }
+          setEmailDialog({
+            open: true,
+            centerName: centerName,
+            centerEmail: centerEmail || 'center@example.com',
+            centerId: centerId,
           });
-          if (error) throw error;
-          toast({ title: "Success", description: `Email sent to ${centerName}` });
-          break;
+          return; // Don't reload page for email action
       }
-      // Refetch data
+      // Refetch data for other actions
       window.location.reload();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Action failed:', error);
       toast({ 
         title: "Error", 
-        description: `Failed to ${action} repair center`,
+        description: `Failed to ${action} repair center: ${error.message}`,
         variant: "destructive"
       });
     }
@@ -357,7 +378,7 @@ const AdminDashboard = () => {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
                               <DropdownMenuItem 
-                                onClick={() => handleCenterAction(center.id, 'email', center.name)}
+                                onClick={() => handleCenterAction(center.id, 'email', center.name, center.email)}
                                 className="cursor-pointer"
                               >
                                 <Mail className="mr-2 h-4 w-4" />
@@ -405,6 +426,14 @@ const AdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
+      
+      <EmailComposerDialog
+        open={emailDialog.open}
+        onOpenChange={(open) => setEmailDialog(prev => ({ ...prev, open }))}
+        centerName={emailDialog.centerName}
+        centerEmail={emailDialog.centerEmail}
+        centerId={emailDialog.centerId}
+      />
     </div>
   );
 };
