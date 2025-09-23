@@ -36,13 +36,12 @@ const RepairCenterSelector = ({ onSelectCenter, onBack }: RepairCenterSelectorPr
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationError, setLocationError] = useState("");
 
-  // Fetch repair centers from secure public view
+  // Fetch repair centers from secure public function
   const { data: repairCenters = [], isLoading } = useQuery({
     queryKey: ["public-repair-centers"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("repair_centers_public")
-        .select("*");
+        .rpc("get_public_repair_centers");
       
       if (error) throw error;
       return data || [];

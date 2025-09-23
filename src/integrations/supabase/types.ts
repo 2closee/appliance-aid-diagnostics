@@ -201,13 +201,6 @@ export type Database = {
             referencedRelation: "Repair Center"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "repair_center_staff_repair_center_id_fkey"
-            columns: ["repair_center_id"]
-            isOneToOne: false
-            referencedRelation: "repair_centers_public"
-            referencedColumns: ["id"]
-          },
         ]
       }
       repair_jobs: {
@@ -288,13 +281,6 @@ export type Database = {
             referencedRelation: "Repair Center"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "repair_jobs_repair_center_id_fkey"
-            columns: ["repair_center_id"]
-            isOneToOne: false
-            referencedRelation: "repair_centers_public"
-            referencedColumns: ["id"]
-          },
         ]
       }
       settings: {
@@ -332,38 +318,33 @@ export type Database = {
       }
     }
     Views: {
-      repair_centers_public: {
-        Row: {
-          general_location: string | null
-          hours: string | null
-          id: number | null
-          name: string | null
-          number_of_staff: number | null
-          specialties: string | null
-          years_of_experience: number | null
-        }
-        Insert: {
-          general_location?: never
-          hours?: string | null
-          id?: number | null
-          name?: string | null
-          number_of_staff?: number | null
-          specialties?: string | null
-          years_of_experience?: number | null
-        }
-        Update: {
-          general_location?: never
-          hours?: string | null
-          id?: number | null
-          name?: string | null
-          number_of_staff?: number | null
-          specialties?: string | null
-          years_of_experience?: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      get_public_repair_centers: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          general_location: string
+          hours: string
+          id: number
+          name: string
+          number_of_staff: number
+          specialties: string
+          years_of_experience: number
+        }[]
+      }
+      get_repair_center_contact_for_customer: {
+        Args: { _repair_center_id: number; _user_id: string }
+        Returns: {
+          address: string
+          email: string
+          hours: string
+          id: number
+          name: string
+          phone: string
+          specialties: string
+        }[]
+      }
       get_user_repair_center: {
         Args: { _user_id: string }
         Returns: number

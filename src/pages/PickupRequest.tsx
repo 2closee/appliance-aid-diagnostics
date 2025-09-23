@@ -99,8 +99,7 @@ const PickupRequest = () => {
   const fetchRepairCenters = async () => {
     try {
       const { data, error } = await supabase
-        .from("repair_centers_public")
-        .select("*")
+        .rpc("get_public_repair_centers")
         .order("name");
 
       if (error) throw error;
