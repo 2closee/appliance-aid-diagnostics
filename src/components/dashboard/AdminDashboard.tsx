@@ -19,7 +19,10 @@ import {
   Trash2,
   Pause,
   Play,
-  Mail
+  Mail,
+  Shield,
+  ShieldOff,
+  CheckCircle2
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -86,7 +89,7 @@ const AdminDashboard = () => {
   });
 
   // Fetch repair centers
-  const { data: repairCenters, isLoading: centersLoading } = useQuery({
+  const { data: repairCenters, isLoading: centersLoading, refetch: refetchCenters } = useQuery({
     queryKey: ["admin-repair-centers"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -98,6 +101,10 @@ const AdminDashboard = () => {
       return data;
     },
   });
+
+  // Separate active and suspended centers
+  const activeCenters = repairCenters?.filter(center => center.status === 'active') || [];
+  const suspendedCenters = repairCenters?.filter(center => center.status === 'suspended') || [];
 
   const [emailDialog, setEmailDialog] = useState<{
     open: boolean;
@@ -120,7 +127,11 @@ const AdminDashboard = () => {
             .delete()
             .eq('id', centerId);
           if (deleteError) throw deleteError;
-          toast({ title: "Success", description: `${centerName} has been deleted` });
+          toast({ 
+            title: "🗑️ Center Deleted", 
+            description: `${centerName} has been permanently removed`,
+            variant: "destructive"
+          });
           break;
         case 'suspend':
           const { error: suspendError } = await supabase
@@ -128,7 +139,11 @@ const AdminDashboard = () => {
             .update({ status: 'suspended' })
             .eq('id', centerId);
           if (suspendError) throw suspendError;
-          toast({ title: "Success", description: `${centerName} has been suspended` });
+          toast({ 
+            title: "⏸️ Center Suspended", 
+            description: `${centerName} has been suspended and moved to suspended centers`,
+            variant: "destructive"
+          });
           break;
         case 'activate':
           const { error: activateError } = await supabase
@@ -136,7 +151,10 @@ const AdminDashboard = () => {
             .update({ status: 'active' })
             .eq('id', centerId);
           if (activateError) throw activateError;
-          toast({ title: "Success", description: `${centerName} has been activated` });
+          toast({ 
+            title: "✅ Center Activated", 
+            description: `${centerName} has been activated and is now operational`
+          });
           break;
         case 'email':
           setEmailDialog({
@@ -145,14 +163,18 @@ const AdminDashboard = () => {
             centerEmail: centerEmail || 'center@example.com',
             centerId: centerId,
           });
+          toast({ 
+            title: "✉️ Email Composer", 
+            description: `Opening email composer for ${centerName}`
+          });
           return; // Don't reload page for email action
       }
       // Refetch data for other actions
-      window.location.reload();
+      refetchCenters();
     } catch (error: any) {
       console.error('Action failed:', error);
       toast({ 
-        title: "Error", 
+        title: "❌ Action Failed", 
         description: `Failed to ${action} repair center: ${error.message}`,
         variant: "destructive"
       });
@@ -341,84 +363,169 @@ const AdminDashboard = () => {
           </TabsContent>
           
           <TabsContent value="repair-centers">
-            <Card>
-              <CardHeader>
-                <CardTitle>Repair Centers</CardTitle>
-                <CardDescription>Manage registered repair centers</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {centersLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="h-20 bg-muted animate-pulse rounded" />
-                    ))}
-                  </div>
-                ) : repairCenters && repairCenters.length > 0 ? (
-                  <div className="space-y-4">
-                    {repairCenters.map((center) => (
-                      <div key={center.id} className="p-4 border rounded-lg">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                          <div className="flex-1 space-y-2">
-                            <h3 className="font-medium">{center.name}</h3>
-                            <p className="text-sm text-muted-foreground">{center.address}</p>
-                            <div className="flex flex-wrap gap-4 text-sm">
-                              <span><strong>Phone:</strong> {center.phone}</span>
-                              <span><strong>Email:</strong> {center.email}</span>
+            <div className="space-y-6">
+              {/* Active Centers */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    Active Repair Centers
+                  </CardTitle>
+                  <CardDescription>Currently operational repair centers ({activeCenters.length})</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {centersLoading ? (
+                    <div className="space-y-4">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-20 bg-muted animate-pulse rounded" />
+                      ))}
+                    </div>
+                  ) : activeCenters.length > 0 ? (
+                    <div className="space-y-4">
+                      {activeCenters.map((center) => (
+                        <div key={center.id} className="p-4 border rounded-lg border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium">{center.name}</h3>
+                                <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full dark:bg-green-900 dark:text-green-200">
+                                  Active
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">{center.address}</p>
+                              <div className="flex flex-wrap gap-4 text-sm">
+                                <span><strong>Phone:</strong> {center.phone}</span>
+                                <span><strong>Email:</strong> {center.email}</span>
+                              </div>
+                              {center.specialties && (
+                                <p className="text-sm"><strong>Specialties:</strong> {center.specialties}</p>
+                              )}
                             </div>
-                            {center.specialties && (
-                              <p className="text-sm"><strong>Specialties:</strong> {center.specialties}</p>
-                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Open menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem 
+                                  onClick={() => handleCenterAction(center.id, 'email', center.name, center.email)}
+                                  className="cursor-pointer"
+                                >
+                                  <Mail className="mr-2 h-4 w-4 text-blue-500" />
+                                  Send Email
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleCenterAction(center.id, 'suspend', center.name)}
+                                  className="cursor-pointer text-orange-600 focus:text-orange-600"
+                                >
+                                  <Pause className="mr-2 h-4 w-4" />
+                                  Suspend Center
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleCenterAction(center.id, 'delete', center.name)}
+                                  className="cursor-pointer text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Center
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem 
-                                onClick={() => handleCenterAction(center.id, 'email', center.name, center.email)}
-                                className="cursor-pointer"
-                              >
-                                <Mail className="mr-2 h-4 w-4" />
-                                Send Email
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleCenterAction(center.id, 'suspend', center.name)}
-                                className="cursor-pointer"
-                              >
-                                <Pause className="mr-2 h-4 w-4" />
-                                Suspend Center
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleCenterAction(center.id, 'activate', center.name)}
-                                className="cursor-pointer"
-                              >
-                                <Play className="mr-2 h-4 w-4" />
-                                Activate Center
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleCenterAction(center.id, 'delete', center.name)}
-                                className="cursor-pointer text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Center
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Building className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">No repair centers registered</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Building className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">No active repair centers</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Suspended Centers */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-orange-500" />
+                    Suspended Repair Centers
+                  </CardTitle>
+                  <CardDescription>Currently suspended repair centers ({suspendedCenters.length})</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {centersLoading ? (
+                    <div className="space-y-4">
+                      {[...Array(2)].map((_, i) => (
+                        <div key={i} className="h-20 bg-muted animate-pulse rounded" />
+                      ))}
+                    </div>
+                  ) : suspendedCenters.length > 0 ? (
+                    <div className="space-y-4">
+                      {suspendedCenters.map((center) => (
+                        <div key={center.id} className="p-4 border rounded-lg border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium">{center.name}</h3>
+                                <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full dark:bg-orange-900 dark:text-orange-200">
+                                  Suspended
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">{center.address}</p>
+                              <div className="flex flex-wrap gap-4 text-sm">
+                                <span><strong>Phone:</strong> {center.phone}</span>
+                                <span><strong>Email:</strong> {center.email}</span>
+                              </div>
+                              {center.specialties && (
+                                <p className="text-sm"><strong>Specialties:</strong> {center.specialties}</p>
+                              )}
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Open menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem 
+                                  onClick={() => handleCenterAction(center.id, 'email', center.name, center.email)}
+                                  className="cursor-pointer"
+                                >
+                                  <Mail className="mr-2 h-4 w-4 text-blue-500" />
+                                  Send Email
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleCenterAction(center.id, 'activate', center.name)}
+                                  className="cursor-pointer text-green-600 focus:text-green-600"
+                                >
+                                  <Play className="mr-2 h-4 w-4" />
+                                  Activate Center
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleCenterAction(center.id, 'delete', center.name)}
+                                  className="cursor-pointer text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Center
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <ShieldOff className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">No suspended repair centers</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
           
           <TabsContent value="center-management">
