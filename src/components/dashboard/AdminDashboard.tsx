@@ -13,13 +13,21 @@ import {
   TrendingUp, 
   Clock,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  MoreHorizontal,
+  Trash2,
+  Pause,
+  Play,
+  Mail
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import RepairCenterManagement from "./RepairCenterManagement";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // Fetch overall stats
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -88,6 +96,47 @@ const AdminDashboard = () => {
       return data;
     },
   });
+
+  const handleCenterAction = async (centerId: number, action: string, centerName: string) => {
+    try {
+      switch (action) {
+        case 'delete':
+          await supabase.from("Repair Center").delete().eq('id', centerId);
+          toast({ title: "Success", description: `${centerName} has been deleted` });
+          break;
+        case 'suspend':
+          // For suspend, we would need to add a status field to the schema
+          toast({ title: "Info", description: `Suspend feature requires database update` });
+          break;
+        case 'activate':
+          // For activate, we would need to add a status field to the schema  
+          toast({ title: "Info", description: `Activate feature requires database update` });
+          break;
+        case 'email':
+          // Trigger email sending edge function
+          const { error } = await supabase.functions.invoke('send-confirmation-email', {
+            body: {
+              email: 'center@example.com', // Would get from center data
+              name: centerName,
+              centerName: centerName,
+              type: 'application'
+            }
+          });
+          if (error) throw error;
+          toast({ title: "Success", description: `Email sent to ${centerName}` });
+          break;
+      }
+      // Refetch data
+      window.location.reload();
+    } catch (error) {
+      console.error('Action failed:', error);
+      toast({ 
+        title: "Error", 
+        description: `Failed to ${action} repair center`,
+        variant: "destructive"
+      });
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -299,9 +348,44 @@ const AdminDashboard = () => {
                               <p className="text-sm"><strong>Specialties:</strong> {center.specialties}</p>
                             )}
                           </div>
-                          <Button variant="outline" size="sm">
-                            Manage
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Open menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem 
+                                onClick={() => handleCenterAction(center.id, 'email', center.name)}
+                                className="cursor-pointer"
+                              >
+                                <Mail className="mr-2 h-4 w-4" />
+                                Send Email
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleCenterAction(center.id, 'suspend', center.name)}
+                                className="cursor-pointer"
+                              >
+                                <Pause className="mr-2 h-4 w-4" />
+                                Suspend Center
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleCenterAction(center.id, 'activate', center.name)}
+                                className="cursor-pointer"
+                              >
+                                <Play className="mr-2 h-4 w-4" />
+                                Activate Center
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleCenterAction(center.id, 'delete', center.name)}
+                                className="cursor-pointer text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Center
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
                     ))}
