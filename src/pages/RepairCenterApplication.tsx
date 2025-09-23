@@ -87,7 +87,7 @@ const RepairCenterApplication = () => {
         if (centerError) {
           console.error("Center creation error:", centerError);
           toast({
-            title: "Application Partially Submitted",
+            title: "Application submitted and pending review and approval after center verification is complete",
             description: "Account created but repair center details need review. Please contact support.",
             variant: "destructive",
           });
