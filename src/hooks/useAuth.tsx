@@ -42,15 +42,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userRole, setUserRole] = useState<'admin' | 'repair_center' | 'customer' | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (!mounted) return;
+        
+        console.log('Auth state change:', event, session?.user?.id);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         // Check user roles when user changes
         if (session?.user) {
-          checkUserRoles(session.user.id);
+          setTimeout(() => {
+            if (mounted) {
+              checkUserRoles(session.user.id);
+            }
+          }, 0);
         } else {
           resetUserRoles();
         }
@@ -60,22 +70,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        checkUserRoles(session.user.id);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session error:', error);
+          if (error.message.includes('refresh_token_not_found')) {
+            // Clear invalid session
+            await supabase.auth.signOut();
+            setSession(null);
+            setUser(null);
+            resetUserRoles();
+          }
+        } else if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            setTimeout(() => {
+              if (mounted) {
+                checkUserRoles(session.user.id);
+              }
+            }, 0);
+          }
+        }
+        
+        if (mounted) {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        if (mounted) {
+          setIsLoading(false);
+          resetUserRoles();
+        }
       }
-      
-      setIsLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const checkUserRoles = async (userId: string) => {
     try {
+      console.log('Checking user roles for:', userId);
+      
       // Check if user is admin
       const { data: adminData, error: adminError } = await supabase
         .from("user_roles")
@@ -84,26 +128,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq("role", "admin")
         .maybeSingle();
 
-      if (adminError) {
+      if (adminError && !adminError.message.includes('JSON object requested')) {
         console.error("Error checking admin status:", adminError);
       }
 
       const isAdminUser = !!adminData;
+      console.log('Is admin:', isAdminUser);
       setIsAdmin(isAdminUser);
 
       // Check if user is repair center staff
       const { data: staffData, error: staffError } = await supabase
         .from("repair_center_staff")
-        .select("repair_center_id, role")
+        .select("repair_center_id, role, is_active")
         .eq("user_id", userId)
         .eq("is_active", true)
         .maybeSingle();
 
-      if (staffError) {
+      if (staffError && !staffError.message.includes('JSON object requested')) {
         console.error("Error checking repair center staff status:", staffError);
       }
 
       const isStaff = !!staffData;
+      console.log('Is repair center staff:', isStaff, staffData);
       setIsRepairCenterStaff(isStaff);
       setRepairCenterId(staffData?.repair_center_id || null);
 
@@ -115,6 +161,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setUserRole('customer');
       }
+      
+      console.log('Final user role:', isAdminUser ? 'admin' : (isStaff ? 'repair_center' : 'customer'));
     } catch (error) {
       console.error("Error checking user roles:", error);
       resetUserRoles();
@@ -129,7 +177,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+      // Clear all state immediately
+      setSession(null);
+      setUser(null);
+      resetUserRoles();
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Force clear state even if signOut fails
+      setSession(null);
+      setUser(null);
+      resetUserRoles();
+    }
   };
 
   return (
