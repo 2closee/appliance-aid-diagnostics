@@ -76,6 +76,24 @@ const RepairCenterApplication = () => {
       const userId = authData.user.id;
       console.log('User created successfully:', userId);
 
+      // Wait for authentication session to be established
+      console.log('Waiting for authentication session...');
+      let retries = 0;
+      const maxRetries = 5;
+      let session = null;
+
+      while (retries < maxRetries && !session) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+        const { data: sessionData } = await supabase.auth.getSession();
+        session = sessionData.session;
+        retries++;
+        console.log(`Authentication check attempt ${retries}, session:`, !!session);
+      }
+
+      if (!session) {
+        console.warn('No active session found, proceeding without auth (will use RLS policy)');
+      }
+
       // Step 2: Create repair center entry
       console.log('Step 2: Creating repair center record...');
       const { data: centerData, error: centerError } = await supabase
@@ -99,9 +117,17 @@ const RepairCenterApplication = () => {
 
       if (centerError) {
         console.error("Center creation error:", centerError);
+        // Enhanced error handling with specific messages
+        let errorMessage = "Failed to create repair center record. Please try again.";
+        if (centerError.code === "42501") {
+          errorMessage = "Authentication issue. Please try refreshing the page and submitting again.";
+        } else if (centerError.message?.includes("violates row-level security")) {
+          errorMessage = "Permission denied. Please contact support if this persists.";
+        }
+        
         toast({
           title: "Application Failed",
-          description: "Failed to create repair center record. Please try again.",
+          description: errorMessage,
           variant: "destructive",
         });
         return;
