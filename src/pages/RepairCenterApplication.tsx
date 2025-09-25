@@ -76,22 +76,34 @@ const RepairCenterApplication = () => {
       const userId = authData.user.id;
       console.log('User created successfully:', userId);
 
-      // Wait for authentication session to be established
+      // Wait for authentication session to be established with exponential backoff
       console.log('Waiting for authentication session...');
       let retries = 0;
-      const maxRetries = 5;
+      const maxRetries = 8;
       let session = null;
+      let isUserValid = false;
 
-      while (retries < maxRetries && !session) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      while (retries < maxRetries && (!session || !isUserValid)) {
+        const delay = Math.min(1000 * Math.pow(1.5, retries), 5000); // Exponential backoff, max 5s
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
         const { data: sessionData } = await supabase.auth.getSession();
         session = sessionData.session;
+        
+        // Verify the session belongs to the expected user
+        if (session && session.user && session.user.id === userId) {
+          isUserValid = true;
+          console.log(`Authentication verified for user ${userId} on attempt ${retries + 1}`);
+        } else if (session && session.user) {
+          console.warn(`Session user mismatch: expected ${userId}, got ${session.user.id}`);
+        }
+        
         retries++;
-        console.log(`Authentication check attempt ${retries}, session:`, !!session);
+        console.log(`Authentication check attempt ${retries}, session:`, !!session, 'valid user:', isUserValid);
       }
 
-      if (!session) {
-        console.warn('No active session found, proceeding without auth (will use RLS policy)');
+      if (!session || !isUserValid) {
+        throw new Error("Authentication session could not be established. Please try again.");
       }
 
       // Step 2: Create repair center entry
@@ -118,16 +130,26 @@ const RepairCenterApplication = () => {
       if (centerError) {
         console.error("Center creation error:", centerError);
         // Enhanced error handling with specific messages
-        let errorMessage = "Failed to create repair center record. Please try again.";
-        if (centerError.code === "42501") {
-          errorMessage = "Authentication issue. Please try refreshing the page and submitting again.";
+        let errorMessage = "Failed to create repair center record.";
+        let shouldRetry = false;
+        
+        if (centerError.code === "42501" || centerError.code === "23503") {
+          errorMessage = "Authentication session expired. Please try submitting again.";
+          shouldRetry = true;
         } else if (centerError.message?.includes("violates row-level security")) {
-          errorMessage = "Permission denied. Please contact support if this persists.";
+          errorMessage = "Access denied. Please ensure you're logged in and try again.";
+          shouldRetry = true;
+        } else if (centerError.message?.includes("duplicate key")) {
+          errorMessage = "A repair center with this information already exists.";
+        } else if (centerError.message?.includes("invalid input")) {
+          errorMessage = "Please check your input and try again.";
+        } else {
+          errorMessage = `Database error: ${centerError.message}`;
         }
         
         toast({
           title: "Application Failed",
-          description: errorMessage,
+          description: shouldRetry ? `${errorMessage} Refreshing and retrying might help.` : errorMessage,
           variant: "destructive",
         });
         return;
@@ -149,33 +171,53 @@ const RepairCenterApplication = () => {
 
       if (staffError) {
         console.error("Staff record error:", staffError);
-        throw staffError;
+        let errorMessage = "Failed to create staff record.";
+        
+        if (staffError.code === "42501") {
+          errorMessage = "Authentication error while creating staff record. Please try again.";
+        } else if (staffError.message?.includes("duplicate key")) {
+          errorMessage = "Staff record already exists for this user and center.";
+        } else {
+          errorMessage = `Staff creation error: ${staffError.message}`;
+        }
+        
+        toast({
+          title: "Application Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
       }
 
       console.log('Staff record created successfully');
 
-      // Step 4: Send confirmation email
+      // Step 4: Send confirmation email (non-blocking)
       console.log('Step 4: Sending confirmation email...');
       try {
         const { error: emailError } = await supabase.functions.invoke("send-confirmation-email", {
           body: {
-            to: application.email,
-            type: "application",
-            data: {
-              name: application.ownerName,
-              businessName: application.businessName
-            }
+            email: application.email,
+            name: application.ownerName,
+            centerName: application.businessName,
+            type: "application"
           }
         });
 
         if (emailError) {
           console.error("Email sending failed:", emailError);
+          // Show warning but don't fail the application
+          toast({
+            title: "Application Submitted",
+            description: "Your application was submitted successfully, but we couldn't send the confirmation email. You'll still receive updates on your application status.",
+            variant: "default",
+          });
         } else {
           console.log('Confirmation email sent successfully');
         }
       } catch (emailError) {
         console.error("Email function error:", emailError);
-        // Don't fail the whole operation if email fails
+        // Log but don't fail the operation
+        console.warn("Email service unavailable, continuing with application submission");
       }
 
       toast({

@@ -100,13 +100,13 @@ Respond with valid JSON only.`;
     return new Response(
       JSON.stringify({
         response: aiResponse,
-        updatedDiagnosis: updateInfo.requiresUpdate ? updateInfo.updatedDiagnosis : null,
-        recommendations: updateInfo.requiresUpdate ? updateInfo.recommendations : null,
+        updatedDiagnosis: updateInfo.requiresUpdate ? (updateInfo as any).updatedDiagnosis : null,
+        recommendations: updateInfo.requiresUpdate ? (updateInfo as any).recommendations : null,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in ai-diagnostic-chat:', error);
     return new Response(
       JSON.stringify({ error: error.message }),

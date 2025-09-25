@@ -1,7 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@4.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,11 +9,17 @@ const corsHeaders = {
 interface ConfirmationEmailRequest {
   email: string;
   name: string;
-  centerName: string;
+  centerName?: string;
   type: "application" | "approval" | "rejection" | "custom";
   subject?: string;
   message?: string;
   centerId?: number;
+  // Legacy support for old API
+  to?: string;
+  data?: {
+    name: string;
+    businessName: string;
+  };
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -26,7 +29,21 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, name, centerName, type, subject: customSubject, message: customMessage }: ConfirmationEmailRequest = await req.json();
+    const requestBody: ConfirmationEmailRequest = await req.json();
+    
+    // Support both new and legacy API formats
+    const email = requestBody.email || requestBody.to;
+    const name = requestBody.name || requestBody.data?.name;
+    const centerName = requestBody.centerName || requestBody.data?.businessName;
+    const type = requestBody.type;
+    const customSubject = requestBody.subject;
+    const customMessage = requestBody.message;
+    
+    if (!email || !name || !type) {
+      throw new Error("Missing required fields: email, name, and type are required");
+    }
+    
+    console.log(`Processing ${type} email for ${email}`);
 
     let subject: string;
     let html: string;
@@ -115,16 +132,35 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error("Invalid email type");
     }
 
-    const emailResponse = await resend.emails.send({
-      from: "FixBudi <noreply@fixbudi.com>",
-      to: [email],
-      subject,
-      html,
+    // Use Resend API directly
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      throw new Error("RESEND_API_KEY not configured");
+    }
+
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "FixBudi <onboarding@resend.dev>",
+        to: [email],
+        subject,
+        html,
+      }),
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    if (!emailResponse.ok) {
+      const errorData = await emailResponse.text();
+      throw new Error(`Resend API error: ${emailResponse.status} - ${errorData}`);
+    }
 
-    return new Response(JSON.stringify({ success: true, emailResponse }), {
+    const emailResult = await emailResponse.json();
+    console.log("Email sent successfully:", emailResult.id);
+
+    return new Response(JSON.stringify({ success: true, emailResponse: emailResult }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
@@ -133,8 +169,19 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-confirmation-email function:", error);
+    
+    // Provide specific error details for debugging
+    const errorDetails = {
+      message: error.message,
+      code: error.code || 'UNKNOWN_ERROR',
+      timestamp: new Date().toISOString()
+    };
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: errorDetails
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
