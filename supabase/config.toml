@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.ai-diagnostic-chat]
 verify_jwt = false
+
+[functions.send-confirmation-email]
+verify_jwt = false

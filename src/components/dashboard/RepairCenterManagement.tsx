@@ -29,6 +29,7 @@ const RepairCenterManagement = () => {
   const { data: pendingApplications, isLoading: loadingApplications } = useQuery({
     queryKey: ["pending-applications"],
     queryFn: async () => {
+      console.log('Fetching pending applications...');
       const { data, error } = await supabase
         .from("repair_center_staff")
         .select(`
@@ -44,14 +45,21 @@ const RepairCenterManagement = () => {
             cac_number,
             tax_id,
             years_of_experience,
-            number_of_staff
+            number_of_staff,
+            status
           )
         `)
         .eq("is_active", false)
+        .eq("is_owner", true)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching pending applications:', error);
+        throw error;
+      }
+      
+      console.log('Pending applications found:', data?.length || 0);
+      return data || [];
     },
   });
 
@@ -93,26 +101,53 @@ const RepairCenterManagement = () => {
       name: string, 
       centerName: string 
     }) => {
+      console.log('Approving application:', staffId);
+      
       // Activate the staff member
-      const { error } = await supabase
+      const { error: staffError } = await supabase
         .from("repair_center_staff")
-        .update({ is_active: true, role: "admin" })
+        .update({ is_active: true })
         .eq("id", staffId);
 
-      if (error) throw error;
+      if (staffError) {
+        console.error('Staff activation error:', staffError);
+        throw staffError;
+      }
+
+      // Update repair center status to active
+      const { error: centerError } = await supabase
+        .from("Repair Center")
+        .update({ status: 'active' })
+        .eq("id", centerId);
+
+      if (centerError) {
+        console.error('Center activation error:', centerError);
+        throw centerError;
+      }
+
+      console.log('Application approved successfully');
 
       // Send approval email
       try {
-        await supabase.functions.invoke("send-confirmation-email", {
+        console.log('Sending approval email to:', email);
+        const { error: emailError } = await supabase.functions.invoke("send-confirmation-email", {
           body: {
-            email,
-            name,
-            centerName,
-            type: "approval"
+            to: email,
+            type: "approval",
+            data: {
+              name: name,
+              businessName: centerName
+            }
           }
         });
+
+        if (emailError) {
+          console.error("Approval email failed:", emailError);
+        } else {
+          console.log('Approval email sent successfully');
+        }
       } catch (emailError) {
-        console.error("Failed to send approval email:", emailError);
+        console.error("Email function error:", emailError);
         // Don't fail the whole operation if email fails
       }
 
@@ -126,7 +161,8 @@ const RepairCenterManagement = () => {
       queryClient.invalidateQueries({ queryKey: ["pending-applications"] });
       queryClient.invalidateQueries({ queryKey: ["all-centers"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Approval error:', error);
       toast({
         title: "Error",
         description: `Failed to approve application: ${error.message}`,
@@ -144,33 +180,53 @@ const RepairCenterManagement = () => {
       name: string, 
       centerName: string 
     }) => {
-      // Delete both the staff record and the repair center
+      console.log('Rejecting application:', staffId);
+      
+      // Delete the staff record
       const { error: staffError } = await supabase
         .from("repair_center_staff")
         .delete()
         .eq("id", staffId);
 
-      if (staffError) throw staffError;
+      if (staffError) {
+        console.error('Staff deletion error:', staffError);
+        throw staffError;
+      }
 
+      // Update repair center status to rejected
       const { error: centerError } = await supabase
         .from("Repair Center")
-        .delete()
+        .update({ status: 'rejected' })
         .eq("id", centerId);
 
-      if (centerError) throw centerError;
+      if (centerError) {
+        console.error('Center rejection error:', centerError);
+        throw centerError;
+      }
+
+      console.log('Application rejected successfully');
 
       // Send rejection email
       try {
-        await supabase.functions.invoke("send-confirmation-email", {
+        console.log('Sending rejection email to:', email);
+        const { error: emailError } = await supabase.functions.invoke("send-confirmation-email", {
           body: {
-            email,
-            name,
-            centerName,
-            type: "rejection"
+            to: email,
+            type: "rejection",
+            data: {
+              name: name,
+              businessName: centerName
+            }
           }
         });
+
+        if (emailError) {
+          console.error("Rejection email failed:", emailError);
+        } else {
+          console.log('Rejection email sent successfully');
+        }
       } catch (emailError) {
-        console.error("Failed to send rejection email:", emailError);
+        console.error("Email function error:", emailError);
         // Don't fail the whole operation if email fails
       }
 
@@ -182,8 +238,10 @@ const RepairCenterManagement = () => {
         description: "Repair center application has been rejected.",
       });
       queryClient.invalidateQueries({ queryKey: ["pending-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["all-centers"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Rejection error:', error);
       toast({
         title: "Error",
         description: `Failed to reject application: ${error.message}`,

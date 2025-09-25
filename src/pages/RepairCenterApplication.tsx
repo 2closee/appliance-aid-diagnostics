@@ -47,7 +47,10 @@ const RepairCenterApplication = () => {
     setIsSubmitting(true);
 
     try {
-      // First create the user account
+      console.log('Starting repair center application submission...');
+      
+      // Step 1: Sign up the user
+      console.log('Step 1: Creating user account...');
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: application.email,
         password: application.password,
@@ -57,6 +60,7 @@ const RepairCenterApplication = () => {
       });
 
       if (signUpError) {
+        console.error('Auth error:', signUpError);
         toast({
           title: "Application Failed",
           description: signUpError.message,
@@ -65,101 +69,123 @@ const RepairCenterApplication = () => {
         return;
       }
 
-      if (authData.user) {
-        // Create a repair center entry (initially with placeholder data)
-        const { data: centerData, error: centerError } = await supabase
-          .from("Repair Center")
-          .insert({
-            name: application.businessName,
-            address: `${application.address}, ${application.city}, ${application.state} ${application.zipCode}`.trim(),
-            phone: application.phone,
-            email: application.email,
-            hours: application.operatingHours,
-            specialties: application.specialties,
-            number_of_staff: parseInt(application.numberOfStaff) || 0,
-            years_of_experience: parseInt(application.yearsInBusiness) || 0,
-            cac_name: application.cacName,
-            cac_number: application.cacNumber,
-            tax_id: application.taxId || null
-          })
-          .select()
-          .single();
-
-        if (centerError) {
-          console.error("Center creation error:", centerError);
-          toast({
-            title: "Application submitted and pending review and approval after center verification is complete",
-            description: "Account created but repair center details need review. Please contact support.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Create repair center staff record (initially inactive, pending approval)
-        const { error: staffError } = await supabase
-          .from("repair_center_staff")
-          .insert({
-            user_id: authData.user.id,
-            repair_center_id: centerData.id,
-            is_active: false, // Pending approval
-            is_owner: true,
-            role: 'admin'
-          });
-
-        if (staffError) {
-          console.error("Staff record error:", staffError);
-        }
-
-        // Send confirmation email
-        try {
-          await supabase.functions.invoke("send-confirmation-email", {
-            body: {
-              email: application.email,
-              name: application.ownerName,
-              centerName: application.businessName,
-              type: "application"
-            }
-          });
-        } catch (emailError) {
-          console.error("Failed to send confirmation email:", emailError);
-          // Don't fail the whole operation if email fails
-        }
-
-        toast({
-          title: "Application submitted and pending review and approval after center verification is complete",
-          description: "Check your email for verification, then wait for admin approval.",
-        });
-
-        setIsSubmitted(true);
-
-        // Reset form
-        setApplication({
-          businessName: "",
-          ownerName: "",
-          email: "",
-          phone: "",
-          website: "",
-          address: "",
-          city: "",
-          state: "",
-          zipCode: "",
-          operatingHours: "",
-          specialties: "",
-          certifications: "",
-          description: "",
-          cacName: "",
-          cacNumber: "",
-          taxId: "",
-          yearsInBusiness: "",
-          numberOfStaff: "",
-          password: ""
-        });
-
-        // Redirect to repair center admin portal
-        setTimeout(() => {
-          navigate("/repair-center-admin");
-        }, 2000);
+      if (!authData.user) {
+        throw new Error("User creation failed");
       }
+
+      const userId = authData.user.id;
+      console.log('User created successfully:', userId);
+
+      // Step 2: Create repair center entry
+      console.log('Step 2: Creating repair center record...');
+      const { data: centerData, error: centerError } = await supabase
+        .from("Repair Center")
+        .insert({
+          name: application.businessName,
+          address: `${application.address}, ${application.city}, ${application.state} ${application.zipCode}`.trim(),
+          phone: application.phone,
+          email: application.email,
+          hours: application.operatingHours,
+          specialties: application.specialties,
+          number_of_staff: parseInt(application.numberOfStaff) || 0,
+          years_of_experience: parseInt(application.yearsInBusiness) || 0,
+          cac_name: application.cacName,
+          cac_number: application.cacNumber,
+          tax_id: application.taxId || null,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (centerError) {
+        console.error("Center creation error:", centerError);
+        toast({
+          title: "Application Failed",
+          description: "Failed to create repair center record. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Repair center created successfully:', centerData.id);
+
+      // Step 3: Create repair center staff record (initially inactive, pending approval)
+      console.log('Step 3: Creating staff record...');
+      const { error: staffError } = await supabase
+        .from("repair_center_staff")
+        .insert({
+          user_id: userId,
+          repair_center_id: centerData.id,
+          is_active: false, // Pending approval
+          is_owner: true,
+          role: 'owner'
+        });
+
+      if (staffError) {
+        console.error("Staff record error:", staffError);
+        throw staffError;
+      }
+
+      console.log('Staff record created successfully');
+
+      // Step 4: Send confirmation email
+      console.log('Step 4: Sending confirmation email...');
+      try {
+        const { error: emailError } = await supabase.functions.invoke("send-confirmation-email", {
+          body: {
+            to: application.email,
+            type: "application",
+            data: {
+              name: application.ownerName,
+              businessName: application.businessName
+            }
+          }
+        });
+
+        if (emailError) {
+          console.error("Email sending failed:", emailError);
+        } else {
+          console.log('Confirmation email sent successfully');
+        }
+      } catch (emailError) {
+        console.error("Email function error:", emailError);
+        // Don't fail the whole operation if email fails
+      }
+
+      toast({
+        title: "Application Submitted Successfully",
+        description: "Check your email for verification, then wait for admin approval.",
+      });
+
+      setIsSubmitted(true);
+
+      // Reset form
+      setApplication({
+        businessName: "",
+        ownerName: "",
+        email: "",
+        phone: "",
+        website: "",
+        address: "",
+        city: "",
+        state: "",
+        zipCode: "",
+        operatingHours: "",
+        specialties: "",
+        certifications: "",
+        description: "",
+        cacName: "",
+        cacNumber: "",
+        taxId: "",
+        yearsInBusiness: "",
+        numberOfStaff: "",
+        password: ""
+      });
+
+      // Redirect to repair center admin portal
+      setTimeout(() => {
+        navigate("/repair-center-admin");
+      }, 2000);
     } catch (error: any) {
       console.error("Application error:", error);
       toast({

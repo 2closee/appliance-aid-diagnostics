@@ -3,12 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Building, LogOut, Shield, Mail } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RepairCenterDashboard from '@/components/dashboard/RepairCenterDashboard';
+import { StaffManagement } from '@/components/StaffManagement';
 
 const RepairCenterAdmin = () => {
   const { toast } = useToast();
@@ -92,6 +94,10 @@ const RepairCenterAdmin = () => {
     setIsSigningUp(true);
     
     try {
+      console.log('Starting quick repair center application...');
+      
+      // Step 1: Sign up the user
+      console.log('Step 1: Creating user account...');
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: signupData.email,
         password: signupData.password,
@@ -101,6 +107,7 @@ const RepairCenterAdmin = () => {
       });
 
       if (signUpError) {
+        console.error('Auth error:', signUpError);
         toast({
           title: "Signup Failed",
           description: signUpError.message,
@@ -109,66 +116,103 @@ const RepairCenterAdmin = () => {
         return;
       }
 
-      if (authData.user) {
-        // Create a basic repair center entry for quick applications
-        const { data: centerData, error: centerError } = await supabase
-          .from("Repair Center")
-          .insert({
-            name: signupData.centerName,
-            address: "TBD - Application pending completion",
-            phone: signupData.phone,
-            email: signupData.email,
-            hours: "TBD",
-            specialties: "TBD",
-            number_of_staff: 0,
-            years_of_experience: 0,
-          })
-          .select()
-          .single();
-
-        if (centerError) {
-          console.error("Center creation error:", centerError);
-        }
-
-        // Create repair center staff record (initially inactive, pending approval)
-        if (centerData) {
-          const { error: staffError } = await supabase
-            .from("repair_center_staff")
-            .insert({
-              user_id: authData.user.id,
-              repair_center_id: centerData.id,
-              is_active: false, // Pending approval
-              is_owner: true,
-              role: 'admin'
-            });
-
-          if (staffError) {
-            console.error("Staff record error:", staffError);
-          }
-        }
-
-        toast({
-          title: "Application Submitted",
-          description: "Your repair center application has been submitted. Please check your email for verification, then wait for admin approval.",
-        });
-        
-        setSignupData({ 
-          email: "", 
-          password: "", 
-          centerName: "", 
-          contactName: "", 
-          phone: "",
-          numberOfStaff: "",
-          yearsOfExperience: "",
-          cacName: "",
-          cacNumber: "",
-          taxId: ""
-        });
+      if (!authData.user) {
+        throw new Error("User creation failed");
       }
-    } catch (error) {
+
+      const userId = authData.user.id;
+      console.log('User created successfully:', userId);
+
+      // Step 2: Create a basic repair center entry for quick applications
+      console.log('Step 2: Creating repair center record...');
+      const { data: centerData, error: centerError } = await supabase
+        .from("Repair Center")
+        .insert({
+          name: signupData.centerName,
+          address: "TBD - Application pending completion",
+          phone: signupData.phone,
+          email: signupData.email,
+          hours: "TBD",
+          specialties: "TBD",
+          number_of_staff: 0,
+          years_of_experience: 0,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (centerError) {
+        console.error("Center creation error:", centerError);
+        throw centerError;
+      }
+
+      console.log('Repair center created successfully:', centerData.id);
+
+      // Step 3: Create repair center staff record (initially inactive, pending approval)
+      console.log('Step 3: Creating staff record...');
+      const { error: staffError } = await supabase
+        .from("repair_center_staff")
+        .insert({
+          user_id: userId,
+          repair_center_id: centerData.id,
+          is_active: false, // Pending approval
+          is_owner: true,
+          role: 'owner'
+        });
+
+      if (staffError) {
+        console.error("Staff record error:", staffError);
+        throw staffError;
+      }
+
+      console.log('Staff record created successfully');
+
+      // Step 4: Send confirmation email
+      console.log('Step 4: Sending confirmation email...');
+      try {
+        const { error: emailError } = await supabase.functions.invoke("send-confirmation-email", {
+          body: {
+            to: signupData.email,
+            type: "application",
+            data: {
+              name: signupData.contactName,
+              businessName: signupData.centerName
+            }
+          }
+        });
+
+        if (emailError) {
+          console.error("Email sending failed:", emailError);
+        } else {
+          console.log('Confirmation email sent successfully');
+        }
+      } catch (emailError) {
+        console.error("Email function error:", emailError);
+        // Don't fail the whole operation if email fails
+      }
+
+      toast({
+        title: "Application Submitted",
+        description: "Your repair center application has been submitted. Please check your email for verification, then wait for admin approval.",
+      });
+      
+      setSignupData({ 
+        email: "", 
+        password: "", 
+        centerName: "", 
+        contactName: "", 
+        phone: "",
+        numberOfStaff: "",
+        yearsOfExperience: "",
+        cacName: "",
+        cacNumber: "",
+        taxId: ""
+      });
+    } catch (error: any) {
+      console.error("Quick application error:", error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred during signup",
+        description: error.message || "An unexpected error occurred during signup",
         variant: "destructive",
       });
     } finally {
@@ -222,32 +266,32 @@ const RepairCenterAdmin = () => {
                     <p><strong>Your Role:</strong> {repairCenterInfo.role}</p>
                   </div>
                 </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">Quick Actions</h3>
-                    <div className="space-y-2">
-                      <Button onClick={() => navigate("/dashboard")} className="w-full">
-                        View Jobs & Analytics
-                      </Button>
-                      <Button onClick={() => navigate("/repair-jobs")} variant="outline" className="w-full">
-                        Manage Repair Jobs
-                      </Button>
-                      {repairCenterInfo.is_owner && (
-                        <Button 
-                          onClick={() => {
-                            // TODO: Implement staff management
-                            toast({
-                              title: "Staff Management",
-                              description: "Staff management feature will be available soon.",
-                            });
-                          }} 
-                          variant="secondary" 
-                          className="w-full"
-                        >
-                          Manage Staff
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                <div>
+                  <Tabs defaultValue="dashboard" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                      <TabsTrigger value="staff">Staff Management</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="dashboard" className="mt-6">
+                      <div>
+                        <h3 className="font-semibold mb-2">Quick Actions</h3>
+                        <div className="space-y-2">
+                          <Button onClick={() => navigate("/dashboard")} className="w-full">
+                            View Jobs & Analytics
+                          </Button>
+                          <Button onClick={() => navigate("/repair-jobs")} variant="outline" className="w-full">
+                            Manage Repair Jobs
+                          </Button>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="staff" className="mt-6">
+                      <StaffManagement />
+                    </TabsContent>
+                  </Tabs>
+                </div>
               </div>
             </CardContent>
           </Card>
