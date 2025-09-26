@@ -35,7 +35,7 @@ type DiagnosticStep = {
 
 const Diagnostic = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useAuth(); // Optional for guest access
   const [selectedAppliance, setSelectedAppliance] = useState<ApplianceType | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
@@ -355,11 +355,11 @@ const Diagnostic = () => {
                       Any videos or audio you share will help technicians better understand the problem.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <Button onClick={() => user ? navigate('/repair-centers') : navigate('/auth')} className="flex-1">
+                      <Button onClick={() => user ? navigate('/repair-centers') : navigate('/auth?redirect=/repair-centers')} className="flex-1">
                         <MapPin className="h-4 w-4 mr-2" />
                         Find Repair Center
                       </Button>
-                      <Button onClick={() => user ? navigate('/pickup-request') : navigate('/auth')} variant="outline" className="flex-1">
+                      <Button onClick={() => user ? navigate('/pickup-request') : navigate('/auth?redirect=/pickup-request')} variant="outline" className="flex-1">
                         <ArrowRight className="h-4 w-4 mr-2" />
                         Schedule Pickup
                       </Button>

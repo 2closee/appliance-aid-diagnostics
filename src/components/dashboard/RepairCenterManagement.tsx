@@ -92,7 +92,7 @@ const RepairCenterManagement = () => {
     return hasStaff && (!activeStaff || activeStaff.length === 0);
   }) || [];
 
-  // Approve repair center application
+  // Approve repair center application (NO assignment - business already has account)
   const approveApplication = useMutation({
     mutationFn: async ({ staffId, centerId, email, name, centerName }: { 
       staffId: string, 
