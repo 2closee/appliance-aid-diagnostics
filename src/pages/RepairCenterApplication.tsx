@@ -256,9 +256,27 @@ const RepairCenterApplication = () => {
       }, 2000);
     } catch (error: any) {
       console.error("Application error:", error);
+      
+      // Phase 5: Better Error Handling - Provide specific error messages
+      let errorMessage = "An unexpected error occurred while submitting your application. Please try again.";
+      
+      if (error?.message?.includes('row-level security')) {
+        errorMessage = "There was a permission issue with your application. Please ensure you're logged in and try again.";
+      } else if (error?.message?.includes('duplicate key')) {
+        errorMessage = "An application for this repair center already exists. Please contact support if you need assistance.";
+      } else if (error?.message?.includes('network') || error?.code === 'NETWORK_ERROR') {
+        errorMessage = "Network connection issue. Please check your internet connection and try again.";
+      } else if (error?.code === 'PGRST301') {
+        errorMessage = "Database connection issue. Please try again in a moment.";
+      } else if (error?.message?.includes('Authentication session could not be established')) {
+        errorMessage = "Unable to verify your account. Please refresh the page and try again.";
+      } else if (error?.message?.includes('User creation failed')) {
+        errorMessage = "Failed to create your account. Please check your email and password and try again.";
+      }
+      
       toast({
         title: "Application Failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
