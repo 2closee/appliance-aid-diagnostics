@@ -360,6 +360,10 @@ export type Database = {
         Args: { _repair_center_id: number; _user_id: string }
         Returns: boolean
       }
+      user_is_center_owner: {
+        Args: { _center_id: number; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
