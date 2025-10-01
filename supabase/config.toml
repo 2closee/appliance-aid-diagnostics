@@ -1,5 +1,8 @@
 project_id = "esbqtuljvejvrzawsqgk"
 
+[functions.submit-repair-center-application]
+verify_jwt = false
+
 [functions.create-repair-payment]
 verify_jwt = true
 

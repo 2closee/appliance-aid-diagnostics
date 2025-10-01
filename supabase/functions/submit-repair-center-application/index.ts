@@ -48,29 +48,81 @@ const handler = async (req: Request): Promise<Response> => {
       }
     });
 
-    // Step 1: Create user account
-    console.log('Creating user account...');
-    const { data: authData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
-      email: applicationData.email,
-      password: applicationData.password,
-      email_confirm: false, // Don't auto-confirm, we'll handle verification
-      user_metadata: {
-        full_name: applicationData.fullName,
-        role: 'repair_center_staff'
+    // Step 1: Check if user already exists
+    console.log('Checking if user exists...');
+    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (listError) {
+      console.error('Error checking existing users:', listError);
+      throw new Error(`Failed to check existing users: ${listError.message}`);
+    }
+
+    const existingUser = existingUsers.users.find(u => u.email === applicationData.email);
+    let userId: string;
+    let isNewUser = false;
+
+    if (existingUser) {
+      console.log('User already exists:', existingUser.id);
+      userId = existingUser.id;
+      
+      // Check if this user already has an active repair center
+      const { data: existingStaff } = await supabaseAdmin
+        .from("repair_center_staff")
+        .select("repair_center_id, is_active, Repair Center!inner(status)")
+        .eq('user_id', userId)
+        .single();
+
+      if (existingStaff) {
+        const centerStatus = (existingStaff as any)['Repair Center']?.status;
+        
+        if (centerStatus === 'active' || centerStatus === 'pending') {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "An application already exists for this email address. Please contact support if you need assistance."
+            }),
+            {
+              status: 409,
+              headers: {
+                "Content-Type": "application/json",
+                ...corsHeaders,
+              },
+            }
+          );
+        }
       }
-    });
 
-    if (signUpError) {
-      console.error('User creation error:', signUpError);
-      throw new Error(`Failed to create user account: ${signUpError.message}`);
+      // If user exists but no active center, allow resubmission
+      // Check if email is verified
+      if (!existingUser.email_confirmed_at) {
+        console.log('Existing user email not verified, will resend verification');
+      }
+    } else {
+      // Create new user
+      console.log('Creating new user account...');
+      const { data: authData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
+        email: applicationData.email,
+        password: applicationData.password,
+        email_confirm: false,
+        user_metadata: {
+          full_name: applicationData.fullName,
+          role: 'repair_center_staff'
+        }
+      });
+
+      if (signUpError) {
+        console.error('User creation error:', signUpError);
+        throw new Error(`Failed to create user account: ${signUpError.message}`);
+      }
+
+      if (!authData.user) {
+        throw new Error("User creation failed - no user returned");
+      }
+
+      userId = authData.user.id;
+      isNewUser = true;
+      console.log('New user created successfully:', userId);
     }
-
-    if (!authData.user) {
-      throw new Error("User creation failed - no user returned");
-    }
-
-    const userId = authData.user.id;
-    console.log('User created successfully:', userId);
 
     // Step 2: Create repair center record using service role (bypasses RLS)
     console.log('Creating repair center record...');
@@ -95,8 +147,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (centerError) {
       console.error('Center creation error:', centerError);
-      // Cleanup: Delete the user if center creation failed
-      await supabaseAdmin.auth.admin.deleteUser(userId);
+      // Cleanup: Delete the user only if we just created it
+      if (isNewUser) {
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+      }
       throw new Error(`Failed to create repair center: ${centerError.message}`);
     }
 
@@ -117,9 +171,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (staffError) {
       console.error('Staff record creation error:', staffError);
-      // Cleanup: Delete center and user
+      // Cleanup: Delete center and user only if we just created it
       await supabaseAdmin.from("Repair Center").delete().eq('id', centerData.id);
-      await supabaseAdmin.auth.admin.deleteUser(userId);
+      if (isNewUser) {
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+      }
       throw new Error(`Failed to create staff record: ${staffError.message}`);
     }
 
