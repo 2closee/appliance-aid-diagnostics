@@ -159,6 +159,81 @@ export type Database = {
         }
         Relationships: []
       }
+      repair_center_applications: {
+        Row: {
+          address: string
+          business_name: string
+          cac_name: string
+          cac_number: string
+          certifications: string | null
+          city: string
+          created_at: string
+          description: string | null
+          email: string
+          full_name: string
+          id: string
+          number_of_staff: number
+          operating_hours: string
+          phone: string
+          specialties: string
+          state: string
+          status: string
+          tax_id: string | null
+          updated_at: string
+          website: string | null
+          years_in_business: number
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          business_name: string
+          cac_name: string
+          cac_number: string
+          certifications?: string | null
+          city: string
+          created_at?: string
+          description?: string | null
+          email: string
+          full_name: string
+          id?: string
+          number_of_staff?: number
+          operating_hours: string
+          phone: string
+          specialties: string
+          state: string
+          status?: string
+          tax_id?: string | null
+          updated_at?: string
+          website?: string | null
+          years_in_business?: number
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          business_name?: string
+          cac_name?: string
+          cac_number?: string
+          certifications?: string | null
+          city?: string
+          created_at?: string
+          description?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          number_of_staff?: number
+          operating_hours?: string
+          phone?: string
+          specialties?: string
+          state?: string
+          status?: string
+          tax_id?: string | null
+          updated_at?: string
+          website?: string | null
+          years_in_business?: number
+          zip_code?: string
+        }
+        Relationships: []
+      }
       repair_center_staff: {
         Row: {
           created_at: string

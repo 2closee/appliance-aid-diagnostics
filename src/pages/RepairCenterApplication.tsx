@@ -38,9 +38,7 @@ export default function RepairCenterApplication() {
     taxId: "",
     // Experience
     yearsInBusiness: "",
-    numberOfStaff: "",
-    // Account Creation
-    password: ""
+    numberOfStaff: ""
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,7 +48,7 @@ export default function RepairCenterApplication() {
     try {
       console.log('Starting repair center application submission...');
       
-      // Submit application using edge function that handles verification flow
+      // Submit application using edge function
       const { data, error } = await supabase.functions.invoke('submit-repair-center-application', {
         body: {
           businessName: application.businessName,
@@ -67,7 +65,9 @@ export default function RepairCenterApplication() {
           cacName: application.cacName,
           cacNumber: application.cacNumber,
           taxId: application.taxId,
-          password: application.password,
+          website: application.website,
+          certifications: application.certifications,
+          description: application.description,
           fullName: application.fullName || application.ownerName
         }
       });
@@ -85,7 +85,7 @@ export default function RepairCenterApplication() {
       
       toast({
         title: "Application Submitted!",
-        description: data.message || "Your application has been submitted successfully. Please check your email to verify your account.",
+        description: data.message || "Your application has been submitted successfully. Our team will review it shortly.",
       });
 
       // Reset form and show success state
@@ -108,26 +108,17 @@ export default function RepairCenterApplication() {
         cacNumber: '',
         taxId: '',
         yearsInBusiness: '',
-        numberOfStaff: '',
-        password: ''
+        numberOfStaff: ''
       });
       setIsSubmitted(true);
 
     } catch (error: any) {
       console.error('Application submission error:', error);
       
-      // Enhanced error handling with specific messages
+      // Simplified error handling
       let errorMessage = "Application failed. Please try again.";
       
-      if (error.message?.includes("Failed to create user account")) {
-        errorMessage = "Unable to create user account. Please check if an account with this email already exists.";
-      } else if (error.message?.includes("Failed to create repair center")) {
-        errorMessage = "Unable to create repair center record. Please check your information and try again.";
-      } else if (error.message?.includes("Failed to create staff record")) {
-        errorMessage = "Unable to create staff record. Please try again.";
-      } else if (error.message?.includes("duplicate key")) {
-        errorMessage = "An account with this email already exists.";
-      } else if (error.message?.includes("rate limit")) {
+      if (error.message?.includes("rate limit")) {
         errorMessage = "Too many requests. Please wait a few minutes and try again.";
       } else if (error.message?.includes("network")) {
         errorMessage = "Network error. Please check your connection and try again.";
@@ -178,9 +169,9 @@ export default function RepairCenterApplication() {
                   Next Steps:
                 </h3>
                 <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 text-left">
-                  <li>1. Check your email and click the verification link</li>
-                  <li>2. Our team will review your application within 24-48 hours</li>
-                  <li>3. You'll receive an email notification once approved</li>
+                  <li>1. Our team will review your application within 24-48 hours</li>
+                  <li>2. You'll receive an email notification once approved</li>
+                  <li>3. Follow the instructions in the email to set up your account</li>
                   <li>4. Access your repair center admin portal to start managing jobs</li>
                 </ol>
               </div>
@@ -490,27 +481,6 @@ export default function RepairCenterApplication() {
                       onChange={(e) => handleInputChange('taxId', e.target.value)}
                       placeholder="Tax identification number"
                     />
-                  </div>
-                </div>
-
-                {/* Account Creation */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Account Creation</h3>
-                  
-                  <div>
-                    <Label htmlFor="password">Password *</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={application.password}
-                      onChange={(e) => handleInputChange('password', e.target.value)}
-                      required
-                      placeholder="Create a secure password"
-                      minLength={6}
-                    />
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Minimum 6 characters required
-                    </p>
                   </div>
                 </div>
 
