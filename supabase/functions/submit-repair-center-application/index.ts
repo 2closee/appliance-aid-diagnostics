@@ -21,10 +21,10 @@ interface ApplicationData {
   cacName: string;
   cacNumber: string;
   taxId?: string;
-  fullName: string;
   website?: string;
   certifications?: string;
   description?: string;
+  fullName: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -34,60 +34,70 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log('📥 Starting repair center application submission...');
+    console.log('Starting repair center application submission...');
     
     const applicationData: ApplicationData = await req.json();
     
     // Validate required fields
-    if (!applicationData.email || !applicationData.fullName) {
-      console.log('❌ Missing required fields');
+    if (!applicationData.email || !applicationData.fullName || !applicationData.businessName) {
+      console.error('Missing required fields');
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: "Email and full name are required" 
+          message: "Email, name, and business name are required" 
         }),
         { 
           status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders }
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          }
         }
       );
     }
-
-    console.log(`📧 Processing application for: ${applicationData.email}`);
     
-    // Initialize Supabase client with anon key (public access)
+    // Initialize Supabase client (no service role needed)
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Check if an application with this email already exists
+    console.log('Checking for existing application...');
     const { data: existing, error: checkError } = await supabase
       .from('repair_center_applications')
-      .select('id, status, created_at')
+      .select('id, status, business_name')
       .eq('email', applicationData.email)
       .maybeSingle();
 
+    if (checkError) {
+      console.error('Error checking existing application:', checkError);
+      // Continue anyway - insert will fail if duplicate due to unique constraint
+    }
+
     // If application exists, return success with helpful message
     if (existing) {
-      console.log(`✅ Application already exists for ${applicationData.email} (Status: ${existing.status})`);
+      console.log('Application already exists for email:', applicationData.email);
       return new Response(
         JSON.stringify({
           success: true,
           message: "Application already submitted. Our team will review it shortly.",
           applicationId: existing.id,
           status: existing.status,
-          submittedAt: existing.created_at
+          businessName: existing.business_name
         }),
         { 
           status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders }
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          }
         }
       );
     }
 
-    // Insert new application into repair_center_applications table
-    console.log('💾 Creating new application record...');
+    // Insert new application
+    console.log('Creating new application...');
     const { data: newApplication, error: insertError } = await supabase
       .from('repair_center_applications')
       .insert({
@@ -115,59 +125,66 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (insertError) {
-      console.error('❌ Insert failed:', insertError);
+      console.error('Insert error:', insertError);
       
-      // Handle duplicate email constraint violation gracefully
-      if (insertError.code === '23505') {
-        console.log('ℹ️ Duplicate email detected, returning success');
+      // Handle duplicate email (in case of race condition)
+      if (insertError.code === '23505') { // PostgreSQL unique constraint violation
+        console.log('Duplicate detected via constraint, returning success');
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             success: true,
             message: "Application already submitted. Our team will review it shortly."
           }),
           { 
             status: 200,
-            headers: { "Content-Type": "application/json", ...corsHeaders }
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders,
+            }
           }
         );
       }
       
+      // Other errors
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: "Failed to submit application. Please try again." 
+          message: "Failed to submit application. Please try again." 
         }),
         { 
           status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders }
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          }
         }
       );
     }
 
-    console.log(`✅ Application submitted successfully! ID: ${newApplication.id}`);
+    console.log('Application created successfully:', newApplication.id);
 
     // Return success
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
-        message: "Application submitted successfully! Our team will review it within 24-48 hours and contact you via email.",
-        applicationId: newApplication.id,
-        status: newApplication.status
+        message: "Application submitted successfully! Our team will review your application within 24-48 hours.",
+        applicationId: newApplication.id
       }),
-      { 
+      {
         status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders }
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
       }
     );
 
   } catch (error: any) {
-    console.error("💥 Error in submit-repair-center-application function:", error);
-    
-    // Always return 200 with error message for client-side handling
+    console.error("Error in submit-repair-center-application function:", error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || "An unexpected error occurred. Please try again.",
+        message: "An unexpected error occurred. Please try again.",
       }),
       {
         status: 500,
