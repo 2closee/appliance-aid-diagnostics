@@ -36,6 +36,13 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log('Starting repair center application submission...');
     
+    // Debug: Log environment setup
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    console.log('Supabase URL:', supabaseUrl);
+    console.log('Using anon key (first 20 chars):', supabaseKey?.substring(0, 20));
+    console.log('Anon key exists:', !!supabaseKey);
+    
     const applicationData: ApplicationData = await req.json();
     
     // Validate required fields
@@ -56,11 +63,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
     
-    // Initialize Supabase client (no service role needed)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
+    // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Debug: Test auth context
+    const { data: authData } = await supabase.auth.getUser();
+    console.log('Auth context - User:', authData?.user?.id || 'No user (anon)');
+    console.log('Auth context - Role:', authData?.user?.role || 'anon');
 
     // Check if an application with this email already exists
     console.log('Checking for existing application...');
@@ -97,7 +106,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Insert new application
-    console.log('Creating new application...');
+    console.log('Creating new application for email:', applicationData.email);
+    console.log('Application data:', JSON.stringify(applicationData, null, 2));
+    
     const { data: newApplication, error: insertError } = await supabase
       .from('repair_center_applications')
       .insert({
