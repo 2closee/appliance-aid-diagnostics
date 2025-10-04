@@ -36,12 +36,12 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log('Starting repair center application submission...');
     
-    // Debug: Log environment setup
+    // Use SERVICE_ROLE_KEY to bypass RLS for application submissions
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     console.log('Supabase URL:', supabaseUrl);
-    console.log('Using anon key (first 20 chars):', supabaseKey?.substring(0, 20));
-    console.log('Anon key exists:', !!supabaseKey);
+    console.log('Using service role key (first 20 chars):', supabaseKey?.substring(0, 20));
+    console.log('Service role key exists:', !!supabaseKey);
     
     const applicationData: ApplicationData = await req.json();
     
@@ -109,7 +109,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Creating new application for email:', applicationData.email);
     console.log('Application data:', JSON.stringify(applicationData, null, 2));
     
-    const { data: newApplication, error: insertError } = await supabase
+    // Try insert without select first to isolate the issue
+    const { data: insertData, error: insertError } = await supabase
       .from('repair_center_applications')
       .insert({
         email: applicationData.email,
@@ -131,9 +132,10 @@ const handler = async (req: Request): Promise<Response> => {
         certifications: applicationData.certifications || null,
         description: applicationData.description || null,
         status: 'pending'
-      })
-      .select()
-      .single();
+      });
+
+    console.log('Insert result - data:', insertData);
+    console.log('Insert result - error:', insertError);
 
     if (insertError) {
       console.error('Insert error:', insertError);
@@ -160,7 +162,9 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ 
           success: false,
-          message: "Failed to submit application. Please try again." 
+          message: "Failed to submit application. Please try again.",
+          error: insertError.message,
+          code: insertError.code
         }),
         { 
           status: 500,
@@ -172,14 +176,29 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('Application created successfully:', newApplication.id);
+    console.log('Application created successfully');
+
+    // Try to select the created application
+    let newApplication = null;
+    const { data: selectData, error: selectError } = await supabase
+      .from('repair_center_applications')
+      .select('id')
+      .eq('email', applicationData.email)
+      .single();
+    
+    if (selectError) {
+      console.log('Select error (non-fatal):', selectError);
+    } else {
+      newApplication = selectData;
+    }
+
 
     // Return success
     return new Response(
       JSON.stringify({
         success: true,
         message: "Application submitted successfully! Our team will review your application within 24-48 hours.",
-        applicationId: newApplication.id
+        applicationId: newApplication?.id || 'pending'
       }),
       {
         status: 200,
