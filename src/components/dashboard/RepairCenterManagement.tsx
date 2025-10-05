@@ -15,15 +15,18 @@ import {
   Clock,
   Users,
   Settings,
-  Play
+  Play,
+  BarChart3
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import CenterPerformance from "./CenterPerformance";
 
 const RepairCenterManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedCenter, setSelectedCenter] = useState<any>(null);
+  const [performanceCenter, setPerformanceCenter] = useState<any>(null);
 
   // Fetch repair center applications (pending users) from repair_center_applications table
   const { data: pendingApplications, isLoading: loadingApplications } = useQuery({
@@ -622,20 +625,35 @@ const RepairCenterManagement = () => {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      // TODO: Add review functionality
-                      toast({
-                        title: "Review Feature",
-                        description: "Center review functionality will be implemented soon.",
-                      });
+                      setPerformanceCenter(selectedCenter);
+                      setSelectedCenter(null);
                     }}
                     className="flex items-center gap-2"
                   >
-                    <Eye className="h-4 w-4" />
-                    Review Performance
+                    <BarChart3 className="h-4 w-4" />
+                    View Performance
                   </Button>
                 </div>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Performance Analytics Dialog */}
+      {performanceCenter && (
+        <Dialog open={!!performanceCenter} onOpenChange={() => setPerformanceCenter(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Center Performance Analytics
+              </DialogTitle>
+            </DialogHeader>
+            <CenterPerformance 
+              centerId={performanceCenter.id} 
+              centerName={performanceCenter.name} 
+            />
           </DialogContent>
         </Dialog>
       )}
