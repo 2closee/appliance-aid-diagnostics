@@ -63,7 +63,7 @@ const RepairCenterAdmin = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: loginData.email,
         password: loginData.password,
       });
@@ -75,10 +75,45 @@ const RepairCenterAdmin = () => {
           variant: "destructive",
         });
       } else {
-        toast({
-          title: "Success",
-          description: "Welcome back to your repair center portal!",
-        });
+        // Check if user needs to change password
+        const forcePasswordChange = data.user?.user_metadata?.force_password_change;
+        
+        if (forcePasswordChange) {
+          // Prompt for password change
+          const newPassword = prompt("For security reasons, you must change your password.\n\nPlease enter a new password (minimum 8 characters):");
+          
+          if (newPassword && newPassword.length >= 8) {
+            const { error: updateError } = await supabase.auth.updateUser({
+              password: newPassword,
+              data: { force_password_change: false }
+            });
+            
+            if (updateError) {
+              toast({
+                title: "Password Change Failed",
+                description: updateError.message,
+                variant: "destructive",
+              });
+            } else {
+              toast({
+                title: "Password Changed Successfully",
+                description: "Welcome to your repair center portal!",
+              });
+            }
+          } else {
+            toast({
+              title: "Invalid Password",
+              description: "Password must be at least 8 characters long. Please try logging in again.",
+              variant: "destructive",
+            });
+            await supabase.auth.signOut();
+          }
+        } else {
+          toast({
+            title: "Success",
+            description: "Welcome back to your repair center portal!",
+          });
+        }
       }
     } catch (error) {
       toast({

@@ -25,32 +25,15 @@ const RepairCenterManagement = () => {
   const queryClient = useQueryClient();
   const [selectedCenter, setSelectedCenter] = useState<any>(null);
 
-  // Fetch repair center applications (pending users) with center details
+  // Fetch repair center applications (pending users) from repair_center_applications table
   const { data: pendingApplications, isLoading: loadingApplications } = useQuery({
     queryKey: ["pending-applications"],
     queryFn: async () => {
       console.log('Fetching pending applications...');
       const { data, error } = await supabase
-        .from("repair_center_staff")
-        .select(`
-          *,
-          repair_center:repair_center_id (
-            id,
-            name,
-            address,
-            phone,
-            email,
-            specialties,
-            cac_name,
-            cac_number,
-            tax_id,
-            years_of_experience,
-            number_of_staff,
-            status
-          )
-        `)
-        .eq("is_active", false)
-        .eq("is_owner", true)
+        .from("repair_center_applications")
+        .select("*")
+        .eq("status", "pending")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -92,66 +75,33 @@ const RepairCenterManagement = () => {
     return hasStaff && (!activeStaff || activeStaff.length === 0);
   }) || [];
 
-  // Approve repair center application (NO assignment - business already has account)
+  // Approve repair center application - create account with temp password
   const approveApplication = useMutation({
-    mutationFn: async ({ staffId, centerId, email, name, centerName }: { 
-      staffId: string, 
-      centerId: number, 
+    mutationFn: async ({ applicationId, email, fullName, businessName }: { 
+      applicationId: string,
       email: string, 
-      name: string, 
-      centerName: string 
+      fullName: string, 
+      businessName: string 
     }) => {
-      console.log('Approving application:', staffId);
+      console.log('Approving application:', applicationId);
       
-      // Activate the staff member
-      const { error: staffError } = await supabase
-        .from("repair_center_staff")
-        .update({ is_active: true })
-        .eq("id", staffId);
+      // Call edge function to approve application and send credentials
+      const { data, error } = await supabase.functions.invoke("approve-repair-center-application", {
+        body: {
+          applicationId,
+          email,
+          fullName,
+          businessName
+        }
+      });
 
-      if (staffError) {
-        console.error('Staff activation error:', staffError);
-        throw staffError;
-      }
-
-      // Update repair center status to active
-      const { error: centerError } = await supabase
-        .from("Repair Center")
-        .update({ status: 'active' })
-        .eq("id", centerId);
-
-      if (centerError) {
-        console.error('Center activation error:', centerError);
-        throw centerError;
+      if (error) {
+        console.error('Approval error:', error);
+        throw error;
       }
 
       console.log('Application approved successfully');
-
-      // Send approval email
-      try {
-        console.log('Sending approval email to:', email);
-        const { error: emailError } = await supabase.functions.invoke("send-confirmation-email", {
-          body: {
-            to: email,
-            type: "approval",
-            data: {
-              name: name,
-              businessName: centerName
-            }
-          }
-        });
-
-        if (emailError) {
-          console.error("Approval email failed:", emailError);
-        } else {
-          console.log('Approval email sent successfully');
-        }
-      } catch (emailError) {
-        console.error("Email function error:", emailError);
-        // Don't fail the whole operation if email fails
-      }
-
-      return { staffId, centerId };
+      return data;
     },
     onSuccess: () => {
       toast({
@@ -173,38 +123,24 @@ const RepairCenterManagement = () => {
 
   // Reject repair center application
   const rejectApplication = useMutation({
-    mutationFn: async ({ staffId, centerId, email, name, centerName }: { 
-      staffId: string, 
-      centerId: number, 
+    mutationFn: async ({ applicationId, email, fullName, businessName }: { 
+      applicationId: string,
       email: string, 
-      name: string, 
-      centerName: string 
+      fullName: string, 
+      businessName: string 
     }) => {
-      console.log('Rejecting application:', staffId);
+      console.log('Rejecting application:', applicationId);
       
-      // Delete the staff record
-      const { error: staffError } = await supabase
-        .from("repair_center_staff")
-        .delete()
-        .eq("id", staffId);
-
-      if (staffError) {
-        console.error('Staff deletion error:', staffError);
-        throw staffError;
-      }
-
-      // Update repair center status to rejected
-      const { error: centerError } = await supabase
-        .from("Repair Center")
+      // Update application status to rejected
+      const { error } = await supabase
+        .from("repair_center_applications")
         .update({ status: 'rejected' })
-        .eq("id", centerId);
+        .eq("id", applicationId);
 
-      if (centerError) {
-        console.error('Center rejection error:', centerError);
-        throw centerError;
+      if (error) {
+        console.error('Rejection error:', error);
+        throw error;
       }
-
-      console.log('Application rejected successfully');
 
       // Send rejection email
       try {
@@ -214,23 +150,20 @@ const RepairCenterManagement = () => {
             to: email,
             type: "rejection",
             data: {
-              name: name,
-              businessName: centerName
+              name: fullName,
+              businessName: businessName
             }
           }
         });
 
         if (emailError) {
           console.error("Rejection email failed:", emailError);
-        } else {
-          console.log('Rejection email sent successfully');
         }
       } catch (emailError) {
         console.error("Email function error:", emailError);
-        // Don't fail the whole operation if email fails
       }
 
-      return staffId;
+      return applicationId;
     },
     onSuccess: () => {
       toast({
@@ -368,7 +301,7 @@ const RepairCenterManagement = () => {
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center gap-2">
                             <h3 className="font-medium">
-                              {application.repair_center?.name || `Application #${application.repair_center_id}`}
+                              {application.business_name}
                             </h3>
                             <Badge variant="outline">
                               <Clock className="h-3 w-3 mr-1" />
@@ -376,26 +309,25 @@ const RepairCenterManagement = () => {
                             </Badge>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-muted-foreground">
-                            <p><strong>Business:</strong> {application.repair_center?.name}</p>
-                            <p><strong>Email:</strong> {application.repair_center?.email}</p>
-                            <p><strong>Phone:</strong> {application.repair_center?.phone}</p>
-                            <p><strong>Address:</strong> {application.repair_center?.address}</p>
-                            <p><strong>Specialties:</strong> {application.repair_center?.specialties}</p>
+                            <p><strong>Contact:</strong> {application.full_name}</p>
+                            <p><strong>Email:</strong> {application.email}</p>
+                            <p><strong>Phone:</strong> {application.phone}</p>
+                            <p><strong>Address:</strong> {application.address}, {application.city}, {application.state}</p>
+                            <p><strong>Specialties:</strong> {application.specialties}</p>
                             <p><strong>Applied:</strong> {new Date(application.created_at).toLocaleDateString()}</p>
-                            <p><strong>Years Experience:</strong> {application.repair_center?.years_of_experience}</p>
-                            <p><strong>Staff Count:</strong> {application.repair_center?.number_of_staff}</p>
-                            <p><strong>CAC Number:</strong> {application.repair_center?.cac_number}</p>
+                            <p><strong>Years in Business:</strong> {application.years_in_business}</p>
+                            <p><strong>Staff Count:</strong> {application.number_of_staff}</p>
+                            <p><strong>CAC Number:</strong> {application.cac_number}</p>
                           </div>
                         </div>
                         <div className="flex gap-2">
                           <Button
                             size="sm"
                             onClick={() => approveApplication.mutate({
-                              staffId: application.id,
-                              centerId: application.repair_center_id,
-                              email: application.repair_center?.email || '',
-                              name: application.repair_center?.name || '',
-                              centerName: application.repair_center?.name || ''
+                              applicationId: application.id,
+                              email: application.email,
+                              fullName: application.full_name,
+                              businessName: application.business_name
                             })}
                             disabled={approveApplication.isPending}
                             className="flex items-center gap-1"
@@ -407,11 +339,10 @@ const RepairCenterManagement = () => {
                             size="sm"
                             variant="destructive"
                             onClick={() => rejectApplication.mutate({
-                              staffId: application.id,
-                              centerId: application.repair_center_id,
-                              email: application.repair_center?.email || '',
-                              name: application.repair_center?.name || '',
-                              centerName: application.repair_center?.name || ''
+                              applicationId: application.id,
+                              email: application.email,
+                              fullName: application.full_name,
+                              businessName: application.business_name
                             })}
                             disabled={rejectApplication.isPending}
                             className="flex items-center gap-1"
