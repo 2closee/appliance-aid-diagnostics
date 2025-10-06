@@ -127,39 +127,73 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Sending approval email with credentials...');
     
     try {
-      await resend.emails.send({
+      const emailResult = await resend.emails.send({
         from: "Fixbudi <onboarding@resend.dev>",
         to: [email],
         subject: "Your Repair Center Application Has Been Approved!",
         html: `
-          <h1>Congratulations, ${fullName}!</h1>
-          <p>Your repair center application for <strong>${businessName}</strong> has been approved!</p>
-          
-          <h2>Your Login Credentials</h2>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Temporary Password:</strong> ${tempPassword}</p>
-          
-          <p><strong>IMPORTANT:</strong> For security reasons, you will be required to change this password when you first log in.</p>
-          
-          <p>You can access your repair center admin portal at:</p>
-          <p><a href="${Deno.env.get('SUPABASE_URL')?.replace('https://', 'https://id-preview--')}/repair-center-admin">Repair Center Portal</a></p>
-          
-          <h3>Next Steps:</h3>
-          <ol>
-            <li>Log in using the credentials above</li>
-            <li>Change your password when prompted</li>
-            <li>Complete your center profile</li>
-            <li>Start receiving repair requests!</li>
-          </ol>
-          
-          <p>Welcome to the Fixbudi network!</p>
-          <p>Best regards,<br>The Fixbudi Team</p>
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Application Approved</title>
+          </head>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
+              <h1 style="color: #2563eb; margin-top: 0;">Congratulations, ${fullName}!</h1>
+              <p style="font-size: 16px;">Your repair center application for <strong>${businessName}</strong> has been approved!</p>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
+                <h2 style="color: #1e40af; margin-top: 0;">Your Login Credentials</h2>
+                <p style="margin: 10px 0;"><strong>Email:</strong> ${email}</p>
+                <p style="margin: 10px 0;"><strong>Temporary Password:</strong> <code style="background-color: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-size: 14px;">${tempPassword}</code></p>
+              </div>
+              
+              <div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+                <p style="margin: 0; color: #92400e;"><strong>⚠️ IMPORTANT:</strong> For security reasons, you will be required to change this password when you first log in.</p>
+              </div>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${supabaseUrl.replace('.supabase.co', '.lovable.app')}/repair-center-admin" 
+                   style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                  Access Your Portal
+                </a>
+              </div>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #1e40af; margin-top: 0;">Next Steps:</h3>
+                <ol style="margin: 0; padding-left: 20px;">
+                  <li style="margin: 8px 0;">Log in using the credentials above</li>
+                  <li style="margin: 8px 0;">Change your password when prompted</li>
+                  <li style="margin: 8px 0;">Complete your center profile</li>
+                  <li style="margin: 8px 0;">Start receiving repair requests!</li>
+                </ol>
+              </div>
+              
+              <p style="text-align: center; color: #6b7280; margin-top: 30px;">
+                Welcome to the Fixbudi network!<br>
+                <strong>The Fixbudi Team</strong>
+              </p>
+            </div>
+          </body>
+          </html>
         `,
       });
-      console.log('Approval email sent successfully');
-    } catch (emailError) {
-      console.error("Email sending failed:", emailError);
-      // Don't fail the whole operation if email fails
+      
+      console.log('Approval email sent successfully. Result:', JSON.stringify(emailResult));
+      
+      if (emailResult.error) {
+        console.error('Resend API returned error:', emailResult.error);
+        throw new Error(`Email sending failed: ${emailResult.error.message || 'Unknown error'}`);
+      }
+      
+    } catch (emailError: any) {
+      console.error("Email sending failed with error:", emailError);
+      console.error("Error details:", JSON.stringify(emailError, null, 2));
+      
+      // Throw error so the frontend knows email failed
+      throw new Error(`Failed to send approval email: ${emailError.message || 'Please verify your Resend domain at https://resend.com/domains'}`);
     }
 
     return new Response(
