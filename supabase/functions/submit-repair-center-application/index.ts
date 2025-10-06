@@ -77,32 +77,58 @@ const handler = async (req: Request): Promise<Response> => {
       .from('repair_center_applications')
       .select('id, status, business_name')
       .eq('email', applicationData.email)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (checkError) {
       console.error('Error checking existing application:', checkError);
-      // Continue anyway - insert will fail if duplicate due to unique constraint
+      // Continue anyway - will handle duplicates below
     }
 
-    // If application exists, return success with helpful message
+    // Handle existing applications based on their status
     if (existing) {
-      console.log('Application already exists for email:', applicationData.email);
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: "Application already submitted. Our team will review it shortly.",
-          applicationId: existing.id,
-          status: existing.status,
-          businessName: existing.business_name
-        }),
-        { 
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders,
+      console.log('Found existing application for email:', applicationData.email, 'Status:', existing.status);
+      
+      if (existing.status === 'pending') {
+        // Prevent duplicate pending applications
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "You have a pending application under review. Our team will contact you within 24-48 hours.",
+            applicationId: existing.id,
+            status: existing.status,
+            businessName: existing.business_name
+          }),
+          { 
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders,
+            }
           }
-        }
-      );
+        );
+      } else if (existing.status === 'approved') {
+        // Already approved
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Your business is already registered in our system. Please check your email for login credentials.",
+            applicationId: existing.id,
+            status: existing.status,
+            businessName: existing.business_name
+          }),
+          { 
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders,
+            }
+          }
+        );
+      }
+      // If rejected, allow resubmission (continue to insert)
+      console.log('Previous application was rejected, allowing resubmission');
     }
 
     // Insert new application
@@ -140,13 +166,13 @@ const handler = async (req: Request): Promise<Response> => {
     if (insertError) {
       console.error('Insert error:', insertError);
       
-      // Handle duplicate email (in case of race condition)
+      // Handle duplicate email for pending application (unique index violation)
       if (insertError.code === '23505') { // PostgreSQL unique constraint violation
-        console.log('Duplicate detected via constraint, returning success');
+        console.log('Duplicate pending application detected via constraint');
         return new Response(
           JSON.stringify({
             success: true,
-            message: "Application already submitted. Our team will review it shortly."
+            message: "You have a pending application under review. Our team will contact you within 24-48 hours."
           }),
           { 
             status: 200,
