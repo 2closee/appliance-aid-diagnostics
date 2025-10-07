@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Diagnostic from "./pages/Diagnostic";
 import RepairCenters from "./pages/RepairCenters";
 import PickupRequest from "./pages/PickupRequest";
+import PickupSelection from "./pages/PickupSelection";
 import RepairJobs from "./pages/RepairJobs";
 import RepairJobDetail from "./pages/RepairJobDetail";
 import RevenueAnalytics from "./pages/RevenueAnalytics";
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/diagnostic" element={<Diagnostic />} />
             <Route path="/repair-centers" element={<RepairCenters />} />
+            <Route path="/pickup-selection" element={<PickupSelection />} />
             <Route path="/pickup-request" element={<PickupRequest />} />
             <Route path="/repair-jobs" element={<RepairJobs />} />
             <Route path="/repair-jobs/:id" element={<RepairJobDetail />} />

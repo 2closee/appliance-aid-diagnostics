@@ -12,7 +12,8 @@ import {
   LogOut,
   Wrench,
   Moon,
-  Sun
+  Sun,
+  Settings
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,7 +31,7 @@ const Navigation = () => {
     ...(userRole === 'customer' || !user ? [
       { path: "/diagnostic", label: "AI Diagnostic", icon: Bot },
       { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
-      { path: "/pickup-request", label: "Pickup Request", icon: Mail },
+      { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },
     ] : []),
   ];
 
@@ -77,6 +78,14 @@ const Navigation = () => {
                 </Button>
               </Link>
             ))}
+            {!user && (
+              <Link to="/repair-center-admin">
+                <Button variant="secondary" className="flex items-center space-x-2">
+                  <Settings className="h-4 w-4" />
+                  <span>Repair Center</span>
+                </Button>
+              </Link>
+            )}
             {user ? (
               <Button
                 variant="ghost"
@@ -118,6 +127,14 @@ const Navigation = () => {
                 </Button>
               </Link>
             ))}
+            {!user && (
+              <Link to="/repair-center-admin" onClick={() => setIsMenuOpen(false)}>
+                <Button variant="secondary" className="w-full justify-start flex items-center space-x-2">
+                  <Settings className="h-4 w-4" />
+                  <span>Repair Center Portal</span>
+                </Button>
+              </Link>
+            )}
             {user ? (
               <Button
                 variant="ghost"

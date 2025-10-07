@@ -94,7 +94,15 @@ const PickupRequest = () => {
         email: user.email || '',
       }));
     }
-  }, [user]);
+    
+    // Pre-select repair center if passed via state
+    if (selectedCenter) {
+      setFormData(prev => ({ 
+        ...prev, 
+        repairCenter: selectedCenter.id.toString() 
+      }));
+    }
+  }, [user, selectedCenter]);
 
   const fetchRepairCenters = async () => {
     try {
@@ -104,11 +112,6 @@ const PickupRequest = () => {
 
       if (error) throw error;
       setRepairCenters(data || []);
-      
-      // Set selected center if passed from repair centers page
-      if (selectedCenter) {
-        setFormData(prev => ({ ...prev, repairCenter: selectedCenter.id.toString() }));
-      }
     } catch (error) {
       console.error("Error fetching repair centers:", error);
     }

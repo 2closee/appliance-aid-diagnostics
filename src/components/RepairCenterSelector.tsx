@@ -214,14 +214,10 @@ const RepairCenterSelector = ({ onSelectCenter, onBack }: RepairCenterSelectorPr
 
         {/* Call to Action */}
         <div className="bg-gradient-to-r from-primary/5 to-accent/5 p-4 lg:p-6 rounded-lg border border-primary/20">
-          <h3 className="text-lg font-semibold mb-2">Need a Pickup Instead?</h3>
+          <h3 className="text-lg font-semibold mb-2">Selected a Center?</h3>
           <p className="text-muted-foreground text-sm mb-4">
-            Can't visit a repair center? Schedule a pickup service and we'll come to you.
+            Choose a repair center above to schedule your device pickup.
           </p>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Truck className="h-4 w-4" />
-            Schedule Pickup
-          </Button>
         </div>
       </CardContent>
     </Card>
