@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Building, LogOut, Shield, Mail } from "lucide-react";
 import RepairCenterDashboard from '@/components/dashboard/RepairCenterDashboard';
 import { StaffManagement } from '@/components/StaffManagement';
+import { PasswordChangeDialog } from '@/components/PasswordChangeDialog';
 
 const RepairCenterAdmin = () => {
   const { toast } = useToast();
@@ -34,6 +35,7 @@ const RepairCenterAdmin = () => {
   // Check if user is already a repair center staff
   const [isRepairCenterStaff, setIsRepairCenterStaff] = useState(false);
   const [repairCenterInfo, setRepairCenterInfo] = useState<any>(null);
+  const [showPasswordChangeDialog, setShowPasswordChangeDialog] = useState(false);
 
   useEffect(() => {
     const checkRepairCenterStatus = async () => {
@@ -79,35 +81,7 @@ const RepairCenterAdmin = () => {
         const forcePasswordChange = data.user?.user_metadata?.force_password_change;
         
         if (forcePasswordChange) {
-          // Prompt for password change
-          const newPassword = prompt("For security reasons, you must change your password.\n\nPlease enter a new password (minimum 8 characters):");
-          
-          if (newPassword && newPassword.length >= 8) {
-            const { error: updateError } = await supabase.auth.updateUser({
-              password: newPassword,
-              data: { force_password_change: false }
-            });
-            
-            if (updateError) {
-              toast({
-                title: "Password Change Failed",
-                description: updateError.message,
-                variant: "destructive",
-              });
-            } else {
-              toast({
-                title: "Password Changed Successfully",
-                description: "Welcome to your repair center portal!",
-              });
-            }
-          } else {
-            toast({
-              title: "Invalid Password",
-              description: "Password must be at least 8 characters long. Please try logging in again.",
-              variant: "destructive",
-            });
-            await supabase.auth.signOut();
-          }
+          setShowPasswordChangeDialog(true);
         } else {
           toast({
             title: "Success",
@@ -286,6 +260,33 @@ const RepairCenterAdmin = () => {
     }
   };
 
+  const handlePasswordChange = async (newPassword: string) => {
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword,
+      data: { force_password_change: false }
+    });
+    
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+    
+    setShowPasswordChangeDialog(false);
+    toast({
+      title: "Password Changed Successfully",
+      description: "Welcome to your repair center portal!",
+    });
+  };
+
+  const handlePasswordChangeCancel = async () => {
+    setShowPasswordChangeDialog(false);
+    await supabase.auth.signOut();
+    toast({
+      title: "Password Change Cancelled",
+      description: "You must change your password to access the portal. Please try logging in again.",
+      variant: "destructive",
+    });
+  };
+
   const handleSignOut = async () => {
     await signOut();
     setIsRepairCenterStaff(false);
@@ -400,8 +401,15 @@ const RepairCenterAdmin = () => {
 
   // Login/Signup form for non-authenticated users
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-md mx-auto space-y-8">
+    <>
+      <PasswordChangeDialog
+        open={showPasswordChangeDialog}
+        onPasswordChange={handlePasswordChange}
+        onCancel={handlePasswordChangeCancel}
+      />
+      
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-md mx-auto space-y-8">
         <div className="text-center">
           <Building className="h-12 w-12 text-primary mx-auto mb-4" />
           <h1 className="text-3xl font-bold">Repair Center Portal</h1>
@@ -537,6 +545,7 @@ const RepairCenterAdmin = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
