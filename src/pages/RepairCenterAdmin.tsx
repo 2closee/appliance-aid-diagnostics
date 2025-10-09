@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Building, LogOut, Shield, Mail } from "lucide-react";
+import { Building, LogOut, Shield, Mail, AlertCircle } from "lucide-react";
 import RepairCenterDashboard from '@/components/dashboard/RepairCenterDashboard';
 import { StaffManagement } from '@/components/StaffManagement';
 import { PasswordChangeDialog } from '@/components/PasswordChangeDialog';
@@ -31,11 +33,23 @@ const RepairCenterAdmin = () => {
     taxId: ""
   });
   const [isSigningUp, setIsSigningUp] = useState(false);
-
-  // Check if user is already a repair center staff
   const [isRepairCenterStaff, setIsRepairCenterStaff] = useState(false);
   const [repairCenterInfo, setRepairCenterInfo] = useState<any>(null);
   const [showPasswordChangeDialog, setShowPasswordChangeDialog] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [isPasswordReset, setIsPasswordReset] = useState(false);
+  const [resetError, setResetError] = useState("");
+
+  useEffect(() => {
+    // Check for password reset token in URL
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const type = hashParams.get('type');
+    
+    if (type === 'recovery') {
+      setIsPasswordReset(true);
+    }
+  }, []);
 
   useEffect(() => {
     const checkRepairCenterStatus = async () => {
@@ -73,21 +87,22 @@ const RepairCenterAdmin = () => {
       if (error) {
         toast({
           title: "Login Failed",
-          description: error.message,
+          description: "Invalid credentials. Try using 'Forgot Password' if you can't remember your password.",
           variant: "destructive",
         });
+        return;
+      }
+
+      // Check if user needs to change password
+      const forcePasswordChange = data.user?.user_metadata?.force_password_change;
+      
+      if (forcePasswordChange) {
+        setShowPasswordChangeDialog(true);
       } else {
-        // Check if user needs to change password
-        const forcePasswordChange = data.user?.user_metadata?.force_password_change;
-        
-        if (forcePasswordChange) {
-          setShowPasswordChangeDialog(true);
-        } else {
-          toast({
-            title: "Success",
-            description: "Welcome back to your repair center portal!",
-          });
-        }
+        toast({
+          title: "Success",
+          description: "Welcome back to your repair center portal!",
+        });
       }
     } catch (error) {
       toast({
@@ -95,6 +110,61 @@ const RepairCenterAdmin = () => {
         description: "An unexpected error occurred",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError("");
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        forgotPasswordEmail,
+        {
+          redirectTo: `${window.location.origin}/repair-center-admin`,
+        }
+      );
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Password reset link sent to your email!",
+      });
+      setShowForgotPassword(false);
+      setForgotPasswordEmail("");
+    } catch (error: any) {
+      setResetError(error.message);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePasswordReset = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Password updated successfully! Logging you in...",
+      });
+
+      setIsPasswordReset(false);
+      window.location.hash = '';
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 
@@ -139,7 +209,7 @@ const RepairCenterAdmin = () => {
       let session = null;
 
       while (retries < maxRetries && !session) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+        await new Promise(resolve => setTimeout(resolve, 1000));
         const { data: sessionData } = await supabase.auth.getSession();
         session = sessionData.session;
         retries++;
@@ -150,7 +220,33 @@ const RepairCenterAdmin = () => {
         console.warn('No active session found, proceeding without auth (will use RLS policy)');
       }
 
-      // Step 2: Create a basic repair center entry for quick applications
+      // Step 2: Check if the user already exists in the repair_center_staff table
+      const { data: existingStaff, error: existingStaffError } = await supabase
+        .from("repair_center_staff")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (existingStaffError) {
+        console.error("Error checking existing staff:", existingStaffError);
+        toast({
+          title: "Signup Error",
+          description: "Failed to check existing staff record. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (existingStaff) {
+        console.warn("User already exists as repair center staff.");
+        toast({
+          title: "Existing Account",
+          description: "This email is already associated with a repair center account. Please log in.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       console.log('Step 2: Creating repair center record...');
       const { data: centerData, error: centerError } = await supabase
         .from("Repair Center")
@@ -170,7 +266,6 @@ const RepairCenterAdmin = () => {
 
       if (centerError) {
         console.error("Center creation error:", centerError);
-        // Enhanced error handling with specific messages
         let errorMessage = "Failed to create repair center record. Please try again.";
         if (centerError.code === "42501") {
           errorMessage = "Authentication issue. Please try refreshing the page and submitting again.";
@@ -188,14 +283,13 @@ const RepairCenterAdmin = () => {
 
       console.log('Repair center created successfully:', centerData.id);
 
-      // Step 3: Create repair center staff record (initially inactive, pending approval)
       console.log('Step 3: Creating staff record...');
       const { error: staffError } = await supabase
         .from("repair_center_staff")
         .insert({
           user_id: userId,
           repair_center_id: centerData.id,
-          is_active: false, // Pending approval
+          is_active: false,
           is_owner: true,
           role: 'owner'
         });
@@ -207,7 +301,6 @@ const RepairCenterAdmin = () => {
 
       console.log('Staff record created successfully');
 
-      // Step 4: Send confirmation email
       console.log('Step 4: Sending confirmation email...');
       try {
         const { error: emailError } = await supabase.functions.invoke("send-confirmation-email", {
@@ -228,7 +321,6 @@ const RepairCenterAdmin = () => {
         }
       } catch (emailError) {
         console.error("Email function error:", emailError);
-        // Don't fail the whole operation if email fails
       }
 
       toast({
@@ -293,7 +385,32 @@ const RepairCenterAdmin = () => {
     setRepairCenterInfo(null);
   };
 
-  // If user is logged in and is repair center staff, show dashboard
+  // If user is resetting password, show reset form
+  if (isPasswordReset) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex items-center justify-center p-6">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle>Set Your New Password</CardTitle>
+            <CardDescription>
+              Create a new password to access your repair center portal
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PasswordChangeDialog
+              open={true}
+              onPasswordChange={handlePasswordReset}
+              onCancel={() => {
+                setIsPasswordReset(false);
+                window.location.hash = '';
+              }}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (user && isRepairCenterStaff && repairCenterInfo) {
     return (
       <div className="min-h-screen bg-background p-6">
@@ -367,7 +484,6 @@ const RepairCenterAdmin = () => {
     );
   }
 
-  // If user is logged in but not repair center staff
   if (user && !isLoading && !isRepairCenterStaff) {
     return (
       <div className="min-h-screen bg-background p-6">
@@ -399,7 +515,6 @@ const RepairCenterAdmin = () => {
     );
   }
 
-  // Login/Signup form for non-authenticated users
   return (
     <>
       <PasswordChangeDialog
@@ -456,6 +571,14 @@ const RepairCenterAdmin = () => {
                   <Button type="submit" className="w-full">
                     Login to Portal
                   </Button>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="w-full"
+                    onClick={() => setShowForgotPassword(true)}
+                  >
+                    Forgot Password?
+                  </Button>
                 </form>
               </CardContent>
             </Card>
@@ -465,12 +588,12 @@ const RepairCenterAdmin = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Quick Application</CardTitle>
-                <p className="text-muted-foreground text-sm">
+                <CardDescription>
                   For a detailed application with more fields, use our{" "}
                   <Link to="/repair-center-application" className="text-primary hover:underline">
                     full application form
                   </Link>
-                </p>
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSignup} className="space-y-4">
@@ -498,16 +621,17 @@ const RepairCenterAdmin = () => {
                     <Label htmlFor="phone">Phone Number</Label>
                     <Input
                       id="phone"
+                      type="tel"
                       value={signupData.phone}
                       onChange={(e) => setSignupData({...signupData, phone: e.target.value})}
-                      placeholder="+234 xxx xxx xxxx"
+                      placeholder="+1234567890"
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="signupEmail">Email</Label>
+                    <Label htmlFor="signup-email">Email</Label>
                     <Input
-                      id="signupEmail"
+                      id="signup-email"
                       type="email"
                       value={signupData.email}
                       onChange={(e) => setSignupData({...signupData, email: e.target.value})}
@@ -516,9 +640,9 @@ const RepairCenterAdmin = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="signupPassword">Password</Label>
+                    <Label htmlFor="signup-password">Password</Label>
                     <Input
-                      id="signupPassword"
+                      id="signup-password"
                       type="password"
                       value={signupData.password}
                       onChange={(e) => setSignupData({...signupData, password: e.target.value})}
@@ -527,24 +651,51 @@ const RepairCenterAdmin = () => {
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={isSigningUp}>
-                    {isSigningUp ? "Submitting Quick Application..." : "Submit Quick Application"}
+                    {isSigningUp ? "Submitting..." : "Submit Application"}
                   </Button>
                 </form>
-                <p className="text-xs text-muted-foreground mt-4">
-                  Your application will be reviewed by our admin team. You'll receive access once approved.
-                </p>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-
-        <div className="text-center">
-          <Button onClick={() => navigate("/")} variant="outline">
-            Back to Main Site
-          </Button>
         </div>
       </div>
-    </div>
+
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Your Password</DialogTitle>
+            <DialogDescription>
+              Enter your email address and we'll send you a link to reset your password.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div>
+              <Label htmlFor="reset-email">Email</Label>
+              <Input
+                id="reset-email"
+                type="email"
+                value={forgotPasswordEmail}
+                onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
+              />
+            </div>
+            {resetError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{resetError}</AlertDescription>
+              </Alert>
+            )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowForgotPassword(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Send Reset Link</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
