@@ -56,7 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
       type: 'recovery',
       email: email,
       options: {
-        redirectTo: `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/repair-center-admin`,
+        redirectTo: 'https://fixbudi.com/repair-center-admin',
       }
     });
 
