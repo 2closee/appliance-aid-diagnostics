@@ -153,10 +153,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Sending approval email...');
     
     try {
-      // IMPORTANT: Change 'onboarding@resend.dev' to your verified domain email (e.g., 'noreply@yourdomain.com')
-      // Verify your domain at: https://resend.com/domains
       const emailResult = await resend.emails.send({
-        from: "Fixbudi <onboarding@resend.dev>",
+        from: "Fixbudi <noreply@fixbudi.com>",
         to: [email],
         subject: "Your Repair Center Application Has Been Approved!",
         html: isNewUser ? `
