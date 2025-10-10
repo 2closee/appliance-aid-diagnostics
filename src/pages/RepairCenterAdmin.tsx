@@ -118,14 +118,16 @@ const RepairCenterAdmin = () => {
     setResetError("");
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        forgotPasswordEmail,
-        {
-          redirectTo: `${window.location.origin}/repair-center-admin`,
-        }
-      );
+      // Use our custom edge function that sends emails via Resend
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email: forgotPasswordEmail }
+      });
 
       if (error) throw error;
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to send reset link");
+      }
 
       toast({
         title: "Success",
