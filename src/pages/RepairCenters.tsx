@@ -216,12 +216,23 @@ const RepairCenters = () => {
                       size="sm" 
                       onClick={(e) => {
                         e.stopPropagation();
+                        navigate('/repair-center-chat', { state: { selectedCenter: center } });
+                      }}
+                      className="flex-1"
+                      variant="secondary"
+                    >
+                      Chat
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
                         handleSchedulePickup(center);
                       }}
                       className="flex-1"
                     >
                       <ArrowRight className="h-4 w-4 mr-2" />
-                      Schedule Pickup
+                      Pickup
                     </Button>
                   </div>
                 </CardContent>
