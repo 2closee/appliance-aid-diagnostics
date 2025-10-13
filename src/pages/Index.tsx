@@ -476,31 +476,33 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        {/* Repair Center Portal */}
-        <Card className="shadow-medium animate-fade-in">
-          <CardContent className="p-6">
-            <div className="text-center space-y-4">
-              <div className="flex items-center justify-center mb-4">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <Settings className="h-8 w-8 text-primary" />
+        {/* Repair Center Portal - Only show to non-logged-in users */}
+        {!user && (
+          <Card className="shadow-medium animate-fade-in">
+            <CardContent className="p-6">
+              <div className="text-center space-y-4">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-3 bg-primary/10 rounded-lg">
+                    <Settings className="h-8 w-8 text-primary" />
+                  </div>
                 </div>
+                <h3 className="text-xl font-semibold">Repair Center Portal</h3>
+                <p className="text-muted-foreground">
+                  Are you a repair center owner? Access your admin dashboard to manage jobs, track performance, and grow your business.
+                </p>
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  onClick={() => navigate('/repair-center-admin')}
+                  className="w-full sm:w-auto"
+                >
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Repair Center Login
+                </Button>
               </div>
-              <h3 className="text-xl font-semibold">Repair Center Portal</h3>
-              <p className="text-muted-foreground">
-                Are you a repair center owner? Access your admin dashboard to manage jobs, track performance, and grow your business.
-              </p>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                onClick={() => navigate('/repair-center-admin')}
-                className="w-full sm:w-auto"
-              >
-                <LogIn className="mr-2 h-5 w-5" />
-                Repair Center Login
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
       </div>
     </div>
