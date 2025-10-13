@@ -20,6 +20,7 @@ import Auth from "./pages/Auth";
 import RepairCenterApplication from "./pages/RepairCenterApplication";
 import RepairCenterAdmin from "./pages/RepairCenterAdmin";
 import RepairCenterChat from "./pages/RepairCenterChat";
+import RepairCenterConversations from "./pages/RepairCenterConversations";
 import EmailVerification from "./pages/EmailVerification";
 import NotFound from "./pages/NotFound";
 
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/apply-repair-center" element={<RepairCenterApplication />} />
             <Route path="/repair-center-admin" element={<RepairCenterAdmin />} />
             <Route path="/repair-center-chat" element={<RepairCenterChat />} />
+            <Route path="/repair-center-conversations" element={<RepairCenterConversations />} />
             <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

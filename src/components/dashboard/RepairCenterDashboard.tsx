@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Clock, CheckCircle, AlertCircle, DollarSign, Users } from "lucide-react";
+import { Wrench, Clock, CheckCircle, AlertCircle, DollarSign, Users, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const RepairCenterDashboard = () => {
@@ -117,6 +117,12 @@ const RepairCenterDashboard = () => {
             </h1>
             <p className="text-muted-foreground mt-2">Manage your repair jobs and track performance</p>
           </div>
+          <Link to="/repair-center-conversations">
+            <Button variant="outline" className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4" />
+              Customer Conversations
+            </Button>
+          </Link>
         </div>
 
         {/* Stats Cards */}

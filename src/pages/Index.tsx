@@ -30,7 +30,7 @@ import Navigation from "@/components/Navigation";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, signOut, userRole } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
@@ -61,14 +61,18 @@ const Index = () => {
               Get instant troubleshooting, connect with verified repair centers, and schedule convenient pickup services.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={() => navigate('/diagnostic')} className="animate-float">
-                Start Diagnosis
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button variant="outline" size="lg" onClick={() => user ? navigate('/repair-centers') : navigate('/auth')}>
-                Find Repair Centers
-                <MapPin className="ml-2 h-5 w-5" />
-              </Button>
+              {(userRole === 'customer' || !user) && (
+                <>
+                  <Button size="lg" onClick={() => navigate('/diagnostic')} className="animate-float">
+                    Start Diagnosis
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                  <Button variant="outline" size="lg" onClick={() => user ? navigate('/repair-centers') : navigate('/auth')}>
+                    Find Repair Centers
+                    <MapPin className="ml-2 h-5 w-5" />
+                  </Button>
+                </>
+              )}
               {!user && (
                 <Button variant="secondary" size="lg" onClick={() => navigate('/apply-repair-center')}>
                   Join as Repair Center
