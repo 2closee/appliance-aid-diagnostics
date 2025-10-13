@@ -132,15 +132,15 @@ const Admin = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Settings className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">Fixbudi Admin Panel</h1>
+            <h1 className="text-3xl font-bold">Super Admin Panel - Fixbudi</h1>
           </div>
           <div className="flex gap-2">
             <Button onClick={handleSignOut} variant="outline">
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
-            <Button onClick={() => navigate("/")} variant="outline">
-              Back to App
+            <Button onClick={() => navigate("/dashboard")} variant="outline">
+              Back to Dashboard
             </Button>
           </div>
         </div>

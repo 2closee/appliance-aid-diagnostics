@@ -201,15 +201,18 @@ const AdminDashboard = () => {
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-muted-foreground mt-2">Monitor and manage the entire repair ecosystem</p>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+              <Shield className="h-8 w-8 text-primary" />
+              Super Admin Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-2">Full platform control - Monitor and manage the entire repair ecosystem</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link to="/revenue-analytics">
               <Button variant="outline">Revenue Analytics</Button>
             </Link>
             <Link to="/admin">
-              <Button>Admin Panel</Button>
+              <Button>Super Admin Panel</Button>
             </Link>
           </div>
         </div>

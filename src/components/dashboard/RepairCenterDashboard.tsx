@@ -112,10 +112,11 @@ const RepairCenterDashboard = () => {
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              {repairCenter?.name || 'Repair Center'} Dashboard
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+              <Wrench className="h-7 w-7 text-primary" />
+              {repairCenter?.name || 'Repair Center'} Portal
             </h1>
-            <p className="text-muted-foreground mt-2">Manage your repair jobs and track performance</p>
+            <p className="text-muted-foreground mt-2">Repair Center Admin - Manage your repair jobs and track performance</p>
           </div>
           <Link to="/repair-center-conversations">
             <Button variant="outline" className="flex items-center gap-2">

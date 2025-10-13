@@ -28,10 +28,15 @@ const Navigation = () => {
   const navItems = [
     { path: "/", label: "Home", icon: Home },
     ...(user ? [{ path: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] : []),
+    // Only show customer features for actual customers and logged-out users
     ...(userRole === 'customer' || !user ? [
       { path: "/diagnostic", label: "AI Diagnostic", icon: Bot },
       { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
       { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },
+    ] : []),
+    // Super Admin specific navigation
+    ...(userRole === 'admin' ? [
+      { path: "/admin", label: "Super Admin Panel", icon: Settings },
     ] : []),
   ];
 
@@ -78,11 +83,12 @@ const Navigation = () => {
                 </Button>
               </Link>
             ))}
+            {/* Only show Repair Center Portal link to non-logged-in users */}
             {!user && (
               <Link to="/repair-center-admin">
                 <Button variant="secondary" className="flex items-center space-x-2">
                   <Settings className="h-4 w-4" />
-                  <span>Repair Center</span>
+                  <span>Repair Center Portal</span>
                 </Button>
               </Link>
             )}
