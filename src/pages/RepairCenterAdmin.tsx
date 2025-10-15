@@ -365,6 +365,23 @@ const RepairCenterAdmin = () => {
     }
     
     setShowPasswordChangeDialog(false);
+    
+    // Re-check repair center staff status to see if they're now active
+    const { data: staffData, error } = await supabase
+      .from("repair_center_staff")
+      .select(`
+        *,
+        repair_center:repair_center_id("Repair Center"(*))
+      `)
+      .eq("user_id", user?.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (!error && staffData) {
+      setIsRepairCenterStaff(true);
+      setRepairCenterInfo(staffData);
+    }
+    
     toast({
       title: "Password Changed Successfully",
       description: "Welcome to your repair center portal!",
