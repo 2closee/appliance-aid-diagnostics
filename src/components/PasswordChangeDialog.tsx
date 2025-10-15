@@ -89,8 +89,8 @@ export function PasswordChangeDialog({
   const strength = getPasswordStrength();
 
   return (
-    <Dialog open={open} onOpenChange={onCancel}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
+      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Change Your Password</DialogTitle>
           <DialogDescription>

@@ -60,8 +60,25 @@ const handler = async (req: Request): Promise<Response> => {
     let isNewUser = false;
 
     if (existingUser) {
-      // User exists - send password reset email
-      console.log('User already exists, sending password reset email:', email);
+      // User exists - update metadata and send password reset email
+      console.log('User already exists, updating metadata and sending password reset email:', email);
+      
+      // Update user metadata to require password change
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        existingUser.id,
+        {
+          user_metadata: {
+            ...existingUser.user_metadata,
+            force_password_change: true,
+            business_name: businessName
+          }
+        }
+      );
+
+      if (updateError) {
+        console.error('User metadata update error:', updateError);
+        throw new Error(`Failed to update user metadata: ${updateError.message}`);
+      }
       
       const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
         redirectTo: `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/repair-center-admin`
