@@ -144,20 +144,47 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Repair center created:', centerData.id);
 
-    // Create staff record
-    const { error: staffError } = await supabaseAdmin
+    // Check if staff record already exists (from quick application)
+    const { data: existingStaff } = await supabaseAdmin
       .from("repair_center_staff")
-      .insert({
-        user_id: userData.user.id,
-        repair_center_id: centerData.id,
-        is_active: true,
-        is_owner: true,
-        role: 'owner'
-      });
+      .select("*")
+      .eq("user_id", userData.user.id)
+      .maybeSingle();
 
-    if (staffError) {
-      console.error('Staff creation error:', staffError);
-      throw new Error(`Failed to create staff record: ${staffError.message}`);
+    if (existingStaff) {
+      // Update existing staff record to link to new center and activate
+      console.log('Updating existing staff record:', existingStaff.id);
+      const { error: staffUpdateError } = await supabaseAdmin
+        .from("repair_center_staff")
+        .update({
+          repair_center_id: centerData.id,
+          is_active: true,
+          is_owner: true,
+          role: 'owner'
+        })
+        .eq("id", existingStaff.id);
+
+      if (staffUpdateError) {
+        console.error('Staff update error:', staffUpdateError);
+        throw new Error(`Failed to update staff record: ${staffUpdateError.message}`);
+      }
+    } else {
+      // Create new staff record
+      console.log('Creating new staff record for user:', userData.user.id);
+      const { error: staffError } = await supabaseAdmin
+        .from("repair_center_staff")
+        .insert({
+          user_id: userData.user.id,
+          repair_center_id: centerData.id,
+          is_active: true,
+          is_owner: true,
+          role: 'owner'
+        });
+
+      if (staffError) {
+        console.error('Staff creation error:', staffError);
+        throw new Error(`Failed to create staff record: ${staffError.message}`);
+      }
     }
 
     // Update application status
