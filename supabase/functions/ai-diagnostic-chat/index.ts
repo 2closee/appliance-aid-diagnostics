@@ -1,10 +1,22 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const requestSchema = z.object({
+  appliance: z.string().min(1).max(100),
+  initialDiagnosis: z.string().min(1).max(2000),
+  messages: z.array(z.object({
+    role: z.enum(['user', 'assistant', 'system']),
+    content: z.string().max(5000)
+  })).max(50),
+  attachments: z.any().optional()
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,7 +24,19 @@ serve(async (req) => {
   }
 
   try {
-    const { appliance, initialDiagnosis, messages, attachments } = await req.json();
+    const body = await req.json();
+    
+    // Validate input
+    const validation = requestSchema.safeParse(body);
+    if (!validation.success) {
+      console.error('Validation error:', validation.error);
+      return new Response(
+        JSON.stringify({ error: 'Invalid input data', details: validation.error.issues }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { appliance, initialDiagnosis, messages, attachments } = validation.data;
 
     const systemPrompt = `You are an expert diagnostic AI assistant for electronic devices. You are helping diagnose issues with a ${appliance}.
 

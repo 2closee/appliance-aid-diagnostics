@@ -1,10 +1,16 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema - max 25MB base64 audio (roughly 18MB original)
+const requestSchema = z.object({
+  audio: z.string().min(100).max(33554432) // ~25MB in base64
+});
 
 // Process base64 in chunks to prevent memory issues
 function processBase64Chunks(base64String: string, chunkSize = 32768) {
@@ -42,11 +48,19 @@ serve(async (req) => {
   }
 
   try {
-    const { audio } = await req.json();
+    const body = await req.json();
     
-    if (!audio) {
-      throw new Error('No audio data provided');
+    // Validate input
+    const validation = requestSchema.safeParse(body);
+    if (!validation.success) {
+      console.error('Validation error:', validation.error);
+      return new Response(
+        JSON.stringify({ error: 'Invalid audio data', details: validation.error.issues }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+    
+    const { audio } = validation.data;
 
     // Process audio in chunks
     const binaryAudio = processBase64Chunks(audio);

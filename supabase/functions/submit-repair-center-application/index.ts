@@ -1,10 +1,33 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const applicationSchema = z.object({
+  businessName: z.string().trim().min(2, "Business name required").max(200),
+  address: z.string().trim().min(5, "Address required").max(300),
+  city: z.string().trim().min(2, "City required").max(100),
+  state: z.string().trim().min(2, "State required").max(100),
+  zipCode: z.string().trim().regex(/^[0-9A-Za-z\s-]{3,10}$/, "Invalid zip code"),
+  phone: z.string().trim().regex(/^[\d\s()+.-]{7,20}$/, "Invalid phone number"),
+  email: z.string().trim().email("Invalid email").max(255),
+  operatingHours: z.string().trim().min(3, "Operating hours required").max(200),
+  specialties: z.string().trim().min(2, "Specialties required").max(500),
+  numberOfStaff: z.string().regex(/^\d+$/, "Must be a number"),
+  yearsInBusiness: z.string().regex(/^\d+$/, "Must be a number"),
+  cacName: z.string().trim().min(2, "CAC name required").max(200),
+  cacNumber: z.string().trim().min(2, "CAC number required").max(50),
+  taxId: z.string().trim().max(50).optional(),
+  website: z.string().trim().url("Invalid URL").max(255).optional().or(z.literal("")),
+  certifications: z.string().trim().max(1000).optional(),
+  description: z.string().trim().max(2000).optional(),
+  fullName: z.string().trim().min(2, "Full name required").max(200)
+});
 
 interface ApplicationData {
   businessName: string;
@@ -36,22 +59,17 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log('Starting repair center application submission...');
     
-    // Use SERVICE_ROLE_KEY to bypass RLS for application submissions
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    console.log('Supabase URL:', supabaseUrl);
-    console.log('Using service role key (first 20 chars):', supabaseKey?.substring(0, 20));
-    console.log('Service role key exists:', !!supabaseKey);
+    const body = await req.json();
     
-    const applicationData: ApplicationData = await req.json();
-    
-    // Validate required fields
-    if (!applicationData.email || !applicationData.fullName || !applicationData.businessName) {
-      console.error('Missing required fields');
+    // Validate input data
+    const validation = applicationSchema.safeParse(body);
+    if (!validation.success) {
+      console.error('Validation error:', validation.error.errors);
       return new Response(
         JSON.stringify({ 
           success: false,
-          message: "Email, name, and business name are required" 
+          message: "Invalid application data",
+          errors: validation.error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
         }),
         { 
           status: 400,
@@ -62,6 +80,14 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+    
+    const applicationData = validation.data;
+    
+    // Use SERVICE_ROLE_KEY to bypass RLS for application submissions
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    console.log('Supabase URL:', supabaseUrl);
+    console.log('Service role key exists:', !!supabaseKey);
     
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseKey);
