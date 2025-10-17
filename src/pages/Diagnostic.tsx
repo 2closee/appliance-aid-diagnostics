@@ -25,6 +25,8 @@ import AIChatInterface from "@/components/AIChatInterface";
 import RepairCenterChatInterface from "@/components/RepairCenterChatInterface";
 import { useAuth } from "@/hooks/useAuth";
 import RepairCenterSelector from "@/components/RepairCenterSelector";
+import { DiagnosticHistory } from "@/components/DiagnosticHistory";
+import { DiagnosticReport } from "@/components/DiagnosticReport";
 
 type ApplianceType = 'tv' | 'smartphone' | 'headphones' | 'monitor';
 type DiagnosticStep = {
@@ -49,6 +51,8 @@ const Diagnostic = () => {
   const [showChatOptions, setShowChatOptions] = useState(false);
   const [showRepairCenterSelector, setShowRepairCenterSelector] = useState(false);
   const [selectedRepairCenter, setSelectedRepairCenter] = useState<any>(null);
+  const [currentReport, setCurrentReport] = useState<any>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   const appliances = [
     { id: 'tv', name: 'TV', icon: Tv, description: 'Smart TV, LED, OLED' },
@@ -180,12 +184,13 @@ const Diagnostic = () => {
     setSelectedRepairCenter(null);
   };
 
-  const handleDiagnosisUpdate = (newDiagnosis: string, recommendations: string[]) => {
+  const handleDiagnosisUpdate = (newDiagnosis: string, report?: any) => {
     setDiagnosis({
-      type: 'hardware', // Assume hardware since AI determined need for update
+      type: 'hardware',
       message: newDiagnosis,
-      recommendations
+      recommendations: report?.recommendations || []
     });
+    if (report) setCurrentReport(report);
   };
 
   const progress = selectedAppliance ? ((currentStep + 1) / diagnosticFlow[selectedAppliance].length) * 100 : 0;
@@ -375,18 +380,19 @@ const Diagnostic = () => {
                     If this diagnosis doesn't cover your specific issues, get personalized assistance. 
                     You can upload videos, use voice commands, or describe your problems in detail.
                   </p>
-                  <div className="flex justify-center lg:justify-start">
+                  <div className="flex gap-2 justify-center lg:justify-start">
                     <Button 
-                      onClick={() => {
-                        console.log("Get Personalized Help clicked, current showChatOptions:", showChatOptions);
-                        console.log("selectedAppliance:", selectedAppliance);
-                        setShowChatOptions(true);
-                        console.log("After setting showChatOptions to true");
-                      }}
+                      onClick={() => setShowChatOptions(true)}
                       className="flex items-center gap-2"
                     >
                       <MessageCircle className="h-4 w-4" />
                       Get Personalized Help
+                    </Button>
+                    <Button 
+                      onClick={() => setShowHistory(!showHistory)}
+                      variant="outline"
+                    >
+                      {showHistory ? 'Hide' : 'View'} History
                     </Button>
                   </div>
                 </div>
@@ -468,6 +474,19 @@ const Diagnostic = () => {
                 initialDiagnosis={diagnosis.message || 'Initial diagnostic questions completed'}
                 onDiagnosisUpdate={handleDiagnosisUpdate}
               />
+
+              {currentReport && (
+                <DiagnosticReport
+                  appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
+                  diagnosis={currentReport.diagnosis}
+                  confidenceScore={currentReport.confidenceScore}
+                  recommendations={currentReport.recommendations}
+                  estimatedCost={currentReport.estimatedCost}
+                  recommendedParts={currentReport.recommendedParts}
+                  repairUrgency={currentReport.repairUrgency}
+                  isProfessionalRepairNeeded={currentReport.isProfessionalRepairNeeded}
+                />
+              )}
             </div>
           )}
 

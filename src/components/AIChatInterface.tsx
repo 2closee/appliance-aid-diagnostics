@@ -11,15 +11,16 @@ import {
   Bot, 
   User, 
   Loader2,
-  AlertCircle,
-  CheckCircle,
   Video,
-  AudioLines
+  AudioLines,
+  Camera,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import VoiceRecorder from './VoiceRecorder';
 import VideoUpload from './VideoUpload';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
@@ -27,21 +28,33 @@ interface Message {
   content: string;
   timestamp: Date;
   attachments?: {
-    type: 'video' | 'audio';
+    type: 'video' | 'audio' | 'image';
     url: string;
     name: string;
   }[];
+  metadata?: {
+    confidenceScore?: number;
+    estimatedCost?: { min?: number; max?: number };
+    recommendedParts?: any[];
+    repairUrgency?: string;
+  };
 }
 
 interface AIChatInterfaceProps {
   appliance: string;
+  applianceBrand?: string;
+  applianceModel?: string;
   initialDiagnosis: string;
-  onDiagnosisUpdate?: (newDiagnosis: string, recommendations: string[]) => void;
+  language?: string;
+  onDiagnosisUpdate?: (newDiagnosis: string, report?: any) => void;
 }
 
 const AIChatInterface: React.FC<AIChatInterfaceProps> = ({ 
-  appliance, 
-  initialDiagnosis, 
+  appliance,
+  applianceBrand,
+  applianceModel,
+  initialDiagnosis,
+  language = 'en',
   onDiagnosisUpdate 
 }) => {
   const [messages, setMessages] = useState<Message[]>([
@@ -55,7 +68,11 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [currentReport, setCurrentReport] = useState<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -79,10 +96,7 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
       .from('diagnostic-attachments')
       .upload(fileName, videoFile);
 
-    if (error) {
-      console.error('Error uploading video:', error);
-      throw error;
-    }
+    if (error) throw error;
 
     const { data: urlData } = supabase.storage
       .from('diagnostic-attachments')
@@ -98,10 +112,7 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
       .from('diagnostic-attachments')
       .upload(fileName, audioBlob);
 
-    if (error) {
-      console.error('Error uploading audio:', error);
-      throw error;
-    }
+    if (error) throw error;
 
     const { data: urlData } = supabase.storage
       .from('diagnostic-attachments')
@@ -112,7 +123,6 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
 
   const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
     try {
-      // Convert blob to base64
       const arrayBuffer = await audioBlob.arrayBuffer();
       const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
@@ -144,73 +154,111 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
     setIsLoading(true);
 
     try {
-      // Send message to AI for processing
+      // Convert image attachments to base64
+      const imageUrls = attachments
+        .filter(a => a.type === 'image')
+        .map(a => a.url);
+
       const { data, error } = await supabase.functions.invoke('ai-diagnostic-chat', {
         body: {
           appliance,
+          applianceBrand,
+          applianceModel,
           initialDiagnosis,
           messages: [...messages, userMessage].map(m => ({
             role: m.type === 'user' ? 'user' : 'assistant',
             content: m.content
           })),
-          attachments: attachments?.map(a => ({
-            type: a.type,
-            url: a.url,
-            name: a.name
-          }))
+          images: imageUrls.length > 0 ? imageUrls : undefined,
+          conversationId,
+          language
         }
       });
 
       if (error) throw error;
 
+      if (data.conversationId && !conversationId) {
+        setConversationId(data.conversationId);
+      }
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
         content: data.response,
-        timestamp: new Date()
+        timestamp: new Date(),
+        metadata: {
+          confidenceScore: data.confidenceScore,
+          estimatedCost: data.estimatedCost,
+          recommendedParts: data.recommendedParts,
+          repairUrgency: data.repairUrgency
+        }
       };
 
       setMessages(prev => [...prev, aiResponse]);
 
-      // Update diagnosis if AI provided new insights
-      if (data.updatedDiagnosis && onDiagnosisUpdate) {
-        onDiagnosisUpdate(data.updatedDiagnosis, data.recommendations || []);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'ai',
-        content: 'I apologize, but I encountered an error processing your message. Please try again.',
-        timestamp: new Date()
+      const report = {
+        diagnosis: data.updatedDiagnosis || initialDiagnosis,
+        confidenceScore: data.confidenceScore,
+        recommendations: data.recommendations,
+        estimatedCost: data.estimatedCost,
+        recommendedParts: data.recommendedParts,
+        repairUrgency: data.repairUrgency,
+        isProfessionalRepairNeeded: data.isProfessionalRepairNeeded
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setCurrentReport(report);
+
+      if (data.updatedDiagnosis && onDiagnosisUpdate) {
+        onDiagnosisUpdate(data.updatedDiagnosis, report);
+        toast({
+          title: "Diagnosis Updated",
+          description: `Confidence: ${Math.round((data.confidenceScore || 0.75) * 100)}%`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
+      setSelectedImages([]);
     }
   };
 
-  const handleTextSubmit = () => {
-    if (newMessage.trim() || selectedVideo) {
-      const attachments: Message['attachments'] = [];
-      
-      if (selectedVideo) {
-        // We'll upload the video when sending
-        handleSendMessage(newMessage, attachments);
-      } else {
-        handleSendMessage(newMessage);
+  const handleTextSubmit = async () => {
+    if (!newMessage.trim() && selectedImages.length === 0 && !selectedVideo) return;
+
+    const attachments: Message['attachments'] = [];
+
+    // Handle images
+    if (selectedImages.length > 0) {
+      for (const file of selectedImages) {
+        const reader = new FileReader();
+        const base64 = await new Promise<string>((resolve) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+        attachments.push({ type: 'image', url: base64, name: file.name });
       }
     }
+
+    // Handle video
+    if (selectedVideo) {
+      const videoUrl = await uploadVideo(selectedVideo);
+      attachments.push({ type: 'video', url: videoUrl, name: selectedVideo.name });
+      setSelectedVideo(null);
+    }
+
+    await handleSendMessage(newMessage, attachments);
   };
 
   const handleVoiceRecording = async (audioBlob: Blob) => {
     try {
       setIsLoading(true);
       
-      // Transcribe audio
       const transcription = await transcribeAudio(audioBlob);
-      
-      // Upload audio file
       const audioUrl = await uploadAudio(audioBlob);
       
       const attachments: Message['attachments'] = [{
@@ -227,25 +275,20 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
     }
   };
 
-  const handleVideoSelect = async (video: File) => {
-    try {
-      setIsLoading(true);
-      const videoUrl = await uploadVideo(video);
-      
-      const attachments: Message['attachments'] = [{
-        type: 'video',
-        url: videoUrl,
-        name: video.name
-      }];
+  const handleVideoSelect = (video: File) => {
+    setSelectedVideo(video);
+  };
 
-      await handleSendMessage(newMessage || 'I\'ve uploaded a video showing the issue', attachments);
-      setSelectedVideo(null);
-      setNewMessage('');
-    } catch (error) {
-      console.error('Error uploading video:', error);
-    } finally {
-      setIsLoading(false);
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newImages = Array.from(files).slice(0, 3);
+      setSelectedImages(prev => [...prev, ...newImages].slice(0, 3));
     }
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const renderAttachment = (attachment: NonNullable<Message['attachments']>[0]) => {
@@ -274,6 +317,12 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
           <audio src={attachment.url} controls className="w-full max-w-sm" />
         </div>
       );
+    } else if (attachment.type === 'image') {
+      return (
+        <div className="mt-2">
+          <img src={attachment.url} alt={attachment.name} className="w-full max-w-sm rounded-lg" />
+        </div>
+      );
     }
     return null;
   };
@@ -286,7 +335,7 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
           AI Diagnostic Assistant
         </CardTitle>
         <div className="text-sm text-muted-foreground">
-          Having issues not covered in the diagnosis? Chat with our AI or share video/audio for better analysis.
+          Having issues not covered in the diagnosis? Chat with our AI or share images/video/audio for better analysis.
         </div>
       </CardHeader>
 
@@ -332,6 +381,13 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
                         {renderAttachment(attachment)}
                       </div>
                     ))}
+                    {message.metadata?.confidenceScore && (
+                      <div className="mt-2 pt-2 border-t border-border/50">
+                        <p className="text-xs opacity-70">
+                          Confidence: {Math.round(message.metadata.confidenceScore * 100)}%
+                        </p>
+                      </div>
+                    )}
                     <div className={cn(
                       "text-xs mt-2 opacity-70",
                       message.type === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
@@ -354,7 +410,7 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
                   </div>
                   <div className="bg-muted rounded-lg p-3 flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm text-muted-foreground">AI is thinking...</span>
+                    <span className="text-sm text-muted-foreground">AI is analyzing...</span>
                   </div>
                 </div>
               </div>
@@ -365,12 +421,55 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
         <Separator />
 
         <div className="space-y-3">
-          <VideoUpload
-            onVideoSelect={handleVideoSelect}
-            onVideoRemove={() => setSelectedVideo(null)}
-            selectedVideo={selectedVideo}
-            disabled={isLoading}
-          />
+          <div className="flex gap-2">
+            <VideoUpload
+              onVideoSelect={handleVideoSelect}
+              onVideoRemove={() => setSelectedVideo(null)}
+              selectedVideo={selectedVideo}
+              disabled={isLoading}
+            />
+            <div className="flex-1">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageSelect}
+                className="hidden"
+                id="image-upload"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => document.getElementById('image-upload')?.click()}
+                disabled={selectedImages.length >= 3 || isLoading}
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                Add Images ({selectedImages.length}/3)
+              </Button>
+            </div>
+          </div>
+
+          {selectedImages.length > 0 && (
+            <div className="flex gap-2 flex-wrap">
+              {selectedImages.map((img, idx) => (
+                <div key={idx} className="relative">
+                  <img
+                    src={URL.createObjectURL(img)}
+                    alt={`Preview ${idx + 1}`}
+                    className="h-20 w-20 object-cover rounded border"
+                  />
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="absolute -top-2 -right-2 h-6 w-6"
+                    onClick={() => removeImage(idx)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="flex gap-2">
             <div className="flex-1">
@@ -391,7 +490,7 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
             <div className="flex flex-col gap-2">
               <Button 
                 onClick={handleTextSubmit}
-                disabled={(!newMessage.trim() && !selectedVideo) || isLoading}
+                disabled={(!newMessage.trim() && selectedImages.length === 0 && !selectedVideo) || isLoading}
                 size="sm"
                 className="px-3"
               >

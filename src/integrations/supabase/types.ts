@@ -59,6 +59,130 @@ export type Database = {
           },
         ]
       }
+      diagnostic_conversations: {
+        Row: {
+          appliance_brand: string | null
+          appliance_model: string | null
+          appliance_type: string
+          confidence_score: number | null
+          created_at: string | null
+          final_diagnosis: string | null
+          id: string
+          initial_diagnosis: string
+          language: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          appliance_brand?: string | null
+          appliance_model?: string | null
+          appliance_type: string
+          confidence_score?: number | null
+          created_at?: string | null
+          final_diagnosis?: string | null
+          id?: string
+          initial_diagnosis: string
+          language?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          appliance_brand?: string | null
+          appliance_model?: string | null
+          appliance_type?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          final_diagnosis?: string | null
+          id?: string
+          initial_diagnosis?: string
+          language?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      diagnostic_messages: {
+        Row: {
+          attachments: Json | null
+          content: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          role: string
+        }
+        Insert: {
+          attachments?: Json | null
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role: string
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnostic_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diagnostic_reports: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          estimated_cost_max: number | null
+          estimated_cost_min: number | null
+          id: string
+          recommended_parts: Json | null
+          repair_urgency: string | null
+          report_data: Json
+          user_id: string | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          estimated_cost_max?: number | null
+          estimated_cost_min?: number | null
+          id?: string
+          recommended_parts?: Json | null
+          repair_urgency?: string | null
+          report_data: Json
+          user_id?: string | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          estimated_cost_max?: number | null
+          estimated_cost_min?: number | null
+          id?: string
+          recommended_parts?: Json | null
+          repair_urgency?: string | null
+          report_data?: Json
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnostic_reports_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_status_history: {
         Row: {
           changed_by: string | null
