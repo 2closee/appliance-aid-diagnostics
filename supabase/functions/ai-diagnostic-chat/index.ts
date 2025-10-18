@@ -19,7 +19,7 @@ const requestSchema = z.object({
     content: z.string().max(5000)
   })).max(50),
   images: z.array(z.string()).optional(), // Base64 or URLs
-  conversationId: z.string().uuid().optional(),
+  conversationId: z.string().uuid().nullable().optional(),
   language: z.string().default('en').optional()
 });
 

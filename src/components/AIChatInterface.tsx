@@ -170,7 +170,7 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
             content: m.content
           })),
           images: imageUrls.length > 0 ? imageUrls : undefined,
-          conversationId,
+          conversationId: conversationId ?? undefined,
           language
         }
       });
