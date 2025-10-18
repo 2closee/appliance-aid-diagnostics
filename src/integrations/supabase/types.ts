@@ -225,7 +225,9 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          is_auto_reply: boolean | null
           is_read: boolean
+          priority: string | null
           sender_id: string
           sender_type: string
         }
@@ -235,7 +237,9 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          is_auto_reply?: boolean | null
           is_read?: boolean
+          priority?: string | null
           sender_id: string
           sender_type: string
         }
@@ -245,7 +249,9 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          is_auto_reply?: boolean | null
           is_read?: boolean
+          priority?: string | null
           sender_id?: string
           sender_type?: string
         }
@@ -443,6 +449,50 @@ export type Database = {
           zip_code?: string
         }
         Relationships: []
+      }
+      repair_center_settings: {
+        Row: {
+          auto_reply_enabled: boolean | null
+          auto_reply_message: string | null
+          business_hours: Json | null
+          created_at: string | null
+          id: string
+          is_online: boolean | null
+          last_activity_at: string | null
+          repair_center_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          auto_reply_enabled?: boolean | null
+          auto_reply_message?: string | null
+          business_hours?: Json | null
+          created_at?: string | null
+          id?: string
+          is_online?: boolean | null
+          last_activity_at?: string | null
+          repair_center_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          auto_reply_enabled?: boolean | null
+          auto_reply_message?: string | null
+          business_hours?: Json | null
+          created_at?: string | null
+          id?: string
+          is_online?: boolean | null
+          last_activity_at?: string | null
+          repair_center_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repair_center_settings_repair_center_id_fkey"
+            columns: ["repair_center_id"]
+            isOneToOne: true
+            referencedRelation: "Repair Center"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       repair_center_staff: {
         Row: {

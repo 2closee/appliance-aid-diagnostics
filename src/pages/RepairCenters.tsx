@@ -1,31 +1,33 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   MapPin, 
   Phone, 
   Clock, 
   Navigation as NavigationIcon,
   Search,
-  Star,
-  ArrowRight
+  ArrowRight,
+  Users,
+  Award
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 
 type RepairCenter = {
-  id: string;
+  id: number;
   name: string;
-  address: string;
-  phone: string;
+  general_location: string;
   hours: string;
-  rating: number;
-  specialties: string[];
-  distance: number;
-  coordinates: { lat: number; lng: number };
+  specialties: string;
+  number_of_staff: number;
+  years_of_experience: number;
 };
 
 const RepairCenters = () => {
@@ -33,56 +35,17 @@ const RepairCenters = () => {
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedCenter, setSelectedCenter] = useState<RepairCenter | null>(null);
 
-  // Sample repair centers data
-  const repairCenters: RepairCenter[] = [
-    {
-      id: "1",
-      name: "TechFix Downtown",
-      address: "123 Main Street, Downtown, NY 10001",
-      phone: "(555) 123-4567",
-      hours: "Mon-Fri 9AM-6PM, Sat 10AM-4PM",
-      rating: 4.8,
-      specialties: ["TVs", "Smartphones", "Laptops"],
-      distance: 0.5,
-      coordinates: { lat: 40.7128, lng: -74.0060 }
-    },
-    {
-      id: "2",
-      name: "ElectroFix Solutions",
-      address: "456 Oak Avenue, Midtown, NY 10018",
-      phone: "(555) 987-6543",
-      hours: "Mon-Fri 8AM-7PM, Sat 9AM-5PM",
-      rating: 4.6,
-      specialties: ["TVs", "Audio Equipment", "Gaming Consoles"],
-      distance: 1.2,
-      coordinates: { lat: 40.7589, lng: -73.9851 }
-    },
-    {
-      id: "3",
-      name: "Quick Repair Hub",
-      address: "789 Pine Street, Upper East Side, NY 10075",
-      phone: "(555) 456-7890",
-      hours: "Mon-Sat 10AM-8PM, Sun 12PM-6PM",
-      rating: 4.4,
-      specialties: ["Smartphones", "Tablets", "Headphones"],
-      distance: 2.1,
-      coordinates: { lat: 40.7736, lng: -73.9566 }
-    },
-    {
-      id: "4",
-      name: "Premium Tech Services",
-      address: "321 Broadway, SoHo, NY 10012",
-      phone: "(555) 789-0123",
-      hours: "Mon-Fri 9AM-6PM, Sat 10AM-3PM",
-      rating: 4.9,
-      specialties: ["TVs", "Premium Audio", "Smart Home"],
-      distance: 3.5,
-      coordinates: { lat: 40.7211, lng: -74.0039 }
+  const { data: repairCenters, isLoading } = useQuery({
+    queryKey: ["public-repair-centers"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_public_repair_centers');
+      if (error) throw error;
+      return data as RepairCenter[];
     }
-  ];
+  });
 
   const handleGetDirections = (center: RepairCenter) => {
-    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(center.address)}`;
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(center.general_location)}`;
     window.open(googleMapsUrl, '_blank');
   };
 
@@ -90,13 +53,11 @@ const RepairCenters = () => {
     navigate('/pickup-request', { state: { selectedCenter: center } });
   };
 
-  const filteredCenters = repairCenters.filter(center => 
+  const filteredCenters = (repairCenters || []).filter(center => 
     center.name.toLowerCase().includes(searchLocation.toLowerCase()) ||
-    center.address.toLowerCase().includes(searchLocation.toLowerCase()) ||
-    center.specialties.some(specialty => 
-      specialty.toLowerCase().includes(searchLocation.toLowerCase())
-    )
-  ).sort((a, b) => a.distance - b.distance);
+    center.general_location.toLowerCase().includes(searchLocation.toLowerCase()) ||
+    center.specialties.toLowerCase().includes(searchLocation.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -147,7 +108,19 @@ const RepairCenters = () => {
 
           {/* Repair Centers List */}
           <div className="grid md:grid-cols-2 gap-6">
-            {filteredCenters.map((center) => (
+            {isLoading ? (
+              [...Array(4)].map((_, i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2 mt-2" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-20 w-full" />
+                  </CardContent>
+                </Card>
+              ))
+            ) : filteredCenters.map((center) => (
               <Card 
                 key={center.id} 
                 className={`shadow-medium transition-all hover:shadow-strong ${
@@ -157,30 +130,25 @@ const RepairCenters = () => {
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="flex-1">
                       <CardTitle className="text-xl">{center.name}</CardTitle>
-                      <div className="flex items-center mt-2">
-                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                        <span className="ml-1 text-sm font-medium">{center.rating}</span>
-                        <span className="ml-2 text-sm text-muted-foreground">
-                          {center.distance} miles away
-                        </span>
+                      <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
+                          <span>{center.number_of_staff} staff</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Award className="h-4 w-4" />
+                          <span>{center.years_of_experience} years exp</span>
+                        </div>
                       </div>
                     </div>
-                    <Badge variant="outline">{center.distance} mi</Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-start space-x-3">
                     <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-muted-foreground">{center.address}</p>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <a href={`tel:${center.phone}`} className="text-sm text-primary hover:underline">
-                      {center.phone}
-                    </a>
+                    <p className="text-sm text-muted-foreground">{center.general_location}</p>
                   </div>
                   
                   <div className="flex items-center space-x-3">
@@ -191,9 +159,9 @@ const RepairCenters = () => {
                   <div>
                     <p className="text-sm font-medium mb-2">Specialties:</p>
                     <div className="flex flex-wrap gap-2">
-                      {center.specialties.map((specialty, index) => (
+                      {center.specialties.split(',').map((specialty, index) => (
                         <Badge key={index} variant="secondary" className="text-xs">
-                          {specialty}
+                          {specialty.trim()}
                         </Badge>
                       ))}
                     </div>
@@ -240,7 +208,7 @@ const RepairCenters = () => {
             ))}
           </div>
 
-          {filteredCenters.length === 0 && (
+          {!isLoading && filteredCenters.length === 0 && (
             <Card className="shadow-medium">
               <CardContent className="text-center py-12">
                 <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

@@ -54,6 +54,7 @@ const RepairCenterChat = () => {
           <LiveChat
             conversationId={conversationId}
             repairCenterName={centerName}
+            repairCenterId={selectedCenter?.id}
           />
         ) : (
           <Card>

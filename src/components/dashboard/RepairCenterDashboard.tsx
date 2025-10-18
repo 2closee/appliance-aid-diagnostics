@@ -4,15 +4,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Clock, CheckCircle, AlertCircle, DollarSign, Users, MessageCircle } from "lucide-react";
+import { Wrench, Clock, CheckCircle, AlertCircle, DollarSign, Users, MessageCircle, Settings as SettingsIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import RepairCenterSettings from "@/components/RepairCenterSettings";
 
 const RepairCenterDashboard = () => {
   const { user, repairCenterId } = useAuth();
   const { toast } = useToast();
+  const [isOnline, setIsOnline] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const { data: repairJobs, isLoading, refetch } = useQuery({
     queryKey: ["repair-center-jobs", repairCenterId],
@@ -43,6 +49,52 @@ const RepairCenterDashboard = () => {
     },
     enabled: !!repairCenterId,
   });
+
+  const { data: settings } = useQuery({
+    queryKey: ["repair-center-settings", repairCenterId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("repair_center_settings")
+        .select("*")
+        .eq("repair_center_id", repairCenterId)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        setIsOnline(data.is_online);
+      }
+      return data;
+    },
+    enabled: !!repairCenterId,
+  });
+
+  const handleOnlineToggle = async (checked: boolean) => {
+    if (!repairCenterId) return;
+
+    setIsOnline(checked);
+    const { error } = await supabase
+      .from('repair_center_settings')
+      .upsert({
+        repair_center_id: repairCenterId,
+        is_online: checked,
+        last_activity_at: new Date().toISOString()
+      });
+
+    if (error) {
+      console.error('Error updating online status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update online status",
+        variant: "destructive"
+      });
+      setIsOnline(!checked);
+    } else {
+      toast({
+        title: "Success",
+        description: `You are now ${checked ? 'online' : 'offline'}`
+      });
+    }
+  };
 
   const updateJobStatus = async (jobId: string, newStatus: "requested" | "pickup_scheduled" | "picked_up" | "in_repair" | "repair_completed" | "ready_for_return" | "returned" | "completed" | "cancelled") => {
     try {
@@ -118,13 +170,40 @@ const RepairCenterDashboard = () => {
             </h1>
             <p className="text-muted-foreground mt-2">Repair Center Admin - Manage your repair jobs and track performance</p>
           </div>
-          <Link to="/repair-center-conversations">
-            <Button variant="outline" className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4" />
-              Customer Conversations
+          <div className="flex gap-2">
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <Label htmlFor="online-status" className="text-sm font-medium">
+                  Online Status
+                </Label>
+                <Switch
+                  id="online-status"
+                  checked={isOnline}
+                  onCheckedChange={handleOnlineToggle}
+                />
+                <span className="text-sm text-muted-foreground">
+                  {isOnline ? 'Online' : 'Offline'}
+                </span>
+              </div>
+            </Card>
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => setShowSettings(!showSettings)}
+            >
+              <SettingsIcon className="h-4 w-4" />
+              Settings
             </Button>
-          </Link>
+            <Link to="/repair-center-conversations">
+              <Button variant="outline" className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                Conversations
+              </Button>
+            </Link>
+          </div>
         </div>
+
+        {showSettings && <RepairCenterSettings />}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
