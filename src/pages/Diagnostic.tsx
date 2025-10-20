@@ -507,7 +507,13 @@ const Diagnostic = () => {
               <RepairCenterChatInterface
                 appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
                 diagnosis={diagnosis.message}
-                onSchedulePickup={() => user ? navigate('/pickup-request') : navigate('/auth')}
+                onSchedulePickup={() => user ? navigate('/pickup-request', { 
+                  state: { 
+                    selectedCenter: selectedRepairCenter,
+                    applianceType: selectedAppliance,
+                    issueDescription: diagnosis.message 
+                  } 
+                }) : navigate('/auth')}
                 onFindRepairCenter={() => user ? navigate('/repair-centers') : navigate('/auth')}
                 selectedCenter={selectedRepairCenter}
               />

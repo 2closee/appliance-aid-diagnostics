@@ -61,6 +61,8 @@ const PickupRequest = () => {
   const { toast } = useToast();
   const { user, isLoading } = useAuth();
   const selectedCenter = location.state?.selectedCenter;
+  const passedApplianceType = location.state?.applianceType;
+  const passedIssueDescription = location.state?.issueDescription;
   
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
@@ -102,7 +104,16 @@ const PickupRequest = () => {
         repairCenter: selectedCenter.id.toString() 
       }));
     }
-  }, [user, selectedCenter]);
+
+    // Pre-fill appliance type and issue description from diagnostic session
+    if (passedApplianceType || passedIssueDescription) {
+      setFormData(prev => ({
+        ...prev,
+        ...(passedApplianceType && { applianceType: passedApplianceType }),
+        ...(passedIssueDescription && { issueDescription: passedIssueDescription })
+      }));
+    }
+  }, [user, selectedCenter, passedApplianceType, passedIssueDescription]);
 
   const fetchRepairCenters = async () => {
     try {
