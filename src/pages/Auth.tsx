@@ -94,9 +94,15 @@ const Auth = () => {
       });
 
       if (error) {
+        // Check for duplicate email error
+        const isDuplicateEmail = error.message?.toLowerCase().includes('user already registered') ||
+                                 error.message?.toLowerCase().includes('already registered');
+        
         toast({
           title: "Sign up failed",
-          description: error.message,
+          description: isDuplicateEmail 
+            ? "This email is already registered. Please sign in or use a different email."
+            : error.message,
           variant: "destructive",
         });
       } else {

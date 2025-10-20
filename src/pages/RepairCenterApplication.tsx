@@ -115,10 +115,16 @@ export default function RepairCenterApplication() {
     } catch (error: any) {
       console.error('Application submission error:', error);
       
-      // Simplified error handling
+      // Enhanced error handling with specific duplicate email detection
       let errorMessage = "Application failed. Please try again.";
+      let errorTitle = "Application Failed";
       
-      if (error.message?.includes("rate limit")) {
+      if (error.message?.toLowerCase().includes("email is already") || 
+          error.message?.toLowerCase().includes("duplicate email") ||
+          error.message?.toLowerCase().includes("already associated")) {
+        errorTitle = "Email Already in Use";
+        errorMessage = error.message;
+      } else if (error.message?.includes("rate limit")) {
         errorMessage = "Too many requests. Please wait a few minutes and try again.";
       } else if (error.message?.includes("network")) {
         errorMessage = "Network error. Please check your connection and try again.";
@@ -127,7 +133,7 @@ export default function RepairCenterApplication() {
       }
       
       toast({
-        title: "Application Failed",
+        title: errorTitle,
         description: errorMessage,
         variant: "destructive",
       });

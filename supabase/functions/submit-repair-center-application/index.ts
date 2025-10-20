@@ -97,6 +97,32 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Auth context - User:', authData?.user?.id || 'No user (anon)');
     console.log('Auth context - Role:', authData?.user?.role || 'anon');
 
+    // Check if email exists in auth.users table
+    console.log('Checking for existing user account...');
+    const { data: existingUsers, error: userCheckError } = await supabase.auth.admin.listUsers();
+    
+    if (userCheckError) {
+      console.error('Error checking existing users:', userCheckError);
+    } else {
+      const emailExists = existingUsers.users.some(
+        user => user.email?.toLowerCase() === applicationData.email.toLowerCase()
+      );
+      
+      if (emailExists) {
+        console.log('Email already exists in auth.users:', applicationData.email);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'This email is already associated with an account. Please use a different email or contact support.' 
+          }),
+          { 
+            status: 409, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+    }
+
     // Check if an application with this email already exists
     console.log('Checking for existing application...');
     const { data: existing, error: checkError } = await supabase
