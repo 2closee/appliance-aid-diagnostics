@@ -145,7 +145,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "FixBudi <onboarding@resend.dev>",
+        from: "FixBudi <noreply@fixbudi.com>",
         to: [email],
         subject,
         html,
@@ -160,6 +160,39 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResult = await emailResponse.json();
     console.log("Email sent successfully:", emailResult.id);
 
+    // Log email delivery
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      
+      if (supabaseUrl && supabaseServiceKey) {
+        const logResponse = await fetch(`${supabaseUrl}/rest/v1/email_logs`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${supabaseServiceKey}`,
+            "apikey": supabaseServiceKey,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+          },
+          body: JSON.stringify({
+            email_type: type,
+            recipient_email: email,
+            recipient_name: name,
+            subject: subject,
+            status: "sent",
+            resend_id: emailResult.id,
+            metadata: { center_name: centerName, center_id: requestBody.centerId },
+          }),
+        });
+        
+        if (!logResponse.ok) {
+          console.error("Failed to log email:", await logResponse.text());
+        }
+      }
+    } catch (logError) {
+      console.error("Error logging email:", logError);
+    }
+
     return new Response(JSON.stringify({ success: true, emailResponse: emailResult }), {
       status: 200,
       headers: {
@@ -169,6 +202,39 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-confirmation-email function:", error);
+    
+    // Log failed email attempt
+    try {
+      const requestBody: ConfirmationEmailRequest = await req.clone().json();
+      const email = requestBody.email || requestBody.to;
+      const name = requestBody.name || requestBody.data?.name;
+      const type = requestBody.type;
+      
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      
+      if (supabaseUrl && supabaseServiceKey && email && type) {
+        await fetch(`${supabaseUrl}/rest/v1/email_logs`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${supabaseServiceKey}`,
+            "apikey": supabaseServiceKey,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+          },
+          body: JSON.stringify({
+            email_type: type,
+            recipient_email: email,
+            recipient_name: name,
+            subject: "Failed to send",
+            status: "failed",
+            error_message: error.message,
+          }),
+        });
+      }
+    } catch (logError) {
+      console.error("Error logging failed email:", logError);
+    }
     
     // Provide specific error details for debugging
     const errorDetails = {

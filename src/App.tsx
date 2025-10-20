@@ -22,6 +22,7 @@ import RepairCenterAdmin from "./pages/RepairCenterAdmin";
 import RepairCenterChat from "./pages/RepairCenterChat";
 import RepairCenterConversations from "./pages/RepairCenterConversations";
 import EmailVerification from "./pages/EmailVerification";
+import EmailTest from "./pages/EmailTest";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/repair-center-chat" element={<RepairCenterChat />} />
             <Route path="/repair-center-conversations" element={<RepairCenterConversations />} />
             <Route path="/verify-email" element={<EmailVerification />} />
+            <Route path="/email-test" element={<EmailTest />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

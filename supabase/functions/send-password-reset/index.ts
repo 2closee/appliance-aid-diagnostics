@@ -69,9 +69,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email using Resend
     const emailResult = await resend.emails.send({
-      from: "Fixbudi <noreply@fixbudi.com>",
+      from: "FixBudi <noreply@fixbudi.com>",
       to: [email],
-      subject: "Reset Your Fixbudi Password",
+      subject: "Reset Your FixBudi Password",
       html: `
         <!DOCTYPE html>
         <html>
@@ -109,6 +109,25 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Password reset email sent successfully:', emailResult.id);
 
+    // Log email delivery
+    try {
+      const { error: logError } = await supabaseAdmin
+        .from('email_logs')
+        .insert({
+          email_type: 'password_reset',
+          recipient_email: email,
+          subject: 'Reset Your FixBudi Password',
+          status: 'sent',
+          resend_id: emailResult.id,
+        });
+      
+      if (logError) {
+        console.error('Failed to log email:', logError);
+      }
+    } catch (logError) {
+      console.error('Error logging email:', logError);
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -123,6 +142,28 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error: any) {
     console.error('Error in send-password-reset function:', error);
+    
+    // Log failed email attempt
+    try {
+      const { email } = await req.clone().json();
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+      
+      if (email) {
+        await supabaseAdmin
+          .from('email_logs')
+          .insert({
+            email_type: 'password_reset',
+            recipient_email: email,
+            subject: 'Reset Your FixBudi Password',
+            status: 'failed',
+            error_message: error.message,
+          });
+      }
+    } catch (logError) {
+      console.error('Error logging failed email:', logError);
+    }
     
     return new Response(
       JSON.stringify({ 
