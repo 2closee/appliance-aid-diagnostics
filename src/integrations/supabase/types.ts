@@ -737,6 +737,10 @@ export type Database = {
         Args: { _repair_center_id: number; _user_id: string }
         Returns: boolean
       }
+      is_staff_at_center: {
+        Args: { _center_id: number; _user_id: string }
+        Returns: boolean
+      }
       user_is_center_owner: {
         Args: { _center_id: number; _user_id: string }
         Returns: boolean
