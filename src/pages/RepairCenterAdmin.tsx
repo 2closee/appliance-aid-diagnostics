@@ -183,7 +183,7 @@ const RepairCenterAdmin = () => {
         email: signupData.email,
         password: signupData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/repair-center-admin`,
+          emailRedirectTo: `${window.location.origin}/verify-email`,
         }
       });
 

@@ -29,31 +29,60 @@ export default function EmailVerification() {
 
         console.log('Email verification - user found:', session.user.id);
 
-        // Call the verification function to activate the account
-        const { data, error } = await supabase.functions.invoke('verify-repair-center-email', {
-          body: { userId: session.user.id }
-        });
+        // Check if user is a repair center staff member
+        const { data: staffData, error: staffError } = await supabase
+          .from('repair_center_staff')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
 
-        if (error) {
-          throw new Error(error.message || 'Failed to complete verification');
+        if (staffError) {
+          console.error('Error checking staff status:', staffError);
         }
 
-        if (!data?.success) {
-          throw new Error(data?.error || 'Verification failed');
+        const isRepairCenterUser = !!staffData;
+
+        if (isRepairCenterUser) {
+          // Repair center user - call verification function
+          const { data, error } = await supabase.functions.invoke('verify-repair-center-email', {
+            body: { userId: session.user.id }
+          });
+
+          if (error) {
+            throw new Error(error.message || 'Failed to complete verification');
+          }
+
+          if (!data?.success) {
+            throw new Error(data?.error || 'Verification failed');
+          }
+
+          setVerificationStatus('success');
+          setMessage(data.message || 'Email verified successfully! Your application is now under review.');
+
+          toast({
+            title: "Email Verified!",
+            description: "Your account has been verified. Your application is now under review.",
+          });
+
+          // Redirect to repair center admin after a delay
+          setTimeout(() => {
+            navigate('/repair-center-admin');
+          }, 3000);
+        } else {
+          // Regular user - email is already verified by Supabase
+          setVerificationStatus('success');
+          setMessage('Email verified successfully! You can now access your dashboard.');
+
+          toast({
+            title: "Email Verified!",
+            description: "Your account has been verified successfully.",
+          });
+
+          // Redirect to dashboard or home after a delay
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 3000);
         }
-
-        setVerificationStatus('success');
-        setMessage(data.message || 'Email verified successfully! Your application is now under review.');
-
-        toast({
-          title: "Email Verified!",
-          description: "Your account has been verified. Your application is now under review.",
-        });
-
-        // Redirect to repair center admin after a delay
-        setTimeout(() => {
-          navigate('/repair-center-admin');
-        }, 3000);
 
       } catch (error: any) {
         console.error('Email verification error:', error);
@@ -140,8 +169,20 @@ export default function EmailVerification() {
               <p className="text-sm text-muted-foreground mb-4">
                 Redirecting to your admin portal in a few seconds...
               </p>
-              <Button onClick={() => navigate('/repair-center-admin')} className="w-full">
-                Go to Admin Portal
+              <Button onClick={async () => {
+                // Check if repair center user
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                  const { data } = await supabase.from('repair_center_staff')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+                  navigate(data ? '/repair-center-admin' : '/dashboard');
+                } else {
+                  navigate('/dashboard');
+                }
+              }} className="w-full">
+                Go to Portal
               </Button>
             </div>
           )}

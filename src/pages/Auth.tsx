@@ -83,7 +83,7 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/verify-email`;
       
       const { error } = await supabase.auth.signUp({
         email,
