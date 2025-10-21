@@ -78,6 +78,8 @@ const RepairCenterDashboard = () => {
         repair_center_id: repairCenterId,
         is_online: checked,
         last_activity_at: new Date().toISOString()
+      }, {
+        onConflict: 'repair_center_id'
       });
 
     if (error) {
