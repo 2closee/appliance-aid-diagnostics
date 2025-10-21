@@ -73,7 +73,7 @@ export const StaffManagement: React.FC = () => {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/repair-center-admin`,
+          emailRedirectTo: `${window.location.origin}/verify-email`,
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
