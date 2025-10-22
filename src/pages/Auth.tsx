@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 
 const Auth = () => {
@@ -17,6 +17,8 @@ const Auth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/dashboard";
 
   useEffect(() => {
     // Set up auth state listener first
@@ -25,9 +27,9 @@ const Auth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Redirect authenticated users to home
+        // Redirect authenticated users to intended page
         if (session?.user) {
-          navigate("/");
+          navigate(from, { replace: true });
         }
       }
     );
@@ -38,7 +40,7 @@ const Auth = () => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        navigate("/");
+        navigate(from, { replace: true });
       }
     });
 

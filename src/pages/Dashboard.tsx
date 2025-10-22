@@ -25,7 +25,7 @@ const Dashboard = () => {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/auth" />;
   }
 
   const renderDashboard = () => {
