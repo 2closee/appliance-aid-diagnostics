@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { createHmac } from "https://deno.land/std@0.190.0/node/crypto.ts";
 
 const paystackSecretKey = Deno.env.get("PAYSTACK_SECRET_KEY") || "";
 
@@ -8,6 +7,27 @@ const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[PAYSTACK-WEBHOOK] ${step}${detailsStr}`);
 };
+
+// Verify webhook signature using Web Crypto API
+async function verifySignature(body: string, signature: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(paystackSecretKey);
+  const messageData = encoder.encode(body);
+  
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-512" },
+    false,
+    ["sign"]
+  );
+  
+  const signatureBuffer = await crypto.subtle.sign("HMAC", key, messageData);
+  const hashArray = Array.from(new Uint8Array(signatureBuffer));
+  const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  return hash === signature;
+}
 
 serve(async (req) => {
   const signature = req.headers.get("x-paystack-signature");
@@ -26,11 +46,9 @@ serve(async (req) => {
     const body = await req.text();
     
     // Verify webhook signature
-    const hash = createHmac("sha512", paystackSecretKey)
-      .update(body)
-      .digest("hex");
+    const isValid = await verifySignature(body, signature);
 
-    if (hash !== signature) {
+    if (!isValid) {
       logStep("ERROR", { message: "Invalid signature" });
       return new Response("Invalid signature", { status: 400 });
     }
