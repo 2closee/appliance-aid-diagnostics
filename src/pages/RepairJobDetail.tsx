@@ -86,10 +86,10 @@ const RepairJobDetail = () => {
       
       // Handle payment success/failure from URL parameters
       const payment = searchParams.get('payment');
-      const sessionId = searchParams.get('session_id');
+      const reference = searchParams.get('reference');
       
-      if (payment === 'success' && sessionId) {
-        verifyPaymentStatus(sessionId);
+      if (payment === 'success' && reference) {
+        verifyPaymentStatus(reference);
       } else if (payment === 'cancelled') {
         toast({
           title: "Payment Cancelled",
@@ -141,10 +141,10 @@ const RepairJobDetail = () => {
     }
   };
 
-  const verifyPaymentStatus = async (sessionId: string) => {
+  const verifyPaymentStatus = async (reference: string) => {
     try {
       const { data, error } = await supabase.functions.invoke("verify-payment-status", {
-        body: { session_id: sessionId }
+        body: { reference }
       });
 
       if (error) throw error;
@@ -189,13 +189,12 @@ const RepairJobDetail = () => {
       if (error) throw error;
 
       if (data.url) {
-        // Add session_id to the success URL for verification
-        const successUrl = new URL(data.url);
-        window.open(data.url, '_blank');
+        // Redirect to Paystack payment page
+        window.location.href = data.url;
         
         toast({
           title: "Redirecting to Payment",
-          description: "You'll be redirected to complete your payment securely.",
+          description: "You'll be redirected to Paystack to complete your payment securely.",
         });
       }
     } catch (error) {
@@ -448,19 +447,19 @@ const RepairJobDetail = () => {
                   {job.estimated_cost && (
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Estimated Cost</span>
-                      <span className="font-medium">${job.estimated_cost.toFixed(2)}</span>
+                      <span className="font-medium">₦{job.estimated_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   {job.final_cost && (
                     <>
                       <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">Final Cost</span>
-                        <span className="font-medium">${job.final_cost.toFixed(2)}</span>
+                        <span className="font-medium">₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                        {job.app_commission && (
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">Service Fee (7.5%)</span>
-                          <span className="font-medium">${job.app_commission.toFixed(2)}</span>
+                          <span className="font-medium">₦{job.app_commission.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                       )}
                     </>

@@ -23,3 +23,12 @@ verify_jwt = false
 
 [functions.resend-verification-email]
 verify_jwt = false
+
+[functions.send-job-notification]
+verify_jwt = false
+
+[functions.paystack-webhook]
+verify_jwt = false
+
+[functions.verify-payment-status]
+verify_jwt = true

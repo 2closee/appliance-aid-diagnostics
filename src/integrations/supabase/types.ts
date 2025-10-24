@@ -358,12 +358,13 @@ export type Database = {
           id: string
           net_amount: number | null
           payment_date: string | null
+          payment_provider: string | null
+          payment_reference: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
+          payment_transaction_id: string | null
           payment_type: Database["public"]["Enums"]["payment_type"]
           repair_job_id: string
-          stripe_checkout_session_id: string | null
           stripe_fee: number | null
-          stripe_payment_intent_id: string | null
           updated_at: string
           webhook_received_at: string | null
         }
@@ -376,12 +377,13 @@ export type Database = {
           id?: string
           net_amount?: number | null
           payment_date?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          payment_transaction_id?: string | null
           payment_type: Database["public"]["Enums"]["payment_type"]
           repair_job_id: string
-          stripe_checkout_session_id?: string | null
           stripe_fee?: number | null
-          stripe_payment_intent_id?: string | null
           updated_at?: string
           webhook_received_at?: string | null
         }
@@ -394,12 +396,13 @@ export type Database = {
           id?: string
           net_amount?: number | null
           payment_date?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          payment_transaction_id?: string | null
           payment_type?: Database["public"]["Enums"]["payment_type"]
           repair_job_id?: string
-          stripe_checkout_session_id?: string | null
           stripe_fee?: number | null
-          stripe_payment_intent_id?: string | null
           updated_at?: string
           webhook_received_at?: string | null
         }

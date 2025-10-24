@@ -1,20 +1,16 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { createHmac } from "https://deno.land/std@0.190.0/node/crypto.ts";
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-  apiVersion: "2025-08-27.basil",
-});
-
-const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET") || "";
+const paystackSecretKey = Deno.env.get("PAYSTACK_SECRET_KEY") || "";
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
+  console.log(`[PAYSTACK-WEBHOOK] ${step}${detailsStr}`);
 };
 
 serve(async (req) => {
-  const signature = req.headers.get("stripe-signature");
+  const signature = req.headers.get("x-paystack-signature");
   
   if (!signature) {
     logStep("ERROR", { message: "No signature found" });
@@ -30,15 +26,25 @@ serve(async (req) => {
     const body = await req.text();
     
     // Verify webhook signature
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    logStep("Webhook received", { type: event.type, id: event.id });
+    const hash = createHmac("sha512", paystackSecretKey)
+      .update(body)
+      .digest("hex");
 
-    switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
-        logStep("Checkout completed", { sessionId: session.id });
+    if (hash !== signature) {
+      logStep("ERROR", { message: "Invalid signature" });
+      return new Response("Invalid signature", { status: 400 });
+    }
 
-        const repairJobId = session.metadata?.repair_job_id;
+    const event = JSON.parse(body);
+    logStep("Webhook received", { type: event.event, reference: event.data?.reference });
+
+    switch (event.event) {
+      case "charge.success": {
+        const transaction = event.data;
+        logStep("Payment successful", { reference: transaction.reference });
+
+        // Get repair job ID from metadata
+        const repairJobId = transaction.metadata?.repair_job_id;
         if (!repairJobId) {
           throw new Error("No repair_job_id in metadata");
         }
@@ -49,10 +55,10 @@ serve(async (req) => {
           .update({
             payment_status: "completed",
             payment_date: new Date().toISOString(),
-            stripe_payment_intent_id: session.payment_intent as string,
+            payment_transaction_id: transaction.id.toString(),
             webhook_received_at: new Date().toISOString()
           })
-          .eq("stripe_checkout_session_id", session.id);
+          .eq("payment_reference", transaction.reference);
 
         if (paymentError) {
           logStep("Payment update failed", { error: paymentError });
@@ -98,9 +104,9 @@ serve(async (req) => {
         break;
       }
 
-      case "checkout.session.expired": {
-        const session = event.data.object as Stripe.Checkout.Session;
-        logStep("Checkout expired", { sessionId: session.id });
+      case "charge.failed": {
+        const transaction = event.data;
+        logStep("Payment failed", { reference: transaction.reference });
 
         await supabaseClient
           .from("payments")
@@ -108,44 +114,13 @@ serve(async (req) => {
             payment_status: "failed",
             webhook_received_at: new Date().toISOString()
           })
-          .eq("stripe_checkout_session_id", session.id);
-
-        break;
-      }
-
-      case "payment_intent.succeeded": {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        logStep("PaymentIntent succeeded", { id: paymentIntent.id });
-
-        await supabaseClient
-          .from("payments")
-          .update({
-            payment_status: "completed",
-            payment_date: new Date().toISOString(),
-            webhook_received_at: new Date().toISOString()
-          })
-          .eq("stripe_payment_intent_id", paymentIntent.id);
-
-        break;
-      }
-
-      case "payment_intent.payment_failed": {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        logStep("PaymentIntent failed", { id: paymentIntent.id });
-
-        await supabaseClient
-          .from("payments")
-          .update({
-            payment_status: "failed",
-            webhook_received_at: new Date().toISOString()
-          })
-          .eq("stripe_payment_intent_id", paymentIntent.id);
+          .eq("payment_reference", transaction.reference);
 
         break;
       }
 
       default:
-        logStep("Unhandled event type", { type: event.type });
+        logStep("Unhandled event type", { type: event.event });
     }
 
     return new Response(JSON.stringify({ received: true }), {

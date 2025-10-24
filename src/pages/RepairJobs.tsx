@@ -253,7 +253,7 @@ const RepairJobs = () => {
                     <div className="mb-4">
                       <h4 className="font-medium mb-2">Estimated Cost</h4>
                       <p className="text-lg font-semibold text-primary">
-                        ${job.estimated_cost.toFixed(2)}
+                        ₦{job.estimated_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                     </div>
                   )}
@@ -262,11 +262,11 @@ const RepairJobs = () => {
                     <div className="mb-4">
                       <h4 className="font-medium mb-2">Final Cost</h4>
                       <p className="text-lg font-semibold text-primary">
-                        ${job.final_cost.toFixed(2)}
+                        ₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                       {job.app_commission && (
                         <p className="text-sm text-muted-foreground">
-                          Service fee: ${job.app_commission.toFixed(2)} (5%)
+                          Service fee: ₦{job.app_commission.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (7.5%)
                         </p>
                       )}
                     </div>
@@ -286,7 +286,7 @@ const RepairJobs = () => {
                         onClick={() => handlePayment(job.id, job.final_cost!)}
                       >
                         <CreditCard className="w-4 h-4 mr-2" />
-                        Pay ${job.final_cost.toFixed(2)}
+                        Pay ₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </Button>
                     )}
 

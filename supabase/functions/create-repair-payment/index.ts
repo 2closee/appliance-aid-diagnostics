@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -51,59 +50,58 @@ serve(async (req) => {
     }
     logStep("Repair job verified", { jobId: repairJob.id, status: repairJob.job_status });
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
-
-    // Check if customer exists
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-      logStep("Existing customer found", { customerId });
-    } else {
-      logStep("No existing customer found");
+    const paystackSecretKey = Deno.env.get("PAYSTACK_SECRET_KEY");
+    if (!paystackSecretKey) {
+      throw new Error("PAYSTACK_SECRET_KEY not configured");
     }
 
-    // Create payment session for repair service
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_email: customerId ? undefined : user.email,
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `Repair Service - ${repairJob.appliance_type}`,
-              description: `Professional repair for ${repairJob.appliance_brand} ${repairJob.appliance_model}`,
-            },
-            unit_amount: Math.round(amount * 100), // Convert to cents
-          },
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      success_url: `${req.headers.get("origin")}/repair-jobs/${repair_job_id}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/repair-jobs/${repair_job_id}?payment=cancelled`,
-      metadata: {
-        repair_job_id: repair_job_id,
-        user_id: user.id,
-        payment_type: "repair_service"
-      }
+    // Initialize Paystack transaction
+    const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${paystackSecretKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: user.email,
+        amount: Math.round(amount * 100), // Convert to kobo (smallest unit for NGN)
+        currency: "NGN",
+        reference: `repair_${repair_job_id}_${Date.now()}`,
+        callback_url: `${req.headers.get("origin")}/repair-jobs/${repair_job_id}?payment=success`,
+        metadata: {
+          repair_job_id: repair_job_id,
+          user_id: user.id,
+          payment_type: "repair_service",
+          customer_name: repairJob.customer_name,
+          appliance_type: repairJob.appliance_type
+        }
+      })
     });
-    logStep("Stripe session created", { sessionId: session.id, url: session.url });
+
+    if (!paystackResponse.ok) {
+      const errorData = await paystackResponse.json();
+      logStep("Paystack initialization failed", { error: errorData });
+      throw new Error(`Paystack error: ${errorData.message || "Unknown error"}`);
+    }
+
+    const paystackData = await paystackResponse.json();
+    logStep("Paystack transaction initialized", { 
+      reference: paystackData.data.reference, 
+      url: paystackData.data.authorization_url 
+    });
 
     // Create payment record
     const { error: paymentError } = await supabaseClient
       .from("payments")
       .insert({
         repair_job_id: repair_job_id,
-        stripe_checkout_session_id: session.id,
+        payment_reference: paystackData.data.reference,
         amount: amount,
-        currency: "usd",
+        currency: "NGN",
         payment_type: "repair_service",
         payment_status: "pending",
-        commission_rate: 0.075
+        commission_rate: 0.075,
+        payment_provider: "paystack"
       });
 
     if (paymentError) {
@@ -113,8 +111,9 @@ serve(async (req) => {
     logStep("Payment record created");
 
     return new Response(JSON.stringify({ 
-      url: session.url,
-      session_id: session.id 
+      url: paystackData.data.authorization_url,
+      reference: paystackData.data.reference,
+      access_code: paystackData.data.access_code
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

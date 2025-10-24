@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -32,29 +31,47 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const { session_id } = await req.json();
-    if (!session_id) {
-      throw new Error("Missing session_id");
+    const { reference } = await req.json();
+    if (!reference) {
+      throw new Error("Missing payment reference");
     }
-    logStep("Request data", { session_id });
+    logStep("Request data", { reference });
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
+    const paystackSecretKey = Deno.env.get("PAYSTACK_SECRET_KEY");
+    if (!paystackSecretKey) {
+      throw new Error("PAYSTACK_SECRET_KEY not configured");
+    }
 
-    // Retrieve the checkout session from Stripe
-    const session = await stripe.checkout.sessions.retrieve(session_id);
-    logStep("Stripe session retrieved", { 
-      sessionId: session.id, 
-      paymentStatus: session.payment_status,
-      status: session.status 
+    // Verify transaction with Paystack
+    const paystackResponse = await fetch(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${paystackSecretKey}`,
+        }
+      }
+    );
+
+    if (!paystackResponse.ok) {
+      const errorData = await paystackResponse.json();
+      throw new Error(`Paystack verification failed: ${errorData.message || "Unknown error"}`);
+    }
+
+    const paystackData = await paystackResponse.json();
+    const transaction = paystackData.data;
+    
+    logStep("Paystack transaction retrieved", { 
+      reference: transaction.reference, 
+      status: transaction.status,
+      amount: transaction.amount 
     });
 
     // Find the payment record in our database
     const { data: payment, error: paymentError } = await supabaseClient
       .from("payments")
       .select("*")
-      .eq("stripe_checkout_session_id", session_id)
+      .eq("payment_reference", reference)
       .single();
 
     if (paymentError || !payment) {
@@ -79,13 +96,13 @@ serve(async (req) => {
     let jobStatus = repairJob.job_status;
 
     // Update payment status if it has changed
-    if (session.payment_status === "paid" && payment.payment_status === "pending") {
+    if (transaction.status === "success" && payment.payment_status === "pending") {
       const { error: updatePaymentError } = await supabaseClient
         .from("payments")
         .update({
           payment_status: "completed",
           payment_date: new Date().toISOString(),
-          stripe_payment_intent_id: session.payment_intent as string
+          payment_transaction_id: transaction.id.toString()
         })
         .eq("id", payment.id);
 
@@ -109,7 +126,7 @@ serve(async (req) => {
         jobStatus = "completed";
         logStep("Job status updated to completed");
       }
-    } else if (session.status === "expired" && payment.payment_status === "pending") {
+    } else if (transaction.status === "failed" && payment.payment_status === "pending") {
       const { error: updatePaymentError } = await supabaseClient
         .from("payments")
         .update({ payment_status: "failed" })
@@ -126,8 +143,9 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       payment_status: paymentStatus,
       job_status: jobStatus,
-      session_status: session.status,
-      payment_intent_status: session.payment_status
+      transaction_status: transaction.status,
+      amount: transaction.amount / 100, // Convert from kobo to naira
+      currency: transaction.currency
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
