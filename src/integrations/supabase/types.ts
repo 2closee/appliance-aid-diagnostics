@@ -225,6 +225,47 @@ export type Database = {
         }
         Relationships: []
       }
+      email_notifications: {
+        Row: {
+          email_type: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          recipient_email: string
+          repair_job_id: string
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          email_type: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email: string
+          repair_job_id: string
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string
+          repair_job_id?: string
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_notifications_repair_job_id_fkey"
+            columns: ["repair_job_id"]
+            isOneToOne: false
+            referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_status_history: {
         Row: {
           changed_by: string | null
@@ -324,6 +365,7 @@ export type Database = {
           stripe_fee: number | null
           stripe_payment_intent_id: string | null
           updated_at: string
+          webhook_received_at: string | null
         }
         Insert: {
           amount: number
@@ -341,6 +383,7 @@ export type Database = {
           stripe_fee?: number | null
           stripe_payment_intent_id?: string | null
           updated_at?: string
+          webhook_received_at?: string | null
         }
         Update: {
           amount?: number
@@ -358,6 +401,7 @@ export type Database = {
           stripe_fee?: number | null
           stripe_payment_intent_id?: string | null
           updated_at?: string
+          webhook_received_at?: string | null
         }
         Relationships: [
           {
@@ -372,6 +416,7 @@ export type Database = {
       "Repair Center": {
         Row: {
           address: string | null
+          average_rating: number | null
           cac_name: string | null
           cac_number: string | null
           email: string | null
@@ -383,10 +428,14 @@ export type Database = {
           specialties: string | null
           status: string
           tax_id: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
+          total_reviews: number | null
           years_of_experience: number | null
         }
         Insert: {
           address?: string | null
+          average_rating?: number | null
           cac_name?: string | null
           cac_number?: string | null
           email?: string | null
@@ -398,10 +447,14 @@ export type Database = {
           specialties?: string | null
           status?: string
           tax_id?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
+          total_reviews?: number | null
           years_of_experience?: number | null
         }
         Update: {
           address?: string | null
+          average_rating?: number | null
           cac_name?: string | null
           cac_number?: string | null
           email?: string | null
@@ -413,6 +466,9 @@ export type Database = {
           specialties?: string | null
           status?: string
           tax_id?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
+          total_reviews?: number | null
           years_of_experience?: number | null
         }
         Relationships: []
@@ -491,6 +547,63 @@ export type Database = {
           zip_code?: string
         }
         Relationships: []
+      }
+      repair_center_reviews: {
+        Row: {
+          created_at: string | null
+          customer_id: string
+          id: string
+          is_verified: boolean | null
+          rating: number
+          repair_center_id: number
+          repair_job_id: string
+          response_date: string | null
+          response_text: string | null
+          review_text: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id: string
+          id?: string
+          is_verified?: boolean | null
+          rating: number
+          repair_center_id: number
+          repair_job_id: string
+          response_date?: string | null
+          response_text?: string | null
+          review_text?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string
+          id?: string
+          is_verified?: boolean | null
+          rating?: number
+          repair_center_id?: number
+          repair_job_id?: string
+          response_date?: string | null
+          response_text?: string | null
+          review_text?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repair_center_reviews_repair_center_id_fkey"
+            columns: ["repair_center_id"]
+            isOneToOne: false
+            referencedRelation: "Repair Center"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repair_center_reviews_repair_job_id_fkey"
+            columns: ["repair_job_id"]
+            isOneToOne: false
+            referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       repair_center_settings: {
         Row: {
@@ -699,7 +812,7 @@ export type Database = {
     }
     Functions: {
       get_public_repair_centers: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           general_location: string
           hours: string
@@ -722,10 +835,7 @@ export type Database = {
           specialties: string
         }[]
       }
-      get_user_repair_center: {
-        Args: { _user_id: string }
-        Returns: number
-      }
+      get_user_repair_center: { Args: { _user_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

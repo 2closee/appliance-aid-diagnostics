@@ -90,7 +90,10 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
   }, [messages]);
 
   const uploadVideo = async (videoFile: File): Promise<string> => {
-    const fileName = `diagnostic-videos/${Date.now()}-${videoFile.name}`;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated");
+    
+    const fileName = `${user.id}/diagnostic-videos/${Date.now()}-${videoFile.name}`;
     
     const { data, error } = await supabase.storage
       .from('diagnostic-attachments')
@@ -98,15 +101,21 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
 
     if (error) throw error;
 
-    const { data: urlData } = supabase.storage
+    // Use signed URL for private bucket
+    const { data: urlData, error: urlError } = await supabase.storage
       .from('diagnostic-attachments')
-      .getPublicUrl(fileName);
+      .createSignedUrl(fileName, 3600); // 1 hour expiry
 
-    return urlData.publicUrl;
+    if (urlError) throw urlError;
+
+    return urlData.signedUrl;
   };
 
   const uploadAudio = async (audioBlob: Blob): Promise<string> => {
-    const fileName = `diagnostic-audio/${Date.now()}-recording.webm`;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated");
+    
+    const fileName = `${user.id}/diagnostic-audio/${Date.now()}-recording.webm`;
     
     const { data, error } = await supabase.storage
       .from('diagnostic-attachments')
@@ -114,11 +123,14 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
 
     if (error) throw error;
 
-    const { data: urlData } = supabase.storage
+    // Use signed URL for private bucket
+    const { data: urlData, error: urlError } = await supabase.storage
       .from('diagnostic-attachments')
-      .getPublicUrl(fileName);
+      .createSignedUrl(fileName, 3600); // 1 hour expiry
 
-    return urlData.publicUrl;
+    if (urlError) throw urlError;
+
+    return urlData.signedUrl;
   };
 
   const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
