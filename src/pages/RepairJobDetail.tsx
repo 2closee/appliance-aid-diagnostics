@@ -500,7 +500,7 @@ const RepairJobDetail = () => {
                     ) : (
                       <CreditCard className="w-4 h-4 mr-2" />
                     )}
-                    {paymentLoading ? "Processing..." : `Pay $${job.final_cost.toFixed(2)}`}
+                    {paymentLoading ? "Processing..." : `Pay ₦${job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                   </Button>
                 )}
 

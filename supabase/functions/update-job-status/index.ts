@@ -57,6 +57,32 @@ serve(async (req) => {
     }
     logStep("Access verified");
 
+    // PAYMENT ENFORCEMENT: Prevent status change to 'returned' without payment
+    if (status === 'returned') {
+      logStep("Checking payment status for return");
+      
+      const { data: payment, error: paymentError } = await supabaseClient
+        .from("payments")
+        .select("payment_status")
+        .eq("repair_job_id", repair_job_id)
+        .eq("payment_type", "final_payment")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (paymentError) {
+        logStep("Payment check error", { error: paymentError });
+        throw new Error("Failed to verify payment status");
+      }
+      
+      if (!payment || payment.payment_status !== 'completed') {
+        logStep("Payment not completed", { payment });
+        throw new Error("Payment must be completed before item can be returned. Customer needs to pay first.");
+      }
+      
+      logStep("Payment verified", { payment_status: payment.payment_status });
+    }
+
     // Prepare update data
     const updateData: any = {
       job_status: status,

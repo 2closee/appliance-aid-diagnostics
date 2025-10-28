@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Clock, CheckCircle, AlertCircle, DollarSign, Users, MessageCircle, Settings as SettingsIcon } from "lucide-react";
+import { Wrench, Clock, CheckCircle, AlertCircle, DollarSign, Users, MessageCircle, Settings as SettingsIcon, CreditCard } from "lucide-react";
+import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import RepairCenterSettings from "@/components/RepairCenterSettings";
@@ -306,12 +307,28 @@ const RepairCenterDashboard = () => {
                           <span><strong>Customer:</strong> {job.customer_name}</span>
                           <span><strong>Phone:</strong> {job.customer_phone}</span>
                           {job.estimated_cost && (
-                            <span><strong>Estimated:</strong> ${job.estimated_cost}</span>
+                            <span><strong>Estimated:</strong> ₦{job.estimated_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           )}
                           {job.final_cost && (
-                            <span><strong>Final Cost:</strong> ${job.final_cost}</span>
+                            <span><strong>Final Cost:</strong> ₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           )}
                         </div>
+                        
+                        {/* Payment Status Alert */}
+                        {job.job_status === 'repair_completed' && (
+                          <div className="mt-3 pt-3 border-t flex items-start gap-2">
+                            <CreditCard className="w-4 h-4 text-amber-500 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-amber-700">Awaiting Customer Payment</p>
+                              <p className="text-xs text-muted-foreground">
+                                Item cannot be returned until payment is received
+                                {job.payment_deadline && (
+                                  <> • Due: {format(new Date(job.payment_deadline), "MMM d, yyyy")}</>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="flex flex-col sm:flex-row gap-2">

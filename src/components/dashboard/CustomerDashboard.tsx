@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
-import { Plus, Wrench, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Plus, Wrench, Clock, CheckCircle, AlertCircle, CreditCard } from "lucide-react";
+import { format } from "date-fns";
 
 const CustomerDashboard = () => {
   const { user } = useAuth();
@@ -157,7 +158,25 @@ const CustomerDashboard = () => {
                         </div>
                         <p className="text-sm text-muted-foreground">{job.issue_description}</p>
                         {job.estimated_cost && (
-                          <p className="text-sm font-medium">Estimated Cost: ${job.estimated_cost}</p>
+                          <p className="text-sm font-medium">Estimated Cost: ₦{job.estimated_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        )}
+                        
+                        {/* Payment Required Alert */}
+                        {job.job_status === 'repair_completed' && (
+                          <div className="mt-2 pt-2 border-t">
+                            <div className="flex items-start gap-2 text-sm">
+                              <CreditCard className="w-4 h-4 text-amber-500 mt-0.5" />
+                              <div>
+                                <p className="font-medium text-amber-700">Payment Required</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Complete payment to receive your item
+                                  {job.payment_deadline && (
+                                    <> • Due: {format(new Date(job.payment_deadline), "MMM d")}</>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                         )}
                       </div>
                       <div className="text-sm text-muted-foreground">

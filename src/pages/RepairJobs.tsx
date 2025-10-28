@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Eye, CreditCard, CheckCircle } from "lucide-react";
+import { Plus, Eye, CreditCard, CheckCircle, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
@@ -253,6 +253,24 @@ const RepairJobs = () => {
                           Service fee: ₦{job.app_commission.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (7.5%)
                         </p>
                       )}
+                    </div>
+                  )}
+                  
+                  {/* Payment Required Warning */}
+                  {job.job_status === 'repair_completed' && (
+                    <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-amber-900">Payment Required</p>
+                          <p className="text-xs text-amber-700 mt-1">
+                            Your repair is complete! Please process payment to have your item returned.
+                            {job.payment_deadline && (
+                              <> Payment due by {format(new Date(job.payment_deadline), "MMMM d, yyyy")}.</>
+                            )}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
 

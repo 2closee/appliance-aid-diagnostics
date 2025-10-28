@@ -708,12 +708,15 @@ export type Database = {
           customer_email: string
           customer_name: string
           customer_phone: string
+          deposit_amount: number | null
+          deposit_required: boolean | null
           estimated_cost: number | null
           final_cost: number | null
           id: string
           issue_description: string
           job_status: Database["public"]["Enums"]["job_status"]
           notes: string | null
+          payment_deadline: string | null
           pickup_address: string
           pickup_date: string | null
           repair_center_id: number
@@ -731,12 +734,15 @@ export type Database = {
           customer_email: string
           customer_name: string
           customer_phone: string
+          deposit_amount?: number | null
+          deposit_required?: boolean | null
           estimated_cost?: number | null
           final_cost?: number | null
           id?: string
           issue_description: string
           job_status?: Database["public"]["Enums"]["job_status"]
           notes?: string | null
+          payment_deadline?: string | null
           pickup_address: string
           pickup_date?: string | null
           repair_center_id: number
@@ -754,12 +760,15 @@ export type Database = {
           customer_email?: string
           customer_name?: string
           customer_phone?: string
+          deposit_amount?: number | null
+          deposit_required?: boolean | null
           estimated_cost?: number | null
           final_cost?: number | null
           id?: string
           issue_description?: string
           job_status?: Database["public"]["Enums"]["job_status"]
           notes?: string | null
+          payment_deadline?: string | null
           pickup_address?: string
           pickup_date?: string | null
           repair_center_id?: number
