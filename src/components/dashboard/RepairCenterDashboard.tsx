@@ -107,9 +107,21 @@ const RepairCenterDashboard = () => {
 
   const updateJobStatus = async (jobId: string, newStatus: "requested" | "pickup_scheduled" | "picked_up" | "in_repair" | "repair_completed" | "ready_for_return" | "returned" | "completed" | "cancelled") => {
     try {
+      const updateData: any = { job_status: newStatus };
+      
+      // When completing repair, automatically set final_cost from quoted_cost if not set
+      if (newStatus === 'repair_completed') {
+        const job = repairJobs?.find(j => j.id === jobId);
+        if (job && !job.final_cost && job.quoted_cost) {
+          updateData.final_cost = job.quoted_cost;
+          updateData.app_commission = job.quoted_cost * 0.075;
+          updateData.payment_deadline = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+        }
+      }
+
       const { error } = await supabase
         .from("repair_jobs")
-        .update({ job_status: newStatus })
+        .update(updateData)
         .eq("id", jobId);
 
       if (error) throw error;
