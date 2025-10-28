@@ -494,7 +494,7 @@ const RepairJobDetail = () => {
             </Card>
 
             {/* Payment Summary Card - Prominent Display */}
-            {job.final_cost && job.job_status === "repair_completed" && (
+            {job.final_cost && (job.job_status === "repair_completed" || job.job_status === "completed") && (
               <Card className={`border-2 ${
                 isPaymentCritical(job.payment_deadline)
                   ? 'border-red-300 bg-red-50'
@@ -588,7 +588,7 @@ const RepairJobDetail = () => {
             )}
 
             {/* Cost Information - Regular Display */}
-            {(job.estimated_cost || job.final_cost) && job.job_status !== "repair_completed" && (
+            {(job.estimated_cost || job.final_cost) && job.job_status !== "repair_completed" && job.job_status !== "completed" && (
               <Card>
                 <CardHeader>
                   <CardTitle>Cost Information</CardTitle>

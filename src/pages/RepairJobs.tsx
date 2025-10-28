@@ -362,7 +362,7 @@ const RepairJobs = () => {
 
                   <div className="flex flex-col gap-2 mt-4">
                     {/* Payment Button - Priority Action */}
-                    {job.final_cost && job.job_status === "repair_completed" && (
+                    {job.final_cost && (job.job_status === "repair_completed" || job.job_status === "completed") && (
                       <Button 
                         className={`w-full text-base font-semibold ${
                           isPaymentCritical(job.payment_deadline)
