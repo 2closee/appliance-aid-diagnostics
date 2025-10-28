@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CreditCard, CheckCircle, Clock, MapPin, Phone, Mail, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, CreditCard, CheckCircle, Clock, MapPin, Phone, Mail, Loader2, AlertCircle, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 interface RepairJob {
   id: string;
@@ -72,12 +73,30 @@ const statusColors = {
 const RepairJobDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const [job, setJob] = useState<RepairJob | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
+
+  // Check if conversation exists for this job
+  const { data: conversation } = useQuery({
+    queryKey: ["job-conversation", id, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("conversations")
+        .select(`id, repair_center:"Repair Center"!repair_center_id(id, name)`)
+        .eq("repair_job_id", id)
+        .eq("customer_id", user?.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id && !!id,
+  });
 
   useEffect(() => {
     if (user && id) {
@@ -489,6 +508,24 @@ const RepairJobDetail = () => {
                 <CardTitle>Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Chat Button */}
+                {conversation && (
+                  <Button 
+                    className="w-full"
+                    variant="outline"
+                    onClick={() => navigate('/repair-center-chat', {
+                      state: {
+                        conversationId: conversation.id,
+                        selectedCenter: conversation.repair_center,
+                        repairJobId: id
+                      }
+                    })}
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Continue Chat
+                  </Button>
+                )}
+
                 {job.final_cost && job.job_status === "repair_completed" && (
                   <Button 
                     className="w-full"

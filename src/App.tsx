@@ -21,6 +21,7 @@ import RepairCenterApplication from "./pages/RepairCenterApplication";
 import RepairCenterAdmin from "./pages/RepairCenterAdmin";
 import RepairCenterChat from "./pages/RepairCenterChat";
 import RepairCenterConversations from "./pages/RepairCenterConversations";
+import CustomerConversations from "./pages/CustomerConversations";
 import EmailVerification from "./pages/EmailVerification";
 import EmailTest from "./pages/EmailTest";
 import Terms from "./pages/Terms";
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/repair-center-admin" element={<RepairCenterAdmin />} />
             <Route path="/repair-center-chat" element={<RepairCenterChat />} />
             <Route path="/repair-center-conversations" element={<RepairCenterConversations />} />
+            <Route path="/customer-conversations" element={<CustomerConversations />} />
             <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="/email-test" element={<EmailTest />} />
             <Route path="/terms" element={<Terms />} />

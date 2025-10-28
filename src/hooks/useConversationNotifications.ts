@@ -7,32 +7,41 @@ interface UnreadCounts {
   [conversationId: string]: number;
 }
 
-export const useConversationNotifications = (repairCenterId?: number) => {
+export const useConversationNotifications = (repairCenterId?: number, customerId?: string) => {
   const { toast } = useToast();
   const [unreadCounts, setUnreadCounts] = useState<UnreadCounts>({});
   const [totalUnread, setTotalUnread] = useState(0);
 
   useEffect(() => {
-    if (!repairCenterId) return;
+    if (!repairCenterId && !customerId) return;
 
     let channel: RealtimeChannel;
 
     const setupNotifications = async () => {
       // Fetch initial unread counts for all conversations
-      const { data: conversations } = await supabase
+      let conversationsQuery = supabase
         .from('conversations')
-        .select('id')
-        .eq('repair_center_id', repairCenterId);
+        .select('id');
+      
+      if (repairCenterId) {
+        conversationsQuery = conversationsQuery.eq('repair_center_id', repairCenterId);
+      } else if (customerId) {
+        conversationsQuery = conversationsQuery.eq('customer_id', customerId);
+      }
+
+      const { data: conversations } = await conversationsQuery;
 
       if (conversations) {
         const counts: UnreadCounts = {};
+        const senderType = repairCenterId ? 'customer' : 'repair_center';
+        
         for (const conv of conversations) {
           const { count } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
             .eq('conversation_id', conv.id)
             .eq('is_read', false)
-            .eq('sender_type', 'customer');
+            .eq('sender_type', senderType);
           
           if (count) {
             counts[conv.id] = count;
@@ -43,24 +52,35 @@ export const useConversationNotifications = (repairCenterId?: number) => {
       }
 
       // Subscribe to new messages across all conversations
+      const channelName = repairCenterId 
+        ? 'repair-center-notifications' 
+        : 'customer-notifications';
+      const filterSenderType = repairCenterId ? 'customer' : 'repair_center';
+      
       channel = supabase
-        .channel('repair-center-notifications')
+        .channel(channelName)
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
             table: 'messages',
-            filter: `sender_type=eq.customer`
+            filter: `sender_type=eq.${filterSenderType}`
           },
           async (payload: any) => {
-            // Check if message belongs to this repair center's conversations
-            const { data: conversation } = await supabase
+            // Check if message belongs to user's conversations
+            let conversationQuery = supabase
               .from('conversations')
-              .select('id, repair_job_id, repair_jobs(customer_name, appliance_type)')
-              .eq('id', payload.new.conversation_id)
-              .eq('repair_center_id', repairCenterId)
-              .single();
+              .select('id, repair_job_id, repair_jobs(customer_name, appliance_type), repair_center:"Repair Center"!repair_center_id(name)')
+              .eq('id', payload.new.conversation_id);
+            
+            if (repairCenterId) {
+              conversationQuery = conversationQuery.eq('repair_center_id', repairCenterId);
+            } else if (customerId) {
+              conversationQuery = conversationQuery.eq('customer_id', customerId);
+            }
+
+            const { data: conversation } = await conversationQuery.single();
 
             if (conversation) {
               // Update unread count for this conversation
@@ -71,11 +91,19 @@ export const useConversationNotifications = (repairCenterId?: number) => {
               setTotalUnread(prev => prev + 1);
 
               // Show toast notification
-              const jobInfo: any = conversation.repair_jobs;
-              toast({
-                title: "New Message",
-                description: `${jobInfo?.customer_name || 'A customer'} sent you a message about ${jobInfo?.appliance_type || 'their repair'}.`,
-              });
+              if (repairCenterId) {
+                const jobInfo: any = conversation.repair_jobs;
+                toast({
+                  title: "New Message",
+                  description: `${jobInfo?.customer_name || 'A customer'} sent you a message about ${jobInfo?.appliance_type || 'their repair'}.`,
+                });
+              } else {
+                const centerInfo: any = conversation.repair_center;
+                toast({
+                  title: "New Message",
+                  description: `${centerInfo?.name || 'A repair center'} sent you a message.`,
+                });
+              }
             }
           }
         )
@@ -89,7 +117,7 @@ export const useConversationNotifications = (repairCenterId?: number) => {
         supabase.removeChannel(channel);
       }
     };
-  }, [repairCenterId, toast]);
+  }, [repairCenterId, customerId, toast]);
 
   const markConversationAsRead = async (conversationId: string) => {
     // Mark all messages in conversation as read

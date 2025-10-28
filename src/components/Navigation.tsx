@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { 
   Bot, 
   MapPin, 
@@ -13,17 +14,23 @@ import {
   Wrench,
   Moon,
   Sun,
-  Settings
+  Settings,
+  MessageCircle
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
+import { useConversationNotifications } from "@/hooks/useConversationNotifications";
 
 const Navigation = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, signOut, userRole } = useAuth();
+  const { user, signOut, userRole, isRepairCenterStaff, repairCenterId } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { totalUnread } = useConversationNotifications(
+    isRepairCenterStaff ? repairCenterId : undefined,
+    userRole === 'customer' ? user?.id : undefined
+  );
 
   const navItems = [
     { path: "/", label: "Home", icon: Home },
@@ -83,6 +90,27 @@ const Navigation = () => {
                 </Button>
               </Link>
             ))}
+            
+            {/* Conversations Icon */}
+            {user && (userRole === 'customer' || isRepairCenterStaff) && (
+              <Link to={userRole === 'customer' ? "/customer-conversations" : "/repair-center-conversations"}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  {totalUnread > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                    >
+                      {totalUnread > 9 ? '9+' : totalUnread}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
+            )}
             {/* Only show Repair Center Portal link to non-logged-in users */}
             {!user && (
               <Link to="/repair-center-admin">
@@ -133,6 +161,27 @@ const Navigation = () => {
                 </Button>
               </Link>
             ))}
+            
+            {/* Conversations Link for Mobile */}
+            {user && (userRole === 'customer' || isRepairCenterStaff) && (
+              <Link 
+                to={userRole === 'customer' ? "/customer-conversations" : "/repair-center-conversations"}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start flex items-center space-x-2"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  <span>Conversations</span>
+                  {totalUnread > 0 && (
+                    <Badge variant="destructive" className="ml-auto">
+                      {totalUnread > 9 ? '9+' : totalUnread}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
+            )}
             {!user && (
               <Link to="/repair-center-admin" onClick={() => setIsMenuOpen(false)}>
                 <Button variant="secondary" className="w-full justify-start flex items-center space-x-2">
