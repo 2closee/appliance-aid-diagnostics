@@ -6,28 +6,98 @@ import { useConversation } from "@/hooks/useConversation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const RepairCenterChat = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { selectedCenter, repairJobId } = location.state || {};
+  const { user, isRepairCenterStaff, repairCenterId } = useAuth();
+  const { selectedCenter, repairJobId, conversationId: passedConversationId } = location.state || {};
   const [centerName, setCenterName] = useState<string>("");
+  const [fetchedConversationId, setFetchedConversationId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const { conversationId, isLoading } = useConversation(
+  // Use passed conversationId for repair center staff, or create/fetch for customers
+  const { conversationId: customerConversationId, isLoading: isCreatingConversation } = useConversation(
     selectedCenter?.id,
     repairJobId
   );
 
-  useEffect(() => {
-    if (!selectedCenter) {
-      navigate('/repair-centers');
-      return;
-    }
-    setCenterName(selectedCenter.name || "Repair Center");
-  }, [selectedCenter, navigate]);
+  const conversationId = passedConversationId || customerConversationId || fetchedConversationId;
+  const isLoading = loading || isCreatingConversation;
 
-  if (!selectedCenter) {
-    return null;
+  useEffect(() => {
+    const fetchConversationDetails = async () => {
+      setLoading(true);
+      
+      // For repair center staff viewing from conversations list
+      if (isRepairCenterStaff && passedConversationId) {
+        try {
+          // Fetch conversation details
+          const { data: conversation, error: convError } = await supabase
+            .from('conversations')
+            .select('*')
+            .eq('id', passedConversationId)
+            .single();
+
+          if (convError) throw convError;
+
+          if (conversation) {
+            setFetchedConversationId(conversation.id);
+            
+            // Fetch repair center name separately
+            const { data: center } = await supabase
+              .from('Repair Center')
+              .select('name')
+              .eq('id', conversation.repair_center_id)
+              .single();
+            
+            setCenterName(center?.name || "Repair Center");
+          }
+        } catch (error) {
+          console.error('Error fetching conversation:', error);
+          toast.error("Failed to load conversation details");
+        }
+      } 
+      // For customers with selectedCenter
+      else if (selectedCenter) {
+        setCenterName(selectedCenter.name || "Repair Center");
+      }
+      // If no context provided, redirect
+      else if (!passedConversationId) {
+        navigate('/repair-centers');
+        return;
+      }
+
+      setLoading(false);
+    };
+
+    fetchConversationDetails();
+  }, [selectedCenter, passedConversationId, isRepairCenterStaff, navigate]);
+
+  if (isRepairCenterStaff && !conversationId && !isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <Card>
+            <CardHeader>
+              <CardTitle>Conversation Not Found</CardTitle>
+              <CardDescription>
+                Unable to find the requested conversation.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => navigate('/repair-center-conversations')}>
+                Back to Conversations
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   return (

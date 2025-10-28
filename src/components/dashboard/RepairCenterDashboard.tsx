@@ -13,12 +13,14 @@ import { Wrench, Clock, CheckCircle, AlertCircle, DollarSign, Users, MessageCirc
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import RepairCenterSettings from "@/components/RepairCenterSettings";
+import { useConversationNotifications } from "@/hooks/useConversationNotifications";
 
 const RepairCenterDashboard = () => {
   const { user, repairCenterId } = useAuth();
   const { toast } = useToast();
   const [isOnline, setIsOnline] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const { totalUnread } = useConversationNotifications(repairCenterId || undefined);
 
   const { data: repairJobs, isLoading, refetch } = useQuery({
     queryKey: ["repair-center-jobs", repairCenterId],
@@ -197,9 +199,17 @@ const RepairCenterDashboard = () => {
               Settings
             </Button>
             <Link to="/repair-center-conversations">
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button variant="outline" className="flex items-center gap-2 relative">
                 <MessageCircle className="h-4 w-4" />
                 Conversations
+                {totalUnread > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  >
+                    {totalUnread}
+                  </Badge>
+                )}
               </Button>
             </Link>
           </div>

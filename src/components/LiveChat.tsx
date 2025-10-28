@@ -160,7 +160,22 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId }: LiveChat
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+
+    // Mark messages as read for repair center staff
+    if (isRepairCenterStaff && messages.length > 0) {
+      const unreadMessages = messages.filter(
+        m => !m.is_read && m.sender_type === 'customer'
+      );
+      
+      if (unreadMessages.length > 0) {
+        supabase
+          .from('messages')
+          .update({ is_read: true })
+          .in('id', unreadMessages.map(m => m.id))
+          .then();
+      }
+    }
+  }, [messages, isRepairCenterStaff]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !user) return;

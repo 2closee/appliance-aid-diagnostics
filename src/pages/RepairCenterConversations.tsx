@@ -4,14 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { MessageCircle, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { useConversationNotifications } from "@/hooks/useConversationNotifications";
 
 const RepairCenterConversations = () => {
   const { repairCenterId } = useAuth();
   const navigate = useNavigate();
+  const { unreadCounts, markConversationAsRead } = useConversationNotifications(repairCenterId || undefined);
 
   const { data: conversations, isLoading } = useQuery({
     queryKey: ["repair-center-conversations", repairCenterId],
@@ -31,10 +33,44 @@ const RepairCenterConversations = () => {
         .order("updated_at", { ascending: false });
 
       if (error) throw error;
+      
+      // Fetch repair center name for each conversation
+      if (data) {
+        const centerIds = [...new Set(data.map(c => c.repair_center_id))];
+        const { data: centers } = await supabase
+          .from('Repair Center')
+          .select('id, name')
+          .in('id', centerIds);
+        
+        const centerMap = new Map(centers?.map(c => [c.id, c.name]) || []);
+        
+        return data.map(conv => ({
+          ...conv,
+          repair_center_name: centerMap.get(conv.repair_center_id)
+        }));
+      }
+      
       return data;
     },
     enabled: !!repairCenterId,
   });
+
+  const handleViewChat = async (conversation: any) => {
+    // Mark conversation as read
+    await markConversationAsRead(conversation.id);
+    
+    // Navigate to chat with conversation details
+    navigate('/repair-center-chat', {
+      state: {
+        conversationId: conversation.id,
+        repairJobId: conversation.repair_job_id,
+        selectedCenter: {
+          id: conversation.repair_center_id,
+          name: conversation.repair_center_name
+        }
+      }
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -80,6 +116,11 @@ const RepairCenterConversations = () => {
                           <Badge variant={conversation.status === 'active' ? 'default' : 'secondary'}>
                             {conversation.status}
                           </Badge>
+                          {unreadCounts[conversation.id] > 0 && (
+                            <Badge variant="destructive" className="ml-2">
+                              {unreadCounts[conversation.id]} new
+                            </Badge>
+                          )}
                         </div>
                         {conversation.repair_jobs?.[0] && (
                           <p className="text-sm text-muted-foreground">
@@ -94,17 +135,13 @@ const RepairCenterConversations = () => {
                         </p>
                       </div>
                       
-                      <Link 
-                        to="/repair-center-chat" 
-                        state={{ 
-                          conversationId: conversation.id,
-                          repairJobId: conversation.repair_job_id 
-                        }}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewChat(conversation)}
                       >
-                        <Button variant="outline" size="sm">
-                          View Chat
-                        </Button>
-                      </Link>
+                        View Chat
+                      </Button>
                     </div>
                   </div>
                 ))}
