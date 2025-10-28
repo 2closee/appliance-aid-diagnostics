@@ -10,6 +10,7 @@ import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { QuoteReviewCard } from "@/components/QuoteReviewCard";
 
 interface RepairJob {
   id: string;
@@ -28,6 +29,11 @@ interface RepairJob {
   completion_date?: string;
   customer_confirmed: boolean;
   created_at: string;
+  quoted_cost?: number;
+  quote_notes?: string;
+  quote_response_deadline?: string;
+  ai_diagnosis_summary?: string;
+  diagnostic_attachments?: any;
   repair_center: {
     name: string;
     phone: string;
@@ -36,10 +42,16 @@ interface RepairJob {
 
 const statusColors = {
   requested: "bg-blue-100 text-blue-800",
+  quote_requested: "bg-amber-100 text-amber-800",
+  quote_pending_review: "bg-amber-100 text-amber-800",
+  quote_accepted: "bg-green-100 text-green-800",
+  quote_rejected: "bg-red-100 text-red-800",
+  quote_negotiating: "bg-purple-100 text-purple-800",
   pickup_scheduled: "bg-yellow-100 text-yellow-800",
   picked_up: "bg-orange-100 text-orange-800",
   in_repair: "bg-purple-100 text-purple-800",
   repair_completed: "bg-green-100 text-green-800",
+  cost_adjustment_pending: "bg-amber-100 text-amber-800",
   ready_for_return: "bg-teal-100 text-teal-800",
   returned: "bg-indigo-100 text-indigo-800",
   completed: "bg-green-100 text-green-800",
@@ -48,10 +60,16 @@ const statusColors = {
 
 const statusLabels = {
   requested: "Requested",
+  quote_requested: "Quote Requested",
+  quote_pending_review: "Quote Pending Review",
+  quote_accepted: "Quote Accepted",
+  quote_rejected: "Quote Rejected",
+  quote_negotiating: "Negotiating",
   pickup_scheduled: "Pickup Scheduled",
   picked_up: "Picked Up",
   in_repair: "In Repair",
   repair_completed: "Repair Completed",
+  cost_adjustment_pending: "Cost Adjustment Pending",
   ready_for_return: "Ready for Return",
   returned: "Returned",
   completed: "Completed",
@@ -216,8 +234,36 @@ const RepairJobs = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6">
-            {jobs.map((job) => (
+          <div className="space-y-8">
+            {/* Pending Quotes Section */}
+            {jobs.filter(job => job.job_status === 'quote_pending_review').length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertCircle className="w-5 h-5 text-amber-600" />
+                  <h2 className="text-2xl font-bold">Quotes Awaiting Your Response</h2>
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                    {jobs.filter(job => job.job_status === 'quote_pending_review').length}
+                  </Badge>
+                </div>
+                <div className="grid gap-6">
+                  {jobs
+                    .filter(job => job.job_status === 'quote_pending_review')
+                    .map((job) => (
+                      <QuoteReviewCard
+                        key={job.id}
+                        repairJob={job}
+                      />
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Active Jobs Section */}
+            {jobs.filter(job => job.job_status !== 'quote_pending_review').length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold mb-4">Your Repair Jobs</h2>
+                <div className="grid gap-6">
+                  {jobs.filter(job => job.job_status !== 'quote_pending_review').map((job) => (
               <Card key={job.id} className="overflow-hidden">
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -366,7 +412,10 @@ const RepairJobs = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

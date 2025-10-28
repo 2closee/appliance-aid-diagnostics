@@ -53,6 +53,8 @@ const Diagnostic = () => {
   const [selectedRepairCenter, setSelectedRepairCenter] = useState<any>(null);
   const [currentReport, setCurrentReport] = useState<any>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [diagnosticAttachments, setDiagnosticAttachments] = useState<any>(null);
+  const [conversationIdRef, setConversationIdRef] = useState<string | null>(null);
 
   const appliances = [
     { id: 'tv', name: 'TV', icon: Tv, description: 'Smart TV, LED, OLED' },
@@ -364,10 +366,32 @@ const Diagnostic = () => {
                         <MapPin className="h-4 w-4 mr-2" />
                         Find Repair Center
                       </Button>
-                      <Button onClick={() => user ? navigate('/pickup-request') : navigate('/auth?redirect=/pickup-request')} variant="outline" className="flex-1">
-                        <ArrowRight className="h-4 w-4 mr-2" />
-                        Schedule Pickup
-                      </Button>
+                       <Button onClick={() => {
+                         if (user) {
+                           navigate('/pickup-request', {
+                             state: {
+                               applianceType: selectedAppliance,
+                               issueDescription: diagnosis.message,
+                               diagnosticData: currentReport ? {
+                                 conversationId: conversationIdRef,
+                                 diagnosis: currentReport.diagnosis || diagnosis.message,
+                                 confidenceScore: currentReport.confidenceScore,
+                                 estimatedCost: {
+                                   min: currentReport.estimatedCost?.min,
+                                   max: currentReport.estimatedCost?.max
+                                 },
+                                 recommendations: currentReport.recommendations,
+                                 attachments: diagnosticAttachments
+                               } : undefined
+                             }
+                           });
+                         } else {
+                           navigate('/auth?redirect=/pickup-request');
+                         }
+                       }} variant="outline" className="flex-1">
+                         <ArrowRight className="h-4 w-4 mr-2" />
+                         Schedule Pickup
+                       </Button>
                     </div>
                   </div>
                 )}
@@ -472,7 +496,12 @@ const Diagnostic = () => {
               <AIChatInterface
                 appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
                 initialDiagnosis={diagnosis.message || 'Initial diagnostic questions completed'}
-                onDiagnosisUpdate={handleDiagnosisUpdate}
+                onDiagnosisUpdate={(newDiag, report) => {
+                  handleDiagnosisUpdate(newDiag, report);
+                  if (report) {
+                    setConversationIdRef(report.conversationId);
+                  }
+                }}
               />
 
               {currentReport && (
@@ -507,13 +536,30 @@ const Diagnostic = () => {
               <RepairCenterChatInterface
                 appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
                 diagnosis={diagnosis.message}
-                onSchedulePickup={() => user ? navigate('/pickup-request', { 
-                  state: { 
-                    selectedCenter: selectedRepairCenter,
-                    applianceType: selectedAppliance,
-                    issueDescription: diagnosis.message 
-                  } 
-                }) : navigate('/auth')}
+                onSchedulePickup={() => {
+                  if (user) {
+                    navigate('/pickup-request', { 
+                      state: { 
+                        selectedCenter: selectedRepairCenter,
+                        applianceType: selectedAppliance,
+                        issueDescription: diagnosis.message,
+                        diagnosticData: currentReport ? {
+                          conversationId: conversationIdRef,
+                          diagnosis: currentReport.diagnosis || diagnosis.message,
+                          confidenceScore: currentReport.confidenceScore,
+                          estimatedCost: {
+                            min: currentReport.estimatedCost?.min,
+                            max: currentReport.estimatedCost?.max
+                          },
+                          recommendations: currentReport.recommendations,
+                          attachments: diagnosticAttachments
+                        } : undefined
+                      } 
+                    });
+                  } else {
+                    navigate('/auth');
+                  }
+                }}
                 onFindRepairCenter={() => user ? navigate('/repair-centers') : navigate('/auth')}
                 selectedCenter={selectedRepairCenter}
               />

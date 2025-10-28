@@ -7,10 +7,11 @@ import Navigation from "@/components/Navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Wrench, CheckCircle, Clock, FileText, Plus, AlertCircle, MessageCircle, CreditCard, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { format, differenceInHours } from "date-fns";
+import { format } from "date-fns";
 import { useConversationNotifications } from "@/hooks/useConversationNotifications";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { differenceInHours } from "date-fns";
 
 const CustomerDashboard = () => {
   const { user } = useAuth();
@@ -109,6 +110,16 @@ const CustomerDashboard = () => {
     return hoursUntilDeadline <= 24 && hoursUntilDeadline > 0;
   };
 
+  const pendingQuotes = repairJobs?.filter(job => job.job_status === 'quote_pending_review') || [];
+
+  const getQuoteUrgency = (deadline?: string) => {
+    if (!deadline) return 'normal';
+    const hoursLeft = differenceInHours(new Date(deadline), new Date());
+    if (hoursLeft <= 12) return 'critical';
+    if (hoursLeft <= 24) return 'urgent';
+    return 'normal';
+  };
+
   const statsData = repairJobs ? {
     total: repairJobs.length,
     completed: repairJobs.filter(job => job.job_status === 'completed').length,
@@ -133,6 +144,67 @@ const CustomerDashboard = () => {
             </Button>
           </Link>
         </div>
+
+        {/* Quote Alert Banner */}
+        {pendingQuotes.length > 0 && (
+          <Card className="border-2 border-amber-500/50 bg-amber-50/50">
+            <CardHeader>
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-lg bg-amber-500/10">
+                  <AlertCircle className="h-6 w-6 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-xl text-amber-900 mb-2">
+                    {pendingQuotes.length === 1 ? 'Quote Awaiting Your Response' : `${pendingQuotes.length} Quotes Awaiting Response`}
+                  </CardTitle>
+                  <CardDescription className="text-amber-700">
+                    {pendingQuotes.some(q => getQuoteUrgency(q.quote_response_deadline) === 'critical') 
+                      ? '⚠️ URGENT: Some quotes expire in less than 12 hours!'
+                      : 'Review and respond to your repair quotes before they expire.'}
+                  </CardDescription>
+                </div>
+                <Link to="/repair-jobs">
+                  <Button className="bg-amber-600 hover:bg-amber-700">
+                    Review {pendingQuotes.length === 1 ? 'Quote' : 'Quotes'}
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {pendingQuotes.slice(0, 2).map((job) => (
+                  <div key={job.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                    <div>
+                      <p className="font-medium text-sm">{job.appliance_type} - {job.repair_center?.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Quote: ₦{job.quoted_cost?.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+                        {job.quote_response_deadline && (
+                          <span className={getQuoteUrgency(job.quote_response_deadline) === 'critical' ? 'text-red-600 font-bold ml-2' : 'ml-2'}>
+                            • Expires {format(new Date(job.quote_response_deadline), "MMM d, h:mm a")}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <Badge className={
+                      getQuoteUrgency(job.quote_response_deadline) === 'critical'
+                        ? 'bg-red-500 text-white'
+                        : getQuoteUrgency(job.quote_response_deadline) === 'urgent'
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-amber-200 text-amber-900'
+                    }>
+                      {getQuoteUrgency(job.quote_response_deadline) === 'critical' ? 'URGENT' : 'Pending'}
+                    </Badge>
+                  </div>
+                ))}
+                {pendingQuotes.length > 2 && (
+                  <p className="text-sm text-center text-muted-foreground pt-2">
+                    +{pendingQuotes.length - 2} more {pendingQuotes.length - 2 === 1 ? 'quote' : 'quotes'}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

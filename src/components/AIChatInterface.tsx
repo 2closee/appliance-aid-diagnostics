@@ -46,7 +46,7 @@ interface AIChatInterfaceProps {
   applianceModel?: string;
   initialDiagnosis: string;
   language?: string;
-  onDiagnosisUpdate?: (newDiagnosis: string, report?: any) => void;
+  onDiagnosisUpdate?: (newDiagnosis: string, report?: any & { conversationId?: string }) => void;
 }
 
 const AIChatInterface: React.FC<AIChatInterfaceProps> = ({ 
@@ -71,8 +71,20 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [currentReport, setCurrentReport] = useState<any>(null);
+  const [uploadedVideos, setUploadedVideos] = useState<Array<{url: string, name: string}>>([]);
+  const [uploadedImages, setUploadedImages] = useState<Array<{url: string, name: string}>>([]);
+  const [uploadedAudio, setUploadedAudio] = useState<Array<{url: string, transcription: string}>>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Expose diagnostic data for parent component
+  const getDiagnosticData = () => ({
+    conversationId,
+    currentReport,
+    uploadedVideos,
+    uploadedImages,
+    uploadedAudio
+  });
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -215,7 +227,8 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
         estimatedCost: data.estimatedCost,
         recommendedParts: data.recommendedParts,
         repairUrgency: data.repairUrgency,
-        isProfessionalRepairNeeded: data.isProfessionalRepairNeeded
+        isProfessionalRepairNeeded: data.isProfessionalRepairNeeded,
+        conversationId: conversationId || data.conversationId
       };
       setCurrentReport(report);
 
@@ -260,6 +273,7 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
     if (selectedVideo) {
       const videoUrl = await uploadVideo(selectedVideo);
       attachments.push({ type: 'video', url: videoUrl, name: selectedVideo.name });
+      setUploadedVideos(prev => [...prev, { url: videoUrl, name: selectedVideo.name }]);
       setSelectedVideo(null);
     }
 
@@ -272,6 +286,8 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
       
       const transcription = await transcribeAudio(audioBlob);
       const audioUrl = await uploadAudio(audioBlob);
+      
+      setUploadedAudio(prev => [...prev, { url: audioUrl, transcription }]);
       
       const attachments: Message['attachments'] = [{
         type: 'audio',
