@@ -15,12 +15,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import RepairCenterSettings from "@/components/RepairCenterSettings";
 import { useConversationNotifications } from "@/hooks/useConversationNotifications";
+import { QuoteProvisionForm } from "@/components/QuoteProvisionForm";
 
 const RepairCenterDashboard = () => {
   const { user, repairCenterId } = useAuth();
   const { toast } = useToast();
   const [isOnline, setIsOnline] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [selectedQuoteJob, setSelectedQuoteJob] = useState<any>(null);
   const { totalUnread } = useConversationNotifications(repairCenterId || undefined);
 
   const { data: repairJobs, isLoading, refetch } = useQuery({
@@ -154,15 +156,19 @@ const RepairCenterDashboard = () => {
     }
   };
 
+  const quoteRequests = repairJobs?.filter(job => job.job_status === 'quote_requested') || [];
+  const otherJobs = repairJobs?.filter(job => job.job_status !== 'quote_requested') || [];
+
   const statsData = repairJobs ? {
     total: repairJobs.length,
     completed: repairJobs.filter(job => job.job_status === 'completed').length,
     inProgress: repairJobs.filter(job => job.job_status === 'in_repair').length,
     pending: repairJobs.filter(job => job.job_status === 'requested').length,
+    quoteRequests: quoteRequests.length,
     totalRevenue: repairJobs
       .filter(job => job.final_cost)
       .reduce((sum, job) => sum + Number(job.final_cost), 0),
-  } : { total: 0, completed: 0, inProgress: 0, pending: 0, totalRevenue: 0 };
+  } : { total: 0, completed: 0, inProgress: 0, pending: 0, quoteRequests: 0, totalRevenue: 0 };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
@@ -219,6 +225,39 @@ const RepairCenterDashboard = () => {
         </div>
 
         {showSettings && <RepairCenterSettings />}
+
+        {/* Quote Requests Section */}
+        {quoteRequests.length > 0 && (
+          <Card className="bg-gradient-to-br from-amber-50 to-background border-amber-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-amber-600" />
+                Quote Requests ({quoteRequests.length})
+              </CardTitle>
+              <CardDescription>New repair requests awaiting your quote</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {quoteRequests.map((job) => (
+                  <div key={job.id} className="p-4 border rounded-lg bg-background hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1">
+                        <h3 className="font-medium mb-1">{job.appliance_type} - {job.appliance_brand}</h3>
+                        <p className="text-sm text-muted-foreground mb-2">{job.issue_description}</p>
+                        {job.ai_diagnosis_summary && (
+                          <Badge variant="outline" className="text-xs">AI Diagnosis Available</Badge>
+                        )}
+                      </div>
+                      <Button onClick={() => setSelectedQuoteJob(job)} size="sm">
+                        Provide Quote
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -286,9 +325,9 @@ const RepairCenterDashboard = () => {
                   <div key={i} className="h-20 bg-muted animate-pulse rounded" />
                 ))}
               </div>
-            ) : repairJobs && repairJobs.length > 0 ? (
+            ) : otherJobs && otherJobs.length > 0 ? (
               <div className="space-y-4">
-                {repairJobs.map((job) => (
+                {otherJobs.map((job) => (
                   <div
                     key={job.id}
                     className="p-4 border rounded-lg space-y-4"
@@ -368,6 +407,18 @@ const RepairCenterDashboard = () => {
             )}
           </CardContent>
         </Card>
+
+        {selectedQuoteJob && (
+          <QuoteProvisionForm
+            repairJob={selectedQuoteJob}
+            open={!!selectedQuoteJob}
+            onClose={() => setSelectedQuoteJob(null)}
+            onQuoteSubmitted={() => {
+              setSelectedQuoteJob(null);
+              refetch();
+            }}
+          />
+        )}
       </main>
     </div>
   );

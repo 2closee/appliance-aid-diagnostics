@@ -32,3 +32,12 @@ verify_jwt = false
 
 [functions.verify-payment-status]
 verify_jwt = true
+
+[functions.provide-repair-quote]
+verify_jwt = true
+
+[functions.respond-to-quote]
+verify_jwt = true
+
+[functions.request-cost-adjustment]
+verify_jwt = true

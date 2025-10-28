@@ -698,11 +698,17 @@ export type Database = {
       }
       repair_jobs: {
         Row: {
+          ai_confidence_score: number | null
+          ai_diagnosis_summary: string | null
+          ai_estimated_cost_max: number | null
+          ai_estimated_cost_min: number | null
           app_commission: number | null
           appliance_brand: string | null
           appliance_model: string | null
           appliance_type: string
           completion_date: string | null
+          cost_adjustment_approved: boolean | null
+          cost_adjustment_reason: string | null
           created_at: string
           customer_confirmed: boolean | null
           customer_email: string
@@ -710,6 +716,8 @@ export type Database = {
           customer_phone: string
           deposit_amount: number | null
           deposit_required: boolean | null
+          diagnostic_attachments: Json | null
+          diagnostic_conversation_id: string | null
           estimated_cost: number | null
           final_cost: number | null
           id: string
@@ -719,16 +727,27 @@ export type Database = {
           payment_deadline: string | null
           pickup_address: string
           pickup_date: string | null
+          quote_expires_at: string | null
+          quote_notes: string | null
+          quote_provided_at: string | null
+          quote_response_deadline: string | null
+          quoted_cost: number | null
           repair_center_id: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          ai_confidence_score?: number | null
+          ai_diagnosis_summary?: string | null
+          ai_estimated_cost_max?: number | null
+          ai_estimated_cost_min?: number | null
           app_commission?: number | null
           appliance_brand?: string | null
           appliance_model?: string | null
           appliance_type: string
           completion_date?: string | null
+          cost_adjustment_approved?: boolean | null
+          cost_adjustment_reason?: string | null
           created_at?: string
           customer_confirmed?: boolean | null
           customer_email: string
@@ -736,6 +755,8 @@ export type Database = {
           customer_phone: string
           deposit_amount?: number | null
           deposit_required?: boolean | null
+          diagnostic_attachments?: Json | null
+          diagnostic_conversation_id?: string | null
           estimated_cost?: number | null
           final_cost?: number | null
           id?: string
@@ -745,16 +766,27 @@ export type Database = {
           payment_deadline?: string | null
           pickup_address: string
           pickup_date?: string | null
+          quote_expires_at?: string | null
+          quote_notes?: string | null
+          quote_provided_at?: string | null
+          quote_response_deadline?: string | null
+          quoted_cost?: number | null
           repair_center_id: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          ai_confidence_score?: number | null
+          ai_diagnosis_summary?: string | null
+          ai_estimated_cost_max?: number | null
+          ai_estimated_cost_min?: number | null
           app_commission?: number | null
           appliance_brand?: string | null
           appliance_model?: string | null
           appliance_type?: string
           completion_date?: string | null
+          cost_adjustment_approved?: boolean | null
+          cost_adjustment_reason?: string | null
           created_at?: string
           customer_confirmed?: boolean | null
           customer_email?: string
@@ -762,6 +794,8 @@ export type Database = {
           customer_phone?: string
           deposit_amount?: number | null
           deposit_required?: boolean | null
+          diagnostic_attachments?: Json | null
+          diagnostic_conversation_id?: string | null
           estimated_cost?: number | null
           final_cost?: number | null
           id?: string
@@ -771,11 +805,23 @@ export type Database = {
           payment_deadline?: string | null
           pickup_address?: string
           pickup_date?: string | null
+          quote_expires_at?: string | null
+          quote_notes?: string | null
+          quote_provided_at?: string | null
+          quote_response_deadline?: string | null
+          quoted_cost?: number | null
           repair_center_id?: number
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "repair_jobs_diagnostic_conversation_id_fkey"
+            columns: ["diagnostic_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_conversations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "repair_jobs_repair_center_id_fkey"
             columns: ["repair_center_id"]
@@ -880,6 +926,13 @@ export type Database = {
         | "returned"
         | "completed"
         | "cancelled"
+        | "quote_requested"
+        | "quote_pending_review"
+        | "quote_accepted"
+        | "quote_rejected"
+        | "quote_negotiating"
+        | "quote_expired"
+        | "cost_adjustment_pending"
       payment_status:
         | "pending"
         | "processing"
@@ -1025,6 +1078,13 @@ export const Constants = {
         "returned",
         "completed",
         "cancelled",
+        "quote_requested",
+        "quote_pending_review",
+        "quote_accepted",
+        "quote_rejected",
+        "quote_negotiating",
+        "quote_expired",
+        "cost_adjustment_pending",
       ],
       payment_status: [
         "pending",

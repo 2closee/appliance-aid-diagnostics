@@ -63,6 +63,7 @@ const PickupRequest = () => {
   const selectedCenter = location.state?.selectedCenter;
   const passedApplianceType = location.state?.applianceType;
   const passedIssueDescription = location.state?.issueDescription;
+  const diagnosticData = location.state?.diagnosticData;
   
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
@@ -183,7 +184,13 @@ const PickupRequest = () => {
           appliance_model: formData.applianceModel,
           issue_description: formData.issueDescription,
           pickup_date: formData.preferredDate ? new Date(formData.preferredDate).toISOString() : null,
-          job_status: "requested"
+          job_status: "quote_requested",
+          diagnostic_conversation_id: diagnosticData?.conversationId,
+          ai_diagnosis_summary: diagnosticData?.diagnosis,
+          ai_confidence_score: diagnosticData?.confidenceScore,
+          ai_estimated_cost_min: diagnosticData?.estimatedCost?.min,
+          ai_estimated_cost_max: diagnosticData?.estimatedCost?.max,
+          diagnostic_attachments: diagnosticData?.attachments
         })
         .select()
         .single();
@@ -194,7 +201,7 @@ const PickupRequest = () => {
       
       toast({
         title: "Request Submitted Successfully!",
-        description: "We've received your pickup request. You'll be contacted within 24 hours.",
+        description: "Your request has been sent! You'll receive a quote within 24 hours.",
       });
     } catch (error) {
       console.error("Error submitting repair request:", error);
@@ -222,15 +229,15 @@ const PickupRequest = () => {
                   Request Submitted Successfully!
                 </h1>
                 <p className="text-lg text-muted-foreground mb-6">
-                  Your pickup request has been sent to our team. We'll contact you within 24 hours to confirm your appointment.
+                  Your repair request has been sent! The repair center will review your diagnostic information and send you a quote within 24 hours.
                 </p>
                 <div className="bg-gradient-card p-6 rounded-lg border mb-6">
                   <h3 className="font-semibold mb-2">What happens next?</h3>
                   <ul className="text-sm text-muted-foreground space-y-1 text-left">
-                    <li>• Our team will review your request</li>
-                    <li>• We'll call you to confirm the pickup time</li>
-                    <li>• A technician will come to your location</li>
-                    <li>• You'll receive updates on the repair progress</li>
+                    <li>• The repair center will review your diagnostic information</li>
+                    <li>• You'll receive a quote within 24 hours</li>
+                    <li>• Accept the quote to schedule pickup</li>
+                    <li>• Track your repair progress in real-time</li>
                   </ul>
                 </div>
                 <div className="flex gap-4 justify-center">
