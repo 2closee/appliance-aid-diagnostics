@@ -5,15 +5,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Wrench, CheckCircle, Clock, FileText, Plus, AlertCircle, MessageCircle, CreditCard } from "lucide-react";
+import { Wrench, CheckCircle, Clock, FileText, Plus, AlertCircle, MessageCircle, CreditCard, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { format } from "date-fns";
+import { format, differenceInHours } from "date-fns";
 import { useConversationNotifications } from "@/hooks/useConversationNotifications";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const CustomerDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { totalUnread } = useConversationNotifications(undefined, user?.id);
+  const { toast } = useToast();
 
   const { data: repairJobs, isLoading } = useQuery({
     queryKey: ["customer-repair-jobs", user?.id],
@@ -59,6 +62,51 @@ const CustomerDashboard = () => {
       default:
         return <AlertCircle className="w-4 h-4" />;
     }
+  };
+
+  const [paymentLoadingId, setPaymentLoadingId] = useState<string | null>(null);
+
+  const handlePayment = async (jobId: string, amount: number) => {
+    setPaymentLoadingId(jobId);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-repair-payment", {
+        body: {
+          repair_job_id: jobId,
+          amount: amount
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.url) {
+        window.location.href = data.url;
+        toast({
+          title: "Redirecting to Payment",
+          description: "You'll be redirected to Paystack to complete your payment securely.",
+        });
+      }
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create payment session",
+        variant: "destructive",
+      });
+    } finally {
+      setPaymentLoadingId(null);
+    }
+  };
+
+  const isPaymentUrgent = (deadline?: string) => {
+    if (!deadline) return false;
+    const hoursUntilDeadline = differenceInHours(new Date(deadline), new Date());
+    return hoursUntilDeadline <= 48 && hoursUntilDeadline > 0;
+  };
+
+  const isPaymentCritical = (deadline?: string) => {
+    if (!deadline) return false;
+    const hoursUntilDeadline = differenceInHours(new Date(deadline), new Date());
+    return hoursUntilDeadline <= 24 && hoursUntilDeadline > 0;
   };
 
   const statsData = repairJobs ? {
@@ -163,29 +211,75 @@ const CustomerDashboard = () => {
                         {job.estimated_cost && (
                           <p className="text-sm font-medium">Estimated Cost: ₦{job.estimated_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                         )}
-                        
-                        {/* Payment Required Alert */}
-                        {job.job_status === 'repair_completed' && (
-                          <div className="mt-2 pt-2 border-t">
-                            <div className="flex items-start gap-2 text-sm">
-                              <CreditCard className="w-4 h-4 text-amber-500 mt-0.5" />
-                              <div>
-                                <p className="font-medium text-amber-700">Payment Required</p>
-                                <p className="text-xs text-muted-foreground">
-                                  Complete payment to receive your item
-                                  {job.payment_deadline && (
-                                    <> • Due: {format(new Date(job.payment_deadline), "MMM d")}</>
-                                  )}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {new Date(job.created_at).toLocaleDateString()}
                       </div>
                     </div>
+                    
+                    {/* Payment Required Card - High Priority CTA */}
+                    {job.job_status === 'repair_completed' && job.final_cost && (
+                      <div 
+                        className={`mt-4 p-4 rounded-lg border-2 ${
+                          isPaymentCritical(job.payment_deadline) 
+                            ? 'bg-red-50 border-red-300 animate-pulse' 
+                            : isPaymentUrgent(job.payment_deadline)
+                            ? 'bg-amber-50 border-amber-300'
+                            : 'bg-amber-50 border-amber-200'
+                        }`}
+                        onClick={(e) => e.preventDefault()}
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          <CreditCard className={`w-5 h-5 mt-0.5 ${
+                            isPaymentCritical(job.payment_deadline) ? 'text-red-600' : 'text-amber-600'
+                          }`} />
+                          <div className="flex-1">
+                            <p className={`font-semibold ${
+                              isPaymentCritical(job.payment_deadline) ? 'text-red-900' : 'text-amber-900'
+                            }`}>
+                              {isPaymentCritical(job.payment_deadline) 
+                                ? '⚠️ URGENT: Payment Required' 
+                                : 'Payment Required'}
+                            </p>
+                            <p className={`text-sm mt-1 ${
+                              isPaymentCritical(job.payment_deadline) ? 'text-red-700' : 'text-amber-700'
+                            }`}>
+                              Your repair is complete! Pay now to receive your item.
+                              {job.payment_deadline && (
+                                <span className="font-medium">
+                                  {' • Due: '}
+                                  {format(new Date(job.payment_deadline), "MMM d, yyyy 'at' h:mm a")}
+                                  {isPaymentCritical(job.payment_deadline) && (
+                                    <span className="text-red-800 font-bold"> (Less than 24 hours!)</span>
+                                  )}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <Button 
+                          className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold shadow-lg"
+                          size="lg"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handlePayment(job.id, job.final_cost);
+                          }}
+                          disabled={paymentLoadingId === job.id}
+                        >
+                          {paymentLoadingId === job.id ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="w-4 h-4 mr-2" />
+                              Pay ₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Now
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
                   </Link>
                 ))}
               </div>

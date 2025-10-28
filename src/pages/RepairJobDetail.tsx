@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CreditCard, CheckCircle, Clock, MapPin, Phone, Mail, Loader2, AlertCircle, MessageCircle } from "lucide-react";
-import { format } from "date-fns";
+import { ArrowLeft, CreditCard, CheckCircle, Clock, MapPin, Phone, Mail, Loader2, AlertCircle, MessageCircle, Timer } from "lucide-react";
+import { format, differenceInHours } from "date-fns";
 import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -29,6 +29,7 @@ interface RepairJob {
   job_status: string;
   pickup_date?: string;
   completion_date?: string;
+  payment_deadline?: string;
   customer_confirmed: boolean;
   notes?: string;
   created_at: string;
@@ -279,6 +280,27 @@ const RepairJobDetail = () => {
     return currentStepIndex >= 0 ? ((currentStepIndex + 1) / statusSteps.length) * 100 : 0;
   };
 
+  const isPaymentUrgent = (deadline?: string) => {
+    if (!deadline) return false;
+    const hoursUntilDeadline = differenceInHours(new Date(deadline), new Date());
+    return hoursUntilDeadline <= 48 && hoursUntilDeadline > 0;
+  };
+
+  const isPaymentCritical = (deadline?: string) => {
+    if (!deadline) return false;
+    const hoursUntilDeadline = differenceInHours(new Date(deadline), new Date());
+    return hoursUntilDeadline <= 24 && hoursUntilDeadline > 0;
+  };
+
+  const getTimeRemaining = (deadline?: string) => {
+    if (!deadline) return null;
+    const hours = differenceInHours(new Date(deadline), new Date());
+    if (hours <= 0) return "Overdue";
+    if (hours < 24) return `${hours} hours remaining`;
+    const days = Math.floor(hours / 24);
+    return `${days} day${days > 1 ? 's' : ''} remaining`;
+  };
+
   if (isLoading || loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -471,8 +493,102 @@ const RepairJobDetail = () => {
               </CardContent>
             </Card>
 
-            {/* Cost Information */}
-            {(job.estimated_cost || job.final_cost) && (
+            {/* Payment Summary Card - Prominent Display */}
+            {job.final_cost && job.job_status === "repair_completed" && (
+              <Card className={`border-2 ${
+                isPaymentCritical(job.payment_deadline)
+                  ? 'border-red-300 bg-red-50'
+                  : isPaymentUrgent(job.payment_deadline)
+                  ? 'border-amber-300 bg-amber-50'
+                  : 'border-green-300 bg-green-50'
+              }`}>
+                <CardHeader>
+                  <CardTitle className={`flex items-center gap-2 ${
+                    isPaymentCritical(job.payment_deadline)
+                      ? 'text-red-900'
+                      : isPaymentUrgent(job.payment_deadline)
+                      ? 'text-amber-900'
+                      : 'text-green-900'
+                  }`}>
+                    <CreditCard className="w-5 h-5" />
+                    {isPaymentCritical(job.payment_deadline) ? '⚠️ URGENT Payment Due' : 'Payment Summary'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Repair Cost</span>
+                      <span className="text-lg font-bold">₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                    {job.app_commission && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Service Fee (7.5%)</span>
+                        <span>₦{job.app_commission.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    )}
+                    {job.estimated_cost && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Original Estimate</span>
+                        <span>₦{job.estimated_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {job.payment_deadline && (
+                    <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                      isPaymentCritical(job.payment_deadline)
+                        ? 'bg-red-100 border border-red-200'
+                        : isPaymentUrgent(job.payment_deadline)
+                        ? 'bg-amber-100 border border-amber-200'
+                        : 'bg-blue-50 border border-blue-200'
+                    }`}>
+                      <Timer className={`w-4 h-4 ${
+                        isPaymentCritical(job.payment_deadline) ? 'text-red-600' : 'text-amber-600'
+                      }`} />
+                      <div className="flex-1">
+                        <p className="text-xs font-medium">Payment Deadline</p>
+                        <p className="text-sm font-semibold">{format(new Date(job.payment_deadline), "MMM d, yyyy 'at' h:mm a")}</p>
+                        <p className={`text-xs font-bold ${
+                          isPaymentCritical(job.payment_deadline) ? 'text-red-700' : 'text-amber-700'
+                        }`}>
+                          {getTimeRemaining(job.payment_deadline)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button 
+                    className={`w-full text-lg font-bold shadow-lg ${
+                      isPaymentCritical(job.payment_deadline)
+                        ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 animate-pulse'
+                        : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'
+                    }`}
+                    size="lg"
+                    onClick={handlePayment}
+                    disabled={paymentLoading}
+                  >
+                    {paymentLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-5 h-5 mr-2" />
+                        Pay ₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Now
+                      </>
+                    )}
+                  </Button>
+                  
+                  <p className="text-xs text-center text-muted-foreground">
+                    Secure payment via Paystack • Your item will be ready for pickup after payment
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Cost Information - Regular Display */}
+            {(job.estimated_cost || job.final_cost) && job.job_status !== "repair_completed" && (
               <Card>
                 <CardHeader>
                   <CardTitle>Cost Information</CardTitle>
@@ -505,9 +621,24 @@ const RepairJobDetail = () => {
             {/* Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>Actions</CardTitle>
+                <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Payment Status Indicators */}
+                {searchParams.get('payment') === 'success' && (
+                  <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-green-800">Payment completed successfully!</span>
+                  </div>
+                )}
+
+                {searchParams.get('payment') === 'cancelled' && (
+                  <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-yellow-600" />
+                    <span className="text-sm text-yellow-800">Payment was cancelled. You can try again anytime.</span>
+                  </div>
+                )}
+
                 {/* Chat Button */}
                 {conversation && (
                   <Button 
@@ -522,38 +653,8 @@ const RepairJobDetail = () => {
                     })}
                   >
                     <MessageCircle className="w-4 h-4 mr-2" />
-                    Continue Chat
+                    Continue Chat with Repair Center
                   </Button>
-                )}
-
-                {job.final_cost && job.job_status === "repair_completed" && (
-                  <Button 
-                    className="w-full"
-                    onClick={handlePayment}
-                    disabled={paymentLoading}
-                  >
-                    {paymentLoading ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <CreditCard className="w-4 h-4 mr-2" />
-                    )}
-                    {paymentLoading ? "Processing..." : `Pay ₦${job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                  </Button>
-                )}
-
-                {/* Payment Status Indicators */}
-                {searchParams.get('payment') === 'success' && (
-                  <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-green-800">Payment completed successfully!</span>
-                  </div>
-                )}
-
-                {searchParams.get('payment') === 'cancelled' && (
-                  <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <AlertCircle className="w-4 h-4 text-yellow-600" />
-                    <span className="text-sm text-yellow-800">Payment was cancelled. You can try again anytime.</span>
-                  </div>
                 )}
 
                 {job.job_status === "returned" && !job.customer_confirmed && (

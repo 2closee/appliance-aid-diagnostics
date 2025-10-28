@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Eye, CreditCard, CheckCircle, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, Eye, CreditCard, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { format, differenceInHours } from "date-fns";
 import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 interface RepairJob {
   id: string;
@@ -61,6 +62,7 @@ const RepairJobs = () => {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [paymentLoadingId, setPaymentLoadingId] = useState<string | null>(null);
 
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ["repair-jobs", user?.id],
@@ -83,6 +85,7 @@ const RepairJobs = () => {
   });
 
   const handlePayment = async (jobId: string, amount: number) => {
+    setPaymentLoadingId(jobId);
     try {
       const { data, error } = await supabase.functions.invoke("create-repair-payment", {
         body: {
@@ -94,7 +97,11 @@ const RepairJobs = () => {
       if (error) throw error;
 
       if (data.url) {
-        window.open(data.url, '_blank');
+        window.location.href = data.url;
+        toast({
+          title: "Redirecting to Payment",
+          description: "You'll be redirected to Paystack to complete your payment securely.",
+        });
       }
     } catch (error) {
       console.error("Error creating payment:", error);
@@ -103,7 +110,21 @@ const RepairJobs = () => {
         description: "Failed to create payment session",
         variant: "destructive",
       });
+    } finally {
+      setPaymentLoadingId(null);
     }
+  };
+
+  const isPaymentUrgent = (deadline?: string) => {
+    if (!deadline) return false;
+    const hoursUntilDeadline = differenceInHours(new Date(deadline), new Date());
+    return hoursUntilDeadline <= 48 && hoursUntilDeadline > 0;
+  };
+
+  const isPaymentCritical = (deadline?: string) => {
+    if (!deadline) return false;
+    const hoursUntilDeadline = differenceInHours(new Date(deadline), new Date());
+    return hoursUntilDeadline <= 24 && hoursUntilDeadline > 0;
   };
 
   const confirmCompletion = async (jobId: string) => {
@@ -257,16 +278,35 @@ const RepairJobs = () => {
                   )}
                   
                   {/* Payment Required Warning */}
-                  {job.job_status === 'repair_completed' && (
-                    <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+                  {job.job_status === 'repair_completed' && job.final_cost && (
+                    <div className={`mb-4 p-4 rounded-lg border-2 ${
+                      isPaymentCritical(job.payment_deadline) 
+                        ? 'bg-red-50 border-red-300' 
+                        : isPaymentUrgent(job.payment_deadline)
+                        ? 'bg-amber-50 border-amber-300'
+                        : 'bg-amber-50 border-amber-200'
+                    }`}>
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className={`w-5 h-5 mt-0.5 ${
+                          isPaymentCritical(job.payment_deadline) ? 'text-red-600' : 'text-amber-600'
+                        }`} />
                         <div>
-                          <p className="text-sm font-medium text-amber-900">Payment Required</p>
-                          <p className="text-xs text-amber-700 mt-1">
+                          <p className={`text-sm font-semibold ${
+                            isPaymentCritical(job.payment_deadline) ? 'text-red-900' : 'text-amber-900'
+                          }`}>
+                            {isPaymentCritical(job.payment_deadline) ? '⚠️ URGENT: Payment Required' : 'Payment Required'}
+                          </p>
+                          <p className={`text-xs mt-1 ${
+                            isPaymentCritical(job.payment_deadline) ? 'text-red-700' : 'text-amber-700'
+                          }`}>
                             Your repair is complete! Please process payment to have your item returned.
                             {job.payment_deadline && (
-                              <> Payment due by {format(new Date(job.payment_deadline), "MMMM d, yyyy")}.</>
+                              <>
+                                {' '}Payment due by {format(new Date(job.payment_deadline), "MMMM d, yyyy 'at' h:mm a")}.
+                                {isPaymentCritical(job.payment_deadline) && (
+                                  <span className="font-bold text-red-800"> (Less than 24 hours remaining!)</span>
+                                )}
+                              </>
                             )}
                           </p>
                         </div>
@@ -274,34 +314,55 @@ const RepairJobs = () => {
                     </div>
                   )}
 
-                  <div className="flex gap-2 mt-4">
-                    <Link to={`/repair-jobs/${job.id}`}>
-                      <Button variant="outline" size="sm">
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Details
-                      </Button>
-                    </Link>
-
+                  <div className="flex flex-col gap-2 mt-4">
+                    {/* Payment Button - Priority Action */}
                     {job.final_cost && job.job_status === "repair_completed" && (
                       <Button 
-                        size="sm"
+                        className={`w-full text-base font-semibold ${
+                          isPaymentCritical(job.payment_deadline)
+                            ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 animate-pulse'
+                            : isPaymentUrgent(job.payment_deadline)
+                            ? 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800'
+                            : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'
+                        }`}
+                        size="lg"
                         onClick={() => handlePayment(job.id, job.final_cost!)}
+                        disabled={paymentLoadingId === job.id}
                       >
-                        <CreditCard className="w-4 h-4 mr-2" />
-                        Pay ₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {paymentLoadingId === job.id ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="w-5 h-5 mr-2" />
+                            Pay ₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Now
+                          </>
+                        )}
                       </Button>
                     )}
 
-                    {job.job_status === "returned" && !job.customer_confirmed && (
-                      <Button 
-                        size="sm"
-                        onClick={() => confirmCompletion(job.id)}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Confirm Completion
-                      </Button>
-                    )}
+                    {/* Secondary Actions */}
+                    <div className="flex gap-2">
+                      <Link to={`/repair-jobs/${job.id}`} className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Eye className="w-4 h-4 mr-2" />
+                          View Details
+                        </Button>
+                      </Link>
+
+                      {job.job_status === "returned" && !job.customer_confirmed && (
+                        <Button 
+                          size="sm"
+                          onClick={() => confirmCompletion(job.id)}
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Confirm Completion
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
