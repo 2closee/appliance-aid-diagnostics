@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { Plus, Eye, CreditCard, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface RepairJob {
   id: string;
@@ -58,19 +58,13 @@ const statusLabels = {
 };
 
 const RepairJobs = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
-  const [jobs, setJobs] = useState<RepairJob[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (user) {
-      fetchRepairJobs();
-    }
-  }, [user]);
-
-  const fetchRepairJobs = async () => {
-    try {
+  const { data: jobs = [], isLoading } = useQuery({
+    queryKey: ["repair-jobs", user?.id],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("repair_jobs")
         .select(`
@@ -81,18 +75,12 @@ const RepairJobs = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setJobs(data || []);
-    } catch (error) {
-      console.error("Error fetching repair jobs:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch repair jobs",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data || [];
+    },
+    enabled: !!user?.id,
+    refetchOnMount: true,
+    staleTime: 0,
+  });
 
   const handlePayment = async (jobId: string, amount: number) => {
     try {
@@ -135,12 +123,8 @@ const RepairJobs = () => {
         description: "Repair completion confirmed!",
       });
 
-      // Update local state
-      setJobs(jobs.map(job => 
-        job.id === jobId 
-          ? { ...job, job_status: "completed", customer_confirmed: true }
-          : job
-      ));
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ["repair-jobs", user?.id] });
     } catch (error) {
       console.error("Error confirming completion:", error);
       toast({
@@ -151,7 +135,7 @@ const RepairJobs = () => {
     }
   };
 
-  if (isLoading || loading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />

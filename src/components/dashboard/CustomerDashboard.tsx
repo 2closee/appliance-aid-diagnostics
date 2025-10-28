@@ -18,7 +18,7 @@ const CustomerDashboard = () => {
         .from("repair_jobs")
         .select(`
           *,
-          repair_center:repair_center_id("Repair Center"(*))
+          repair_center:"Repair Center"!repair_center_id(*)
         `)
         .eq("user_id", user?.id)
         .order("created_at", { ascending: false });
@@ -27,6 +27,8 @@ const CustomerDashboard = () => {
       return data;
     },
     enabled: !!user?.id,
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   const getStatusColor = (status: string) => {

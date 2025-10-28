@@ -35,6 +35,8 @@ const RepairCenterDashboard = () => {
       return data;
     },
     enabled: !!repairCenterId,
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   const { data: repairCenter } = useQuery({

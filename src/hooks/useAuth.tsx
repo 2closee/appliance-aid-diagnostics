@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthContextType {
   user: User | null;
@@ -33,6 +34,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,10 +61,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setTimeout(() => {
             if (mounted) {
               checkUserRoles(session.user.id);
+              // Invalidate all queries when user logs in
+              queryClient.invalidateQueries();
             }
           }, 0);
         } else {
           resetUserRoles();
+          // Clear all queries when user logs out
+          queryClient.clear();
         }
         
         setIsLoading(false);
@@ -183,12 +189,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(null);
       setUser(null);
       resetUserRoles();
+      // Clear all cached queries
+      queryClient.clear();
     } catch (error) {
       console.error('Sign out error:', error);
       // Force clear state even if signOut fails
       setSession(null);
       setUser(null);
       resetUserRoles();
+      queryClient.clear();
     }
   };
 
