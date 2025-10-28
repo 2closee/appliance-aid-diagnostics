@@ -102,15 +102,30 @@ const RepairJobDetail = () => {
 
   const fetchJobDetails = async () => {
     try {
-      const { data, error } = await supabase
+      // Check if user is repair center staff
+      const { data: staffRecord } = await supabase
+        .from("repair_center_staff")
+        .select("repair_center_id")
+        .eq("user_id", user?.id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      // Build query
+      let query = supabase
         .from("repair_jobs")
         .select(`
           *,
           repair_center:"Repair Center"(name, phone, email, address)
         `)
-        .eq("id", id)
-        .eq("user_id", user?.id)
-        .single();
+        .eq("id", id);
+
+      // If not repair center staff, filter by user_id (customer view)
+      // If repair center staff, RLS policy will ensure they can only see jobs for their center
+      if (!staffRecord) {
+        query = query.eq("user_id", user?.id);
+      }
+
+      const { data, error } = await query.single();
 
       if (error) throw error;
       setJob(data);
