@@ -36,8 +36,8 @@ const Navigation = () => {
   const navItems = [
     { path: "/", label: "Home", icon: Home },
     ...(user ? [{ path: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] : []),
-    // Only show customer features for actual customers and logged-out users
-    ...(userRole === 'customer' || !user ? [
+    // Only show customer features for actual customers and logged-out users (not repair center staff)
+    ...(userRole === 'customer' || (!user && !isRepairCenterStaff) ? [
       { path: "/diagnostic", label: "AI Diagnostic", icon: Bot },
       { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
       { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },

@@ -16,6 +16,8 @@ import { useState } from "react";
 import RepairCenterSettings from "@/components/RepairCenterSettings";
 import { useConversationNotifications } from "@/hooks/useConversationNotifications";
 import { QuoteProvisionForm } from "@/components/QuoteProvisionForm";
+import BankAccountManager from "@/components/BankAccountManager";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const RepairCenterDashboard = () => {
   const { user, repairCenterId } = useAuth();
@@ -23,6 +25,7 @@ const RepairCenterDashboard = () => {
   const [isOnline, setIsOnline] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedQuoteJob, setSelectedQuoteJob] = useState<any>(null);
+  const [showBankAccount, setShowBankAccount] = useState(false);
   const { totalUnread } = useConversationNotifications(repairCenterId || undefined);
 
   const { data: repairJobs, isLoading, refetch } = useQuery({
@@ -344,6 +347,31 @@ const RepairCenterDashboard = () => {
           </Card>
         )}
 
+        {/* Action Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setShowBankAccount(true)}>
+            <CardContent className="flex items-center justify-between p-6">
+              <div>
+                <h3 className="font-semibold text-lg">Bank Account</h3>
+                <p className="text-sm text-muted-foreground">Manage your payout account</p>
+              </div>
+              <CreditCard className="h-8 w-8 text-primary" />
+            </CardContent>
+          </Card>
+
+          <Link to="/center-earnings" className="block">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="flex items-center justify-between p-6">
+                <div>
+                  <h3 className="font-semibold text-lg">Request Payout</h3>
+                  <p className="text-sm text-muted-foreground">View earnings & request payouts</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-primary" />
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           <Card>
@@ -518,6 +546,23 @@ const RepairCenterDashboard = () => {
             }}
           />
         )}
+
+        <Dialog open={showBankAccount} onOpenChange={setShowBankAccount}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Bank Account Management</DialogTitle>
+              <DialogDescription>
+                Add or update your bank account for receiving payouts
+              </DialogDescription>
+            </DialogHeader>
+            {repairCenterId && repairCenter && (
+              <BankAccountManager 
+                repairCenterId={repairCenterId} 
+                businessName={repairCenter.name}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
