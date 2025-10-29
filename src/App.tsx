@@ -47,14 +47,18 @@ const RouteHandler = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
+    // Check for redirect path from 404.html
+    const redirectPath = sessionStorage.getItem('redirectPath');
+    if (redirectPath && location.pathname === '/') {
+      sessionStorage.removeItem('redirectPath');
+      navigate(redirectPath, { replace: true });
+      return;
+    }
+
     // Get the initial path stored by index.html script
     const initialPath = (window as any).__INITIAL_PATH__;
-    
-    // Only navigate if we have an initial path and we're currently on root
     if (initialPath && location.pathname === '/') {
-      // Clear it so it doesn't interfere with future navigations
       delete (window as any).__INITIAL_PATH__;
-      // Navigate to the stored path
       navigate(initialPath, { replace: true });
     }
   }, [navigate, location.pathname]);

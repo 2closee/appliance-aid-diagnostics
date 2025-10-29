@@ -4,20 +4,15 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FixBudi - AI-Powered Appliance Repair Platform</title>
-    <meta name="description" content="Get instant AI diagnosis and professional repair services for your appliances. Upload videos, chat with experts, and schedule repairs easily." />
+    <title>Redirecting...</title>
+    <script>
+      // Redirect 404s to index.html with the path intact
+      // This allows React Router to handle the routing
+      sessionStorage.setItem('redirectPath', window.location.pathname + window.location.search + window.location.hash);
+      window.location.replace('/');
+    </script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // Handle client-side routing for direct URL access
-      (function() {
-        if (window.location.pathname !== '/' && !window.location.pathname.includes('.')) {
-          // Store the path for React Router to handle naturally
-          window.__INITIAL_PATH__ = window.location.pathname + window.location.search + window.location.hash;
-        }
-      })();
-    </script>
+    <p>Redirecting...</p>
   </body>
 </html>
