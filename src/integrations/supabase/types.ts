@@ -416,6 +416,33 @@ export type Database = {
           },
         ]
       }
+      payout_settings: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       "Repair Center": {
         Row: {
           address: string | null
@@ -603,6 +630,11 @@ export type Database = {
           commission_amount: number
           created_at: string
           currency: string
+          dispute_notes: string | null
+          dispute_reason: string | null
+          dispute_status: Database["public"]["Enums"]["dispute_status"] | null
+          disputed_at: string | null
+          disputed_by: string | null
           gross_amount: number
           id: string
           net_amount: number
@@ -614,6 +646,9 @@ export type Database = {
           payout_status: string
           repair_center_id: number
           repair_job_id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
           settlement_period: string | null
           updated_at: string
         }
@@ -621,6 +656,11 @@ export type Database = {
           commission_amount: number
           created_at?: string
           currency?: string
+          dispute_notes?: string | null
+          dispute_reason?: string | null
+          dispute_status?: Database["public"]["Enums"]["dispute_status"] | null
+          disputed_at?: string | null
+          disputed_by?: string | null
           gross_amount: number
           id?: string
           net_amount: number
@@ -632,6 +672,9 @@ export type Database = {
           payout_status?: string
           repair_center_id: number
           repair_job_id: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           settlement_period?: string | null
           updated_at?: string
         }
@@ -639,6 +682,11 @@ export type Database = {
           commission_amount?: number
           created_at?: string
           currency?: string
+          dispute_notes?: string | null
+          dispute_reason?: string | null
+          dispute_status?: Database["public"]["Enums"]["dispute_status"] | null
+          disputed_at?: string | null
+          disputed_by?: string | null
           gross_amount?: number
           id?: string
           net_amount?: number
@@ -650,6 +698,9 @@ export type Database = {
           payout_status?: string
           repair_center_id?: number
           repair_job_id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           settlement_period?: string | null
           updated_at?: string
         }
@@ -1046,6 +1097,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      dispute_status: "open" | "under_review" | "resolved" | "rejected"
       job_status:
         | "requested"
         | "pickup_scheduled"
@@ -1198,6 +1250,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      dispute_status: ["open", "under_review", "resolved", "rejected"],
       job_status: [
         "requested",
         "pickup_scheduled",

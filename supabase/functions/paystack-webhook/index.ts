@@ -114,6 +114,15 @@ serve(async (req) => {
           const commissionAmount = Math.round(grossAmount * commissionRate * 100) / 100;
           const netAmount = Math.round((grossAmount - commissionAmount) * 100) / 100;
 
+          // Get minimum threshold setting
+          const { data: thresholdSetting } = await supabaseClient
+            .from('payout_settings')
+            .select('value')
+            .eq('key', 'minimum_threshold')
+            .single();
+
+          const minimumThreshold = thresholdSetting?.value?.amount || 5000;
+
           // Get settlement period (current week)
           const { data: settlementPeriod } = await supabaseClient
             .rpc("get_settlement_period", { date_input: new Date().toISOString() });
@@ -129,7 +138,8 @@ serve(async (req) => {
               net_amount: netAmount,
               currency: transaction.currency || "NGN",
               settlement_period: settlementPeriod || null,
-              payout_status: "pending"
+              payout_status: netAmount >= minimumThreshold ? "pending" : "below_threshold",
+              notes: netAmount < minimumThreshold ? `Below minimum threshold of ₦${minimumThreshold}` : null,
             });
 
           if (payoutError) {

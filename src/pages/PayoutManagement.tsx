@@ -7,13 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, DollarSign, Calendar, Building2, CheckCircle, Clock, Download } from "lucide-react";
+import { Loader2, DollarSign, Calendar, Building2, CheckCircle, Clock, Download, Settings, AlertTriangle, TrendingUp, BarChart3 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/lib/currency";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 interface PayoutRecord {
   id: string;
@@ -30,6 +32,9 @@ interface PayoutRecord {
   settlement_period: string | null;
   created_at: string;
   notes: string | null;
+  dispute_status: string | null;
+  dispute_reason: string | null;
+  dispute_notes: string | null;
   repair_center?: {
     name: string;
     email: string;
@@ -45,6 +50,12 @@ interface CenterSummary {
   currency: string;
 }
 
+interface PayoutSettings {
+  payout_frequency: { type: string; day: number };
+  minimum_threshold: { amount: number; currency: string };
+  auto_process: { enabled: boolean };
+}
+
 const PayoutManagement = () => {
   const { user, isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -56,12 +67,110 @@ const PayoutManagement = () => {
   const [payoutReference, setPayoutReference] = useState("");
   const [payoutMethod, setPayoutMethod] = useState("bank_transfer");
   const [payoutNotes, setPayoutNotes] = useState("");
+  
+  // Batch processing
+  const [selectedPayoutIds, setSelectedPayoutIds] = useState<Set<string>>(new Set());
+  const [batchProcessing, setBatchProcessing] = useState(false);
+  
+  // Settings
+  const [settings, setSettings] = useState<PayoutSettings>({
+    payout_frequency: { type: "weekly", day: 1 },
+    minimum_threshold: { amount: 5000, currency: "NGN" },
+    auto_process: { enabled: false },
+  });
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  
+  // Dispute
+  const [disputePayout, setDisputePayout] = useState<PayoutRecord | null>(null);
+  const [disputeReason, setDisputeReason] = useState("");
+  const [disputeNotes, setDisputeNotes] = useState("");
+  
+  // Analytics
+  const [analyticsData, setAnalyticsData] = useState<any[]>([]);
 
   useEffect(() => {
     if (user && isAdmin) {
       fetchPayouts();
+      fetchSettings();
+      fetchAnalytics();
     }
   }, [user, isAdmin]);
+
+  const fetchSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("payout_settings")
+        .select("key, value");
+
+      if (error) throw error;
+
+      const settingsMap: any = {};
+      data?.forEach((setting) => {
+        settingsMap[setting.key] = setting.value;
+      });
+
+      setSettings({
+        payout_frequency: settingsMap.payout_frequency || { type: "weekly", day: 1 },
+        minimum_threshold: settingsMap.minimum_threshold || { amount: 5000, currency: "NGN" },
+        auto_process: settingsMap.auto_process || { enabled: false },
+      });
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+    }
+  };
+
+  const updateSettings = async () => {
+    try {
+      const updates = [
+        { key: "payout_frequency", value: settings.payout_frequency },
+        { key: "minimum_threshold", value: settings.minimum_threshold },
+        { key: "auto_process", value: settings.auto_process },
+      ];
+
+      for (const update of updates) {
+        await supabase
+          .from("payout_settings")
+          .upsert({ key: update.key, value: update.value, updated_by: user?.id }, { onConflict: "key" });
+      }
+
+      toast.success("Settings updated successfully");
+      setSettingsOpen(false);
+    } catch (error) {
+      console.error("Error updating settings:", error);
+      toast.error("Failed to update settings");
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      const { data: allPayouts } = await supabase
+        .from("repair_center_payouts")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (!allPayouts) return;
+
+      // Group by month
+      const monthlyData: { [key: string]: { month: string; revenue: number; commission: number; payouts: number } } = {};
+
+      allPayouts.forEach((payout) => {
+        const date = new Date(payout.created_at);
+        const month = date.toLocaleDateString("en-US", { year: "numeric", month: "short" });
+
+        if (!monthlyData[month]) {
+          monthlyData[month] = { month, revenue: 0, commission: 0, payouts: 0 };
+        }
+
+        monthlyData[month].revenue += Number(payout.gross_amount);
+        monthlyData[month].commission += Number(payout.commission_amount);
+        monthlyData[month].payouts += 1;
+      });
+
+      setAnalyticsData(Object.values(monthlyData));
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+    }
+  };
 
   const fetchPayouts = async () => {
     try {
@@ -111,12 +220,17 @@ const PayoutManagement = () => {
         repair_center: completedCenterMap.get(p.repair_center_id)
       }));
 
-      setPendingPayouts(pendingWithCenters || []);
+      // Filter by minimum threshold
+      const filteredPending = pendingWithCenters?.filter(
+        p => Number(p.net_amount) >= settings.minimum_threshold.amount
+      ) || [];
+
+      setPendingPayouts(filteredPending);
       setCompletedPayouts(completedWithCenters || []);
 
       // Calculate center summaries
       const summaries: { [key: number]: CenterSummary } = {};
-      pending?.forEach((payout) => {
+      filteredPending.forEach((payout) => {
         const centerInfo = centerMap.get(payout.repair_center_id);
         if (!summaries[payout.repair_center_id]) {
           summaries[payout.repair_center_id] = {
@@ -147,6 +261,11 @@ const PayoutManagement = () => {
       return;
     }
 
+    if (Number(selectedPayout.net_amount) < settings.minimum_threshold.amount) {
+      toast.error(`Payout amount is below minimum threshold of ${formatCurrency(settings.minimum_threshold.amount, "NGN")}`);
+      return;
+    }
+
     try {
       setProcessingPayout(true);
 
@@ -172,6 +291,98 @@ const PayoutManagement = () => {
       toast.error(error.message || "Failed to process payout");
     } finally {
       setProcessingPayout(false);
+    }
+  };
+
+  const handleBatchProcess = async () => {
+    if (selectedPayoutIds.size === 0) {
+      toast.error("Please select at least one payout");
+      return;
+    }
+
+    if (!payoutReference.trim()) {
+      toast.error("Please provide a payout reference");
+      return;
+    }
+
+    try {
+      setBatchProcessing(true);
+
+      const { data, error } = await supabase.functions.invoke("batch-process-payouts", {
+        body: {
+          payout_ids: Array.from(selectedPayoutIds),
+          payout_reference: payoutReference,
+          payout_method: payoutMethod,
+          notes: payoutNotes,
+        },
+      });
+
+      if (error) throw error;
+
+      const result = data as any;
+      toast.success(
+        `Batch processing completed: ${result.successful_count} successful, ${result.failed_count} failed`
+      );
+
+      setSelectedPayoutIds(new Set());
+      setPayoutReference("");
+      setPayoutMethod("bank_transfer");
+      setPayoutNotes("");
+      fetchPayouts();
+    } catch (error: any) {
+      console.error("Error batch processing payouts:", error);
+      toast.error(error.message || "Failed to batch process payouts");
+    } finally {
+      setBatchProcessing(false);
+    }
+  };
+
+  const handleRaiseDispute = async () => {
+    if (!disputePayout || !disputeReason.trim()) {
+      toast.error("Please provide a dispute reason");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("repair_center_payouts")
+        .update({
+          dispute_status: "open",
+          dispute_reason: disputeReason,
+          dispute_notes: disputeNotes,
+          disputed_at: new Date().toISOString(),
+          disputed_by: user?.id,
+        })
+        .eq("id", disputePayout.id);
+
+      if (error) throw error;
+
+      toast.success("Dispute raised successfully");
+      setDisputePayout(null);
+      setDisputeReason("");
+      setDisputeNotes("");
+      fetchPayouts();
+    } catch (error) {
+      console.error("Error raising dispute:", error);
+      toast.error("Failed to raise dispute");
+    }
+  };
+
+  const togglePayoutSelection = (payoutId: string) => {
+    const newSelection = new Set(selectedPayoutIds);
+    if (newSelection.has(payoutId)) {
+      newSelection.delete(payoutId);
+    } else {
+      newSelection.add(payoutId);
+    }
+    setSelectedPayoutIds(newSelection);
+  };
+
+  const selectAllPayouts = () => {
+    if (selectedPayoutIds.size === pendingPayouts.length) {
+      setSelectedPayoutIds(new Set());
+    } else {
+      setSelectedPayoutIds(new Set(pendingPayouts.map(p => p.id)));
     }
   };
 
@@ -220,6 +431,10 @@ const PayoutManagement = () => {
 
   const totalPending = pendingPayouts.reduce((sum, p) => sum + Number(p.net_amount), 0);
   const totalCommission = pendingPayouts.reduce((sum, p) => sum + Number(p.commission_amount), 0);
+  const selectedTotal = Array.from(selectedPayoutIds).reduce((sum, id) => {
+    const payout = pendingPayouts.find(p => p.id === id);
+    return sum + (payout ? Number(payout.net_amount) : 0);
+  }, 0);
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -228,14 +443,80 @@ const PayoutManagement = () => {
           <h1 className="text-3xl font-bold">Payout Management</h1>
           <p className="text-muted-foreground">Manage repair center payouts and settlements</p>
         </div>
-        <Button onClick={() => exportToCSV(pendingPayouts, "pending-payouts.csv")} variant="outline">
-          <Download className="mr-2 h-4 w-4" />
-          Export Pending
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Payout Settings</DialogTitle>
+                <DialogDescription>Configure payout frequency and thresholds</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Payout Frequency</Label>
+                  <Select
+                    value={settings.payout_frequency.type}
+                    onValueChange={(value) =>
+                      setSettings({
+                        ...settings,
+                        payout_frequency: { ...settings.payout_frequency, type: value },
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Minimum Threshold (NGN)</Label>
+                  <Input
+                    type="number"
+                    value={settings.minimum_threshold.amount}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        minimum_threshold: {
+                          ...settings.minimum_threshold,
+                          amount: Number(e.target.value),
+                        },
+                      })
+                    }
+                    min={1000}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Payouts below this amount won't be processed
+                  </p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setSettingsOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={updateSettings}>Save Settings</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Button onClick={() => exportToCSV(pendingPayouts, "pending-payouts.csv")} variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Pending Payouts</CardTitle>
@@ -268,6 +549,17 @@ const PayoutManagement = () => {
             <p className="text-xs text-muted-foreground">Centers with pending payouts</p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Selected for Batch</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(selectedTotal, "NGN")}</div>
+            <p className="text-xs text-muted-foreground">{selectedPayoutIds.size} selected</p>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="pending" className="space-y-4">
@@ -275,30 +567,117 @@ const PayoutManagement = () => {
           <TabsTrigger value="pending">Pending Payouts</TabsTrigger>
           <TabsTrigger value="by-center">By Center</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="analytics">
+            <BarChart3 className="mr-2 h-4 w-4" />
+            Analytics
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending" className="space-y-4">
+          {selectedPayoutIds.size > 0 && (
+            <Card className="border-primary">
+              <CardContent className="pt-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-semibold">
+                      {selectedPayoutIds.size} payout(s) selected - {formatCurrency(selectedTotal, "NGN")}
+                    </p>
+                  </div>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button>Process Selected Payouts</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Batch Process Payouts</DialogTitle>
+                        <DialogDescription>
+                          Process {selectedPayoutIds.size} selected payout(s) totaling {formatCurrency(selectedTotal, "NGN")}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="batch-method">Payout Method</Label>
+                          <Select value={payoutMethod} onValueChange={setPayoutMethod}>
+                            <SelectTrigger id="batch-method">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                              <SelectItem value="paystack_transfer">Paystack Transfer</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="batch-reference">Transaction Reference *</Label>
+                          <Input
+                            id="batch-reference"
+                            value={payoutReference}
+                            onChange={(e) => setPayoutReference(e.target.value)}
+                            placeholder="e.g., BATCH-TXN123456789"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="batch-notes">Notes (optional)</Label>
+                          <Textarea
+                            id="batch-notes"
+                            value={payoutNotes}
+                            onChange={(e) => setPayoutNotes(e.target.value)}
+                            placeholder="Additional notes about this batch payout..."
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setSelectedPayoutIds(new Set())}>
+                          Cancel
+                        </Button>
+                        <Button onClick={handleBatchProcess} disabled={batchProcessing}>
+                          {batchProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Confirm Batch Payout
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Pending Payouts</CardTitle>
-              <CardDescription>Process individual payouts to repair centers</CardDescription>
+              <CardDescription>
+                Process individual or multiple payouts (minimum: {formatCurrency(settings.minimum_threshold.amount, "NGN")})
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedPayoutIds.size === pendingPayouts.length && pendingPayouts.length > 0}
+                        onCheckedChange={selectAllPayouts}
+                      />
+                    </TableHead>
                     <TableHead>Center</TableHead>
                     <TableHead>Job ID</TableHead>
                     <TableHead>Gross Amount</TableHead>
                     <TableHead>Commission</TableHead>
                     <TableHead>Net Payout</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead>Action</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingPayouts.map((payout) => (
                     <TableRow key={payout.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedPayoutIds.has(payout.id)}
+                          onCheckedChange={() => togglePayoutSelection(payout.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{payout.repair_center?.name}</p>
@@ -311,70 +690,115 @@ const PayoutManagement = () => {
                       <TableCell className="font-semibold">{formatCurrency(Number(payout.net_amount), payout.currency as any)}</TableCell>
                       <TableCell>{new Date(payout.created_at).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button size="sm" onClick={() => setSelectedPayout(payout)}>
-                              Process
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Process Payout</DialogTitle>
-                              <DialogDescription>
-                                Processing payout of {formatCurrency(Number(payout.net_amount), payout.currency as any)} to {payout.repair_center?.name}
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <Label htmlFor="method">Payout Method</Label>
-                                <Select value={payoutMethod} onValueChange={setPayoutMethod}>
-                                  <SelectTrigger id="method">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                                    <SelectItem value="paystack_transfer">Paystack Transfer</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div>
-                                <Label htmlFor="reference">Transaction Reference *</Label>
-                                <Input
-                                  id="reference"
-                                  value={payoutReference}
-                                  onChange={(e) => setPayoutReference(e.target.value)}
-                                  placeholder="e.g., TXN123456789"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="notes">Notes (optional)</Label>
-                                <Textarea
-                                  id="notes"
-                                  value={payoutNotes}
-                                  onChange={(e) => setPayoutNotes(e.target.value)}
-                                  placeholder="Additional notes about this payout..."
-                                />
-                              </div>
-                            </div>
-                            <DialogFooter>
-                              <Button variant="outline" onClick={() => setSelectedPayout(null)}>
-                                Cancel
+                        <div className="flex gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button size="sm" onClick={() => setSelectedPayout(payout)}>
+                                Process
                               </Button>
-                              <Button onClick={handleProcessPayout} disabled={processingPayout}>
-                                {processingPayout && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Confirm Payout
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Process Payout</DialogTitle>
+                                <DialogDescription>
+                                  Processing payout of {formatCurrency(Number(payout.net_amount), payout.currency as any)} to {payout.repair_center?.name}
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <Label htmlFor="method">Payout Method</Label>
+                                  <Select value={payoutMethod} onValueChange={setPayoutMethod}>
+                                    <SelectTrigger id="method">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                                      <SelectItem value="paystack_transfer">Paystack Transfer</SelectItem>
+                                      <SelectItem value="other">Other</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label htmlFor="reference">Transaction Reference *</Label>
+                                  <Input
+                                    id="reference"
+                                    value={payoutReference}
+                                    onChange={(e) => setPayoutReference(e.target.value)}
+                                    placeholder="e.g., TXN123456789"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="notes">Notes (optional)</Label>
+                                  <Textarea
+                                    id="notes"
+                                    value={payoutNotes}
+                                    onChange={(e) => setPayoutNotes(e.target.value)}
+                                    placeholder="Additional notes about this payout..."
+                                  />
+                                </div>
+                              </div>
+                              <DialogFooter>
+                                <Button variant="outline" onClick={() => setSelectedPayout(null)}>
+                                  Cancel
+                                </Button>
+                                <Button onClick={handleProcessPayout} disabled={processingPayout}>
+                                  {processingPayout && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                  Confirm Payout
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="outline" onClick={() => setDisputePayout(payout)}>
+                                <AlertTriangle className="h-4 w-4" />
                               </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Raise Dispute</DialogTitle>
+                                <DialogDescription>
+                                  Flag this payout for review or correction
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <Label htmlFor="dispute-reason">Dispute Reason *</Label>
+                                  <Input
+                                    id="dispute-reason"
+                                    value={disputeReason}
+                                    onChange={(e) => setDisputeReason(e.target.value)}
+                                    placeholder="e.g., Incorrect amount calculated"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="dispute-notes">Additional Notes</Label>
+                                  <Textarea
+                                    id="dispute-notes"
+                                    value={disputeNotes}
+                                    onChange={(e) => setDisputeNotes(e.target.value)}
+                                    placeholder="Provide details about the dispute..."
+                                  />
+                                </div>
+                              </div>
+                              <DialogFooter>
+                                <Button variant="outline" onClick={() => setDisputePayout(null)}>
+                                  Cancel
+                                </Button>
+                                <Button onClick={handleRaiseDispute} variant="destructive">
+                                  Raise Dispute
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
                   {pendingPayouts.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground">
-                        No pending payouts
+                      <TableCell colSpan={8} className="text-center text-muted-foreground">
+                        No pending payouts above minimum threshold
                       </TableCell>
                     </TableRow>
                   )}
@@ -469,6 +893,49 @@ const PayoutManagement = () => {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Revenue Trends</CardTitle>
+                <CardDescription>Monthly revenue and commission analysis</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={analyticsData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip formatter={(value: number) => formatCurrency(value, "NGN")} />
+                    <Legend />
+                    <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" name="Revenue" />
+                    <Line type="monotone" dataKey="commission" stroke="hsl(var(--chart-2))" name="Commission" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Payout Volume</CardTitle>
+                <CardDescription>Number of payouts per month</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={analyticsData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="payouts" fill="hsl(var(--primary))" name="Payouts" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
