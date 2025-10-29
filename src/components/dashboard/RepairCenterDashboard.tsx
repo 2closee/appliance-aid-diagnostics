@@ -349,24 +349,24 @@ const RepairCenterDashboard = () => {
 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setShowBankAccount(true)}>
+          <Card className="hover:shadow-medium transition-all cursor-pointer bg-gradient-to-br from-card to-secondary/30 border-primary/10" onClick={() => setShowBankAccount(true)}>
             <CardContent className="flex items-center justify-between p-6">
               <div>
-                <h3 className="font-semibold text-lg">Bank Account</h3>
-                <p className="text-sm text-muted-foreground">Manage your payout account</p>
+                <h3 className="font-semibold text-lg">Bank Information</h3>
+                <p className="text-sm text-muted-foreground">Add or update your bank details</p>
               </div>
               <CreditCard className="h-8 w-8 text-primary" />
             </CardContent>
           </Card>
 
           <Link to="/center-earnings" className="block">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <Card className="hover:shadow-medium hover:scale-[1.02] transition-all cursor-pointer bg-gradient-to-br from-success/90 to-success border-success/20">
               <CardContent className="flex items-center justify-between p-6">
                 <div>
-                  <h3 className="font-semibold text-lg">Request Payout</h3>
-                  <p className="text-sm text-muted-foreground">View earnings & request payouts</p>
+                  <h3 className="font-semibold text-lg text-success-foreground">Request Payout</h3>
+                  <p className="text-sm text-success-foreground/80">View earnings & request payouts</p>
                 </div>
-                <DollarSign className="h-8 w-8 text-primary" />
+                <DollarSign className="h-8 w-8 text-success-foreground" />
               </CardContent>
             </Card>
           </Link>
