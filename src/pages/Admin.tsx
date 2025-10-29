@@ -268,6 +268,9 @@ const Admin = () => {
               <Button onClick={() => navigate("/repair-center-admin")} variant="outline" className="w-full">
                 Repair Center Admin Portal
               </Button>
+              <Button onClick={() => navigate("/payout-management")} variant="outline" className="w-full">
+                Payout Management & Analytics
+              </Button>
             </div>
           </CardContent>
         </Card>

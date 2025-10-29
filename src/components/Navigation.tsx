@@ -15,7 +15,8 @@ import {
   Moon,
   Sun,
   Settings,
-  MessageCircle
+  MessageCircle,
+  CreditCard
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -44,6 +45,7 @@ const Navigation = () => {
     // Super Admin specific navigation
     ...(userRole === 'admin' ? [
       { path: "/admin", label: "Super Admin Panel", icon: Settings },
+      { path: "/payout-management", label: "Payout Management", icon: CreditCard },
     ] : []),
   ];
 
