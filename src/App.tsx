@@ -22,11 +22,14 @@ import RepairCenterAdmin from "./pages/RepairCenterAdmin";
 import RepairCenterChat from "./pages/RepairCenterChat";
 import RepairCenterConversations from "./pages/RepairCenterConversations";
 import CustomerConversations from "./pages/CustomerConversations";
-import EmailVerification from "./pages/EmailVerification";
-import EmailTest from "./pages/EmailTest";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
+import PickupSelection from "./pages/PickupSelection";
+import PickupRequest from "./pages/PickupRequest";
+import RevenueAnalytics from "./pages/RevenueAnalytics";
+import PayoutManagement from "./pages/PayoutManagement";
+import CenterEarnings from "./pages/CenterEarnings";
 import NotFound from "./pages/NotFound";
+import EmailTest from "./pages/EmailTest";
+import EmailVerification from "./pages/EmailVerification";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,6 +60,8 @@ const App = () => (
             <Route path="/repair-jobs" element={<RepairJobs />} />
             <Route path="/repair-jobs/:id" element={<RepairJobDetail />} />
             <Route path="/revenue-analytics" element={<RevenueAnalytics />} />
+            <Route path="/payout-management" element={<PayoutManagement />} />
+            <Route path="/center-earnings" element={<CenterEarnings />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/apply-repair-center" element={<RepairCenterApplication />} />

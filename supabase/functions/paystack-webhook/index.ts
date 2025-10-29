@@ -68,7 +68,7 @@ serve(async (req) => {
         }
 
         // Update payment record
-        const { error: paymentError } = await supabaseClient
+        const { data: paymentData, error: paymentError } = await supabaseClient
           .from("payments")
           .update({
             payment_status: "completed",
@@ -76,7 +76,9 @@ serve(async (req) => {
             payment_transaction_id: transaction.id.toString(),
             webhook_received_at: new Date().toISOString()
           })
-          .eq("payment_reference", transaction.reference);
+          .eq("payment_reference", transaction.reference)
+          .select("id")
+          .single();
 
         if (paymentError) {
           logStep("Payment update failed", { error: paymentError });
@@ -98,15 +100,46 @@ serve(async (req) => {
           throw jobError;
         }
 
-        // Get job details for email
+        // Get job details for email and payout
         const { data: job } = await supabaseClient
           .from("repair_jobs")
-          .select("customer_email, customer_name, appliance_type")
+          .select("customer_email, customer_name, appliance_type, repair_center_id, final_cost")
           .eq("id", repairJobId)
           .single();
 
-        // Send payment confirmation email
-        if (job) {
+        // Create payout record for repair center
+        if (job && paymentData) {
+          const grossAmount = transaction.amount / 100; // Convert from kobo to naira
+          const commissionRate = 0.075; // 7.5%
+          const commissionAmount = Math.round(grossAmount * commissionRate * 100) / 100;
+          const netAmount = Math.round((grossAmount - commissionAmount) * 100) / 100;
+
+          // Get settlement period (current week)
+          const { data: settlementPeriod } = await supabaseClient
+            .rpc("get_settlement_period", { date_input: new Date().toISOString() });
+
+          const { error: payoutError } = await supabaseClient
+            .from("repair_center_payouts")
+            .insert({
+              repair_center_id: job.repair_center_id,
+              payment_id: paymentData.id,
+              repair_job_id: repairJobId,
+              gross_amount: grossAmount,
+              commission_amount: commissionAmount,
+              net_amount: netAmount,
+              currency: transaction.currency || "NGN",
+              settlement_period: settlementPeriod || null,
+              payout_status: "pending"
+            });
+
+          if (payoutError) {
+            logStep("Payout record creation failed", { error: payoutError });
+            // Don't throw - payment already succeeded, this is just tracking
+          } else {
+            logStep("Payout record created", { netAmount, commissionAmount });
+          }
+
+          // Send payment confirmation email
           await supabaseClient.functions.invoke("send-job-notification", {
             body: {
               email_type: "payment_received",

@@ -551,6 +551,85 @@ export type Database = {
         }
         Relationships: []
       }
+      repair_center_payouts: {
+        Row: {
+          commission_amount: number
+          created_at: string
+          currency: string
+          gross_amount: number
+          id: string
+          net_amount: number
+          notes: string | null
+          payment_id: string
+          payout_date: string | null
+          payout_method: string | null
+          payout_reference: string | null
+          payout_status: string
+          repair_center_id: number
+          repair_job_id: string
+          settlement_period: string | null
+          updated_at: string
+        }
+        Insert: {
+          commission_amount: number
+          created_at?: string
+          currency?: string
+          gross_amount: number
+          id?: string
+          net_amount: number
+          notes?: string | null
+          payment_id: string
+          payout_date?: string | null
+          payout_method?: string | null
+          payout_reference?: string | null
+          payout_status?: string
+          repair_center_id: number
+          repair_job_id: string
+          settlement_period?: string | null
+          updated_at?: string
+        }
+        Update: {
+          commission_amount?: number
+          created_at?: string
+          currency?: string
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          notes?: string | null
+          payment_id?: string
+          payout_date?: string | null
+          payout_method?: string | null
+          payout_reference?: string | null
+          payout_status?: string
+          repair_center_id?: number
+          repair_job_id?: string
+          settlement_period?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repair_center_payouts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repair_center_payouts_repair_center_id_fkey"
+            columns: ["repair_center_id"]
+            isOneToOne: false
+            referencedRelation: "Repair Center"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repair_center_payouts_repair_job_id_fkey"
+            columns: ["repair_job_id"]
+            isOneToOne: false
+            referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       repair_center_reviews: {
         Row: {
           created_at: string | null
@@ -896,6 +975,7 @@ export type Database = {
           specialties: string
         }[]
       }
+      get_settlement_period: { Args: { date_input: string }; Returns: string }
       get_user_repair_center: { Args: { _user_id: string }; Returns: number }
       has_role: {
         Args: {
