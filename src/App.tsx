@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "./hooks/useAuth";
 import Index from "./pages/Index";
@@ -41,6 +41,27 @@ const queryClient = new QueryClient({
   },
 });
 
+// Component to handle initial path restoration
+const RouteHandler = ({ children }: { children: React.ReactNode }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Get the initial path stored by index.html script
+    const initialPath = (window as any).__INITIAL_PATH__;
+    
+    // Only navigate if we have an initial path and we're currently on root
+    if (initialPath && location.pathname === '/') {
+      // Clear it so it doesn't interfere with future navigations
+      delete (window as any).__INITIAL_PATH__;
+      // Navigate to the stored path
+      navigate(initialPath, { replace: true });
+    }
+  }, [navigate, location.pathname]);
+
+  return <>{children}</>;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
@@ -49,7 +70,8 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-          <Routes>
+            <RouteHandler>
+              <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/diagnostic" element={<Diagnostic />} />
@@ -73,8 +95,9 @@ const App = () => (
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+              </Routes>
+            </RouteHandler>
+          </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
     </ThemeProvider>
