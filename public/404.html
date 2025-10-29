@@ -14,9 +14,8 @@
       // Handle client-side routing for direct URL access
       (function() {
         if (window.location.pathname !== '/' && !window.location.pathname.includes('.')) {
-          // If not on root and not a file request, let React Router handle it
-          history.replaceState(null, null, '/');
-          window.__INITIAL_PATH__ = window.location.pathname;
+          // Store the path for React Router to handle naturally
+          window.__INITIAL_PATH__ = window.location.pathname + window.location.search + window.location.hash;
         }
       })();
     </script>

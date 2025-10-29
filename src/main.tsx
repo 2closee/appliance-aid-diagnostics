@@ -3,10 +3,6 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Handle initial path for direct URL access
-const initialPath = (window as any).__INITIAL_PATH__;
-if (initialPath) {
-  window.history.replaceState(null, '', initialPath);
-}
+// BrowserRouter handles the initial path automatically - no manual history manipulation needed
 
 createRoot(document.getElementById("root")!).render(<App />);
