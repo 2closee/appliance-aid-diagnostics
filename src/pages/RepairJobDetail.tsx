@@ -191,7 +191,10 @@ const RepairJobDetail = () => {
         });
         
         // Refresh job details to get updated status
-        fetchJobDetails();
+        await fetchJobDetails();
+        
+        // Clean up URL parameters after successful payment
+        navigate(`/repair-jobs/${id}`, { replace: true });
       } else if (data.payment_status === 'failed') {
         toast({
           title: "Payment Failed",
@@ -494,7 +497,7 @@ const RepairJobDetail = () => {
             </Card>
 
             {/* Payment Required Alert - Urgent Display */}
-            {job.job_status === 'repair_completed' && job.final_cost && (
+            {job.job_status === 'repair_completed' && job.final_cost && !job.customer_confirmed && (
               <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-amber-900 dark:text-amber-100">
@@ -556,7 +559,7 @@ const RepairJobDetail = () => {
             )}
 
             {/* Payment Summary Card - Prominent Display */}
-            {job.final_cost && (job.job_status === "repair_completed" || job.job_status === "completed") && (
+            {job.final_cost && job.job_status === "repair_completed" && !job.customer_confirmed && (
               <Card className={`border-2 ${
                 isPaymentCritical(job.payment_deadline)
                   ? 'border-red-300 bg-red-50'

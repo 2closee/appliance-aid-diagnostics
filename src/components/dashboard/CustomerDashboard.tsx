@@ -290,7 +290,7 @@ const CustomerDashboard = () => {
                     </div>
                     
                     {/* Payment Required Card - High Priority CTA */}
-                    {(job.job_status === 'repair_completed' || job.job_status === 'completed') && job.final_cost && (
+                    {job.job_status === 'repair_completed' && job.final_cost && !job.customer_confirmed && (
                       <div 
                         className={`mt-4 p-4 rounded-lg border-2 ${
                           isPaymentCritical(job.payment_deadline) 
