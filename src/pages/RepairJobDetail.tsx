@@ -493,6 +493,68 @@ const RepairJobDetail = () => {
               </CardContent>
             </Card>
 
+            {/* Payment Required Alert - Urgent Display */}
+            {job.job_status === 'repair_completed' && job.final_cost && (
+              <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-amber-900 dark:text-amber-100">
+                    <AlertCircle className="w-5 h-5" />
+                    Payment Required
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">Your repair is complete!</p>
+                    <div className="text-3xl font-bold text-amber-900 dark:text-amber-100">
+                      ₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    {job.app_commission && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Includes ₦{job.app_commission.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} service fee
+                      </p>
+                    )}
+                  </div>
+
+                  {job.payment_deadline && (
+                    <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                      isPaymentCritical(job.payment_deadline) ? 'bg-red-100 dark:bg-red-950/30' :
+                      isPaymentUrgent(job.payment_deadline) ? 'bg-amber-100 dark:bg-amber-950/30' :
+                      'bg-blue-100 dark:bg-blue-950/30'
+                    }`}>
+                      <Timer className="w-4 h-4" />
+                      <div className="text-sm">
+                        <p className="font-medium">Payment Deadline</p>
+                        <p className="text-xs">{getTimeRemaining(job.payment_deadline)}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button 
+                    onClick={handlePayment} 
+                    disabled={paymentLoading}
+                    className="w-full h-12 text-lg"
+                    size="lg"
+                  >
+                    {paymentLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-5 h-5 mr-2" />
+                        Pay Now
+                      </>
+                    )}
+                  </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    Your item will be returned after payment is confirmed
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Payment Summary Card - Prominent Display */}
             {job.final_cost && (job.job_status === "repair_completed" || job.job_status === "completed") && (
               <Card className={`border-2 ${

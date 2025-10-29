@@ -105,14 +105,55 @@ const RepairCenterDashboard = () => {
     }
   };
 
+  // Define sequential workflow - only allow valid next statuses
+  const statusWorkflow: Record<string, string[]> = {
+    'requested': ['pickup_scheduled', 'cancelled'],
+    'pickup_scheduled': ['picked_up', 'cancelled'],
+    'picked_up': ['in_repair', 'cancelled'],
+    'in_repair': ['repair_completed', 'cancelled'],
+    'repair_completed': ['returned', 'cancelled'],
+    'returned': ['completed', 'cancelled'],
+    'completed': [], // Terminal state
+    'cancelled': [] // Terminal state
+  };
+
+  const getNextValidStatuses = (currentStatus: string): string[] => {
+    return statusWorkflow[currentStatus] || [];
+  };
+
+  const formatStatusLabel = (status: string): string => {
+    return status.replace('_', ' ').split(' ').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+  };
+
   const updateJobStatus = async (jobId: string, newStatus: "requested" | "pickup_scheduled" | "picked_up" | "in_repair" | "repair_completed" | "ready_for_return" | "returned" | "completed" | "cancelled") => {
     try {
+      const job = repairJobs?.find(j => j.id === jobId);
+      if (!job) {
+        toast({
+          title: "Error",
+          description: "Job not found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate workflow progression (skip validation for cancelled)
+      if (newStatus !== 'cancelled' && !getNextValidStatuses(job.job_status).includes(newStatus)) {
+        toast({
+          title: "Invalid Status Change",
+          description: `Cannot skip stages. Current stage: ${formatStatusLabel(job.job_status)}. Next valid stages: ${getNextValidStatuses(job.job_status).map(formatStatusLabel).join(', ')}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const updateData: any = { job_status: newStatus };
       
       // When completing repair, automatically set final_cost from quoted_cost if not set
       if (newStatus === 'repair_completed') {
-        const job = repairJobs?.find(j => j.id === jobId);
-        if (job && !job.final_cost && job.quoted_cost) {
+        if (!job.final_cost && job.quoted_cost) {
           updateData.final_cost = job.quoted_cost;
           updateData.app_commission = job.quoted_cost * 0.075;
           updateData.payment_deadline = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
@@ -126,10 +167,42 @@ const RepairCenterDashboard = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Job status updated successfully",
-      });
+      // Send notification email when repair is completed
+      if (newStatus === 'repair_completed') {
+        try {
+          const { error: notifError } = await supabase.functions.invoke('send-job-notification', {
+            body: {
+              email_type: 'repair_completed',
+              repair_job_id: jobId,
+              customer_email: job.customer_email,
+              customer_name: job.customer_name,
+              appliance_type: job.appliance_type,
+              final_cost: job.quoted_cost || job.final_cost,
+            }
+          });
+          
+          if (notifError) {
+            console.error('Failed to send notification:', notifError);
+          } else {
+            toast({
+              title: "Repair Completed!",
+              description: "Customer has been notified and can now make payment.",
+            });
+          }
+        } catch (notifError) {
+          console.error('Failed to send notification:', notifError);
+          // Don't fail the status update if email fails
+          toast({
+            title: "Success",
+            description: "Job status updated. Note: Email notification may have failed.",
+          });
+        }
+      } else {
+        toast({
+          title: "Success",
+          description: "Job status updated successfully",
+        });
+      }
       
       refetch();
     } catch (error) {
@@ -391,15 +464,26 @@ const RepairCenterDashboard = () => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="requested">Requested</SelectItem>
-                            <SelectItem value="pickup_scheduled">Pickup Scheduled</SelectItem>
-                            <SelectItem value="picked_up">Picked Up</SelectItem>
-                            <SelectItem value="in_repair">In Repair</SelectItem>
-                            <SelectItem value="repair_completed">Repair Completed</SelectItem>
-                            <SelectItem value="ready_for_return">Ready for Return</SelectItem>
-                            <SelectItem value="returned">Returned</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                            {/* Current status - disabled */}
+                            <SelectItem value={job.job_status} disabled>
+                              {formatStatusLabel(job.job_status)} (Current)
+                            </SelectItem>
+                            
+                            {/* Valid next statuses - enabled */}
+                            {getNextValidStatuses(job.job_status).map(status => (
+                              <SelectItem key={status} value={status}>
+                                {formatStatusLabel(status)}
+                              </SelectItem>
+                            ))}
+                            
+                            {/* All other statuses - disabled & locked */}
+                            {['requested', 'pickup_scheduled', 'picked_up', 'in_repair', 'repair_completed', 'returned', 'completed']
+                              .filter(s => s !== job.job_status && !getNextValidStatuses(job.job_status).includes(s))
+                              .map(status => (
+                                <SelectItem key={status} value={status} disabled className="opacity-50">
+                                  {formatStatusLabel(status)} 🔒
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                         

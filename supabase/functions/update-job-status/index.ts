@@ -37,6 +37,18 @@ serve(async (req) => {
     }
     logStep("Request data", { repair_job_id, status, notes, final_cost });
 
+    // Define sequential workflow validation
+    const statusWorkflow: Record<string, string[]> = {
+      'requested': ['pickup_scheduled', 'cancelled'],
+      'pickup_scheduled': ['picked_up', 'cancelled'],
+      'picked_up': ['in_repair', 'cancelled'],
+      'in_repair': ['repair_completed', 'cancelled'],
+      'repair_completed': ['returned', 'cancelled'],
+      'returned': ['completed', 'cancelled'],
+      'completed': [],
+      'cancelled': []
+    };
+
     // Verify access to the repair job (user owns it or is admin)
     const { data: repairJob, error: jobError } = await supabaseClient
       .from("repair_jobs")
@@ -56,6 +68,16 @@ serve(async (req) => {
       throw new Error("Access denied");
     }
     logStep("Access verified");
+
+    // Validate workflow progression (skip validation for cancelled)
+    const currentStatus = repairJob.job_status;
+    const validNextStatuses = statusWorkflow[currentStatus] || [];
+    
+    if (status !== 'cancelled' && !validNextStatuses.includes(status)) {
+      logStep("Invalid status transition", { currentStatus, requestedStatus: status, validNextStatuses });
+      throw new Error(`Invalid status transition. Current: ${currentStatus}. Valid next statuses: ${validNextStatuses.join(', ')}`);
+    }
+    logStep("Workflow validation passed");
 
     // PAYMENT ENFORCEMENT: Prevent status change to 'returned' without payment
     if (status === 'returned') {
@@ -112,6 +134,33 @@ serve(async (req) => {
       throw new Error(`Failed to update job: ${updateError.message}`);
     }
     logStep("Job updated successfully");
+
+    // Send notification email when repair is completed
+    if (status === 'repair_completed') {
+      logStep("Sending repair completion notification");
+      try {
+        const { error: notifError } = await supabaseClient.functions.invoke('send-job-notification', {
+          body: {
+            email_type: 'repair_completed',
+            repair_job_id: repair_job_id,
+            customer_email: repairJob.customer_email,
+            customer_name: repairJob.customer_name,
+            appliance_type: repairJob.appliance_type,
+            final_cost: updateData.final_cost || repairJob.final_cost,
+          }
+        });
+        
+        if (notifError) {
+          logStep("Notification send failed", { error: notifError });
+          // Don't fail the status update if email fails
+        } else {
+          logStep("Notification sent successfully");
+        }
+      } catch (notifError) {
+        logStep("Notification error", { error: notifError });
+        // Don't fail the status update if email fails
+      }
+    }
 
     // Add status history entry (this will be handled by the trigger automatically)
     
