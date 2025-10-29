@@ -65,7 +65,7 @@ serve(async (req) => {
       .from("repair_center_payouts")
       .select(`
         *,
-        repair_center:Repair Center(name, email)
+        repair_center:Repair Center(id, name, email)
       `)
       .eq("id", payout_id)
       .single();
@@ -73,6 +73,28 @@ serve(async (req) => {
     if (payoutFetchError || !payout) {
       throw new Error("Payout not found");
     }
+
+    // Check if repair center has a whitelisted bank account
+    const { data: bankAccount, error: bankError } = await supabaseClient
+      .from("repair_center_bank_accounts")
+      .select("*")
+      .eq("repair_center_id", payout.repair_center?.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (bankError) {
+      logStep("Bank account fetch error", { error: bankError });
+      throw new Error("Failed to fetch bank account information");
+    }
+
+    if (!bankAccount) {
+      throw new Error("No whitelisted bank account found for this repair center. Please add bank account details before processing payouts.");
+    }
+
+    logStep("Bank account verified", { 
+      bank_name: bankAccount.bank_name, 
+      account_number: `****${bankAccount.account_number.slice(-4)}` 
+    });
 
     // Update payout status
     const { error: updateError } = await supabaseClient
@@ -103,6 +125,9 @@ serve(async (req) => {
           payout_amount: payout.net_amount,
           payout_reference: payout_reference,
           payout_date: new Date().toISOString(),
+          bank_name: bankAccount.bank_name,
+          account_number: `****${bankAccount.account_number.slice(-4)}`,
+          account_name: bankAccount.account_name,
         },
       });
       logStep("Notification email sent");

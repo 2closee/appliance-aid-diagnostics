@@ -551,6 +551,53 @@ export type Database = {
         }
         Relationships: []
       }
+      repair_center_bank_accounts: {
+        Row: {
+          account_name: string
+          account_number: string
+          bank_name: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_updated_at: string
+          repair_center_id: number
+          updated_at: string
+          whitelisted_at: string
+        }
+        Insert: {
+          account_name: string
+          account_number: string
+          bank_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_updated_at?: string
+          repair_center_id: number
+          updated_at?: string
+          whitelisted_at?: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          bank_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_updated_at?: string
+          repair_center_id?: number
+          updated_at?: string
+          whitelisted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repair_center_bank_accounts_repair_center_id_fkey"
+            columns: ["repair_center_id"]
+            isOneToOne: false
+            referencedRelation: "Repair Center"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       repair_center_payouts: {
         Row: {
           commission_amount: number

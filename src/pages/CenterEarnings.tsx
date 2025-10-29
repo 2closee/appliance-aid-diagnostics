@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Loader2, DollarSign, TrendingUp, Clock, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
+import BankAccountManager from "@/components/BankAccountManager";
 
 interface PayoutRecord {
   id: string;
@@ -36,6 +37,7 @@ const CenterEarnings = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [repairCenterId, setRepairCenterId] = useState<number | null>(null);
+  const [businessName, setBusinessName] = useState("");
   const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
   const [summary, setSummary] = useState<EarningsSummary>({
     total_gross: 0,
@@ -60,16 +62,29 @@ const CenterEarnings = () => {
 
   const fetchCenterInfo = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: staffData, error: staffError } = await supabase
         .from("repair_center_staff")
         .select("repair_center_id")
         .eq("user_id", user?.id)
         .eq("is_active", true)
         .single();
 
-      if (error) throw error;
-      if (data) {
-        setRepairCenterId(data.repair_center_id);
+      if (staffError) throw staffError;
+      
+      if (staffData) {
+        setRepairCenterId(staffData.repair_center_id);
+        
+        // Fetch business name
+        const { data: centerData, error: centerError } = await supabase
+          .from("Repair Center")
+          .select("name")
+          .eq("id", staffData.repair_center_id)
+          .single();
+
+        if (centerError) throw centerError;
+        if (centerData) {
+          setBusinessName(centerData.name);
+        }
       }
     } catch (error) {
       console.error("Error fetching center info:", error);
@@ -212,6 +227,14 @@ const CenterEarnings = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Bank Account Management */}
+      {repairCenterId && businessName && (
+        <BankAccountManager 
+          repairCenterId={repairCenterId} 
+          businessName={businessName}
+        />
+      )}
 
       {/* Payout Schedule Info */}
       <Card className="bg-muted/50">

@@ -112,6 +112,48 @@ const emailTemplates = {
       <br>
       <p>Best regards,<br>Fixbudi Team</p>
     `
+  }),
+
+  payout_processed: (data: any) => ({
+    subject: `Payout Processed - ${data.payout_reference}`,
+    html: `
+      <h2>Payout Successfully Processed</h2>
+      <p>Hello ${data.repair_center_name},</p>
+      <p>Great news! Your payout has been processed successfully.</p>
+      <p><strong>Payout Amount:</strong> ₦${Number(data.payout_amount).toLocaleString()}</p>
+      <p><strong>Reference:</strong> ${data.payout_reference}</p>
+      <p><strong>Date:</strong> ${new Date(data.payout_date).toLocaleDateString()}</p>
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+      <h3>Bank Account Details</h3>
+      <p><strong>Bank Name:</strong> ${data.bank_name}</p>
+      <p><strong>Account Number:</strong> ${data.account_number}</p>
+      <p><strong>Account Name:</strong> ${data.account_name}</p>
+      <p style="margin-top: 20px; padding: 12px; background-color: #f3f4f6; border-radius: 6px;">
+        Please allow 2-3 business days for the funds to reflect in your account.
+      </p>
+      <p>If you have any questions about this payout, please contact our support team.</p>
+      <br>
+      <p>Best regards,<br>Fixbudi Team</p>
+    `
+  }),
+
+  bank_account_whitelisted: (data: any) => ({
+    subject: `Bank Account Whitelisted - ${data.repair_center_name}`,
+    html: `
+      <h2>Bank Account Successfully Whitelisted</h2>
+      <p>Hello ${data.repair_center_name},</p>
+      <p>Your bank account has been successfully added and whitelisted for receiving payouts.</p>
+      <h3>Account Details</h3>
+      <p><strong>Bank Name:</strong> ${data.bank_name}</p>
+      <p><strong>Account Number:</strong> ${data.account_number}</p>
+      <p><strong>Account Name:</strong> ${data.account_name}</p>
+      <p style="margin-top: 20px; padding: 12px; background-color: #fef3c7; border-radius: 6px;">
+        <strong>Important:</strong> This account can only be changed after 2 weeks from today for security purposes.
+      </p>
+      <p>You can now receive payouts to this account. All future payouts will be processed weekly.</p>
+      <br>
+      <p>Best regards,<br>Fixbudi Team</p>
+    `
   })
 };
 
@@ -129,14 +171,18 @@ serve(async (req) => {
     const { 
       email_type, 
       repair_job_id, 
-      customer_email, 
+      customer_email,
+      repair_center_email,
       customer_name,
+      repair_center_name,
       ...additionalData 
     } = await req.json();
 
-    logStep("Sending notification", { email_type, repair_job_id, customer_email });
+    const recipient_email = repair_center_email || customer_email;
 
-    if (!customer_email || !email_type) {
+    logStep("Sending notification", { email_type, repair_job_id, recipient_email });
+
+    if (!recipient_email || !email_type) {
       throw new Error("Missing required fields");
     }
 
@@ -144,6 +190,7 @@ serve(async (req) => {
 
     const templateData = {
       customer_name: customer_name || "Customer",
+      repair_center_name: repair_center_name || "Repair Center",
       job_id: repair_job_id,
       app_url,
       ...additionalData
@@ -164,7 +211,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: "Fixbudi <noreply@updates.lovable.app>",
-        to: [customer_email],
+        to: [recipient_email],
         subject,
         html,
       }),
@@ -176,12 +223,12 @@ serve(async (req) => {
       throw new Error(`Resend API error: ${JSON.stringify(resData)}`);
     }
 
-    // Track email in database
+    // Track email in database (only for job-related emails)
     if (repair_job_id) {
       await supabaseClient.from("email_notifications").insert({
         repair_job_id,
         email_type,
-        recipient_email: customer_email,
+        recipient_email,
         status: "sent",
         metadata: { resend_id: resData.id }
       });
