@@ -57,11 +57,13 @@ serve(async (req) => {
     // Update job status based on response
     let newStatus: string;
     let notificationType: string;
+    let updateData: any = {};
 
     switch (response) {
       case 'accept':
-        newStatus = 'quote_accepted';
+        newStatus = 'requested'; // Auto-progress to workflow start
         notificationType = 'quote_accepted';
+        updateData.quote_accepted_at = new Date().toISOString(); // Track acceptance time
         break;
       case 'reject':
         newStatus = 'quote_rejected';
@@ -79,7 +81,8 @@ serve(async (req) => {
       .from('repair_jobs')
       .update({
         job_status: newStatus,
-        notes: customer_notes ? `Customer response: ${customer_notes}` : null
+        notes: customer_notes ? `Customer response: ${customer_notes}` : null,
+        ...updateData
       })
       .eq('id', repair_job_id);
 

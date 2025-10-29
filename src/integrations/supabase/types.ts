@@ -727,6 +727,7 @@ export type Database = {
           payment_deadline: string | null
           pickup_address: string
           pickup_date: string | null
+          quote_accepted_at: string | null
           quote_expires_at: string | null
           quote_notes: string | null
           quote_provided_at: string | null
@@ -766,6 +767,7 @@ export type Database = {
           payment_deadline?: string | null
           pickup_address: string
           pickup_date?: string | null
+          quote_accepted_at?: string | null
           quote_expires_at?: string | null
           quote_notes?: string | null
           quote_provided_at?: string | null
@@ -805,6 +807,7 @@ export type Database = {
           payment_deadline?: string | null
           pickup_address?: string
           pickup_date?: string | null
+          quote_accepted_at?: string | null
           quote_expires_at?: string | null
           quote_notes?: string | null
           quote_provided_at?: string | null
