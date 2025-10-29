@@ -13,7 +13,8 @@ import {
   MessageCircle,
   Search,
   Navigation,
-  Truck
+  Truck,
+  Bot
 } from "lucide-react";
 
 interface RepairCenter {

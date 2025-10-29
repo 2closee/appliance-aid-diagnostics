@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, ArrowLeft } from "lucide-react";
+import { MessageCircle, ArrowLeft, Bot } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useConversationNotifications } from "@/hooks/useConversationNotifications";
@@ -101,18 +101,26 @@ const RepairCenterConversations = () => {
               </div>
             ) : conversations && conversations.length > 0 ? (
               <div className="space-y-4">
-                {conversations.map((conversation) => (
+                {conversations.map((conversation) => {
+                  const isDiagnosticOrigin = (conversation as any).source === 'diagnostic';
+                  return (
                   <div
                     key={conversation.id}
                     className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                       <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <MessageCircle className="h-4 w-4 text-primary" />
                           <h3 className="font-medium">
                             {conversation.repair_jobs?.[0]?.customer_name || 'Customer'}
                           </h3>
+                          {isDiagnosticOrigin && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Bot className="h-3 w-3 mr-1" />
+                              From AI Diagnosis
+                            </Badge>
+                          )}
                           <Badge variant={conversation.status === 'active' ? 'default' : 'secondary'}>
                             {conversation.status}
                           </Badge>
@@ -122,6 +130,11 @@ const RepairCenterConversations = () => {
                             </Badge>
                           )}
                         </div>
+                        {isDiagnosticOrigin && (conversation as any).diagnostic_summary && (
+                          <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                            AI Diagnosis: {(conversation as any).diagnostic_summary}
+                          </p>
+                        )}
                         {conversation.repair_jobs?.[0] && (
                           <p className="text-sm text-muted-foreground">
                             Job: {conversation.repair_jobs[0].appliance_type} - 
@@ -144,7 +157,8 @@ const RepairCenterConversations = () => {
                       </Button>
                     </div>
                   </div>
-                ))}
+                );
+                })}
               </div>
             ) : (
               <div className="text-center py-8">

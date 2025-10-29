@@ -18,31 +18,47 @@ export type Database = {
         Row: {
           created_at: string
           customer_id: string
+          diagnostic_conversation_id: string | null
+          diagnostic_summary: string | null
           id: string
           repair_center_id: number
           repair_job_id: string | null
+          source: string | null
           status: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           customer_id: string
+          diagnostic_conversation_id?: string | null
+          diagnostic_summary?: string | null
           id?: string
           repair_center_id: number
           repair_job_id?: string | null
+          source?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           customer_id?: string
+          diagnostic_conversation_id?: string | null
+          diagnostic_summary?: string | null
           id?: string
           repair_center_id?: number
           repair_job_id?: string | null
+          source?: string | null
           status?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "conversations_diagnostic_conversation_id_fkey"
+            columns: ["diagnostic_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_conversations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "conversations_repair_center_id_fkey"
             columns: ["repair_center_id"]

@@ -14,7 +14,7 @@ const RepairCenterChat = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isRepairCenterStaff, repairCenterId } = useAuth();
-  const { selectedCenter, repairJobId, conversationId: passedConversationId } = location.state || {};
+  const { selectedCenter, repairJobId, conversationId: passedConversationId, diagnosticContext } = location.state || {};
   const [centerName, setCenterName] = useState<string>("");
   const [fetchedConversationId, setFetchedConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +22,8 @@ const RepairCenterChat = () => {
   // Use passed conversationId for repair center staff, or create/fetch for customers
   const { conversationId: customerConversationId, isLoading: isCreatingConversation } = useConversation(
     selectedCenter?.id,
-    repairJobId
+    repairJobId,
+    diagnosticContext
   );
 
   const conversationId = passedConversationId || customerConversationId || fetchedConversationId;
@@ -125,6 +126,7 @@ const RepairCenterChat = () => {
             conversationId={conversationId}
             repairCenterName={centerName}
             repairCenterId={selectedCenter?.id}
+            diagnosticContext={diagnosticContext}
           />
         ) : (
           <Card>

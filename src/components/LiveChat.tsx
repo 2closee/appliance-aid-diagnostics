@@ -25,13 +25,22 @@ interface Message {
   created_at: string;
 }
 
+interface DiagnosticContext {
+  conversationId: string;
+  summary: string;
+  attachments?: any;
+  estimatedCost?: { min: number; max: number };
+  confidenceScore?: number;
+}
+
 interface LiveChatProps {
   conversationId: string;
   repairCenterName?: string;
   repairCenterId?: number;
+  diagnosticContext?: DiagnosticContext;
 }
 
-const LiveChat = ({ conversationId, repairCenterName, repairCenterId }: LiveChatProps) => {
+const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnosticContext }: LiveChatProps) => {
   const { user, isRepairCenterStaff, repairCenterId: userRepairCenterId } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -205,7 +214,8 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId }: LiveChat
     }
 
     // Check if auto-reply needed (customer sending to offline repair center)
-    if (!isRepairCenterStaff && repairCenterId && !isOnline) {
+    // Skip auto-reply for diagnostic-originated conversations
+    if (!isRepairCenterStaff && repairCenterId && !isOnline && !diagnosticContext) {
       const { data: settings } = await supabase
         .from('repair_center_settings')
         .select('auto_reply_enabled, auto_reply_message')
@@ -293,6 +303,28 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId }: LiveChat
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col p-0">
+        {/* Diagnostic Context Card */}
+        {diagnosticContext && (
+          <div className="p-4 bg-muted/50 border-b">
+            <div className="flex items-start gap-3">
+              <Badge variant="secondary" className="mt-0.5">AI Diagnosis</Badge>
+              <div className="flex-1 space-y-2">
+                <p className="text-sm font-medium">{diagnosticContext.summary}</p>
+                {diagnosticContext.estimatedCost && (
+                  <p className="text-xs text-muted-foreground">
+                    Estimated: ₦{diagnosticContext.estimatedCost.min.toLocaleString()} - 
+                    ₦{diagnosticContext.estimatedCost.max.toLocaleString()}
+                  </p>
+                )}
+                {diagnosticContext.confidenceScore && (
+                  <p className="text-xs text-muted-foreground">
+                    Confidence: {(diagnosticContext.confidenceScore * 100).toFixed(0)}%
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         <ScrollArea className="flex-1 p-4" ref={scrollRef}>
           <div className="space-y-4">
             {messages.map((message) => {

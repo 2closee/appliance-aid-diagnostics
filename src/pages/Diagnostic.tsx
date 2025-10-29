@@ -22,7 +22,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import AIChatInterface from "@/components/AIChatInterface";
-import RepairCenterChatInterface from "@/components/RepairCenterChatInterface";
+
 import { useAuth } from "@/hooks/useAuth";
 import RepairCenterSelector from "@/components/RepairCenterSelector";
 import { DiagnosticHistory } from "@/components/DiagnosticHistory";
@@ -47,7 +47,7 @@ const Diagnostic = () => {
     recommendations: []
   });
   const [showAIChat, setShowAIChat] = useState(false);
-  const [showRepairCenterChat, setShowRepairCenterChat] = useState(false);
+  
   const [showChatOptions, setShowChatOptions] = useState(false);
   const [showRepairCenterSelector, setShowRepairCenterSelector] = useState(false);
   const [selectedRepairCenter, setSelectedRepairCenter] = useState<any>(null);
@@ -180,7 +180,6 @@ const Diagnostic = () => {
     setAnswers([]);
     setDiagnosis({ type: '', message: '', recommendations: [] });
     setShowAIChat(false);
-    setShowRepairCenterChat(false);
     setShowChatOptions(false);
     setShowRepairCenterSelector(false);
     setSelectedRepairCenter(null);
@@ -295,7 +294,7 @@ const Diagnostic = () => {
             </Card>
           )}
 
-          {diagnosis.type && !showAIChat && !showRepairCenterChat && !showChatOptions && !showRepairCenterSelector && (
+          {diagnosis.type && !showAIChat && !showChatOptions && !showRepairCenterSelector && (
             <Card className="shadow-medium">
               <CardHeader>
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -519,59 +518,27 @@ const Diagnostic = () => {
             </div>
           )}
 
-          {showRepairCenterChat && selectedAppliance && (
-            <div className="space-y-6">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div>
-                  <h2 className="text-xl lg:text-2xl font-bold">Repair Center Chat</h2>
-                  <p className="text-muted-foreground text-sm lg:text-base">
-                    Connect with local repair experts
-                  </p>
-                </div>
-                <Button variant="outline" onClick={() => setShowRepairCenterChat(false)} size="sm">
-                  Back to Options
-                </Button>
-              </div>
-              
-              <RepairCenterChatInterface
-                appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
-                diagnosis={diagnosis.message}
-                onSchedulePickup={() => {
-                  if (user) {
-                    navigate('/pickup-request', { 
-                      state: { 
-                        selectedCenter: selectedRepairCenter,
-                        applianceType: selectedAppliance,
-                        issueDescription: diagnosis.message,
-                        diagnosticData: currentReport ? {
-                          conversationId: conversationIdRef,
-                          diagnosis: currentReport.diagnosis || diagnosis.message,
-                          confidenceScore: currentReport.confidenceScore,
-                          estimatedCost: {
-                            min: currentReport.estimatedCost?.min,
-                            max: currentReport.estimatedCost?.max
-                          },
-                          recommendations: currentReport.recommendations,
-                          attachments: diagnosticAttachments
-                        } : undefined
-                      } 
-                    });
-                  } else {
-                    navigate('/auth');
-                  }
-                }}
-                onFindRepairCenter={() => user ? navigate('/repair-centers') : navigate('/auth')}
-                selectedCenter={selectedRepairCenter}
-              />
-            </div>
-          )}
 
           {showRepairCenterSelector && selectedAppliance && (
             <RepairCenterSelector
               onSelectCenter={(center) => {
-                setSelectedRepairCenter(center);
-                setShowRepairCenterSelector(false);
-                setShowRepairCenterChat(true);
+                // Navigate to live chat with diagnostic context
+                if (user) {
+                  navigate('/repair-center-chat', {
+                    state: {
+                      selectedCenter: center,
+                      diagnosticContext: {
+                        conversationId: conversationIdRef,
+                        summary: currentReport?.diagnosis || diagnosis.message,
+                        attachments: diagnosticAttachments,
+                        estimatedCost: currentReport?.estimatedCost,
+                        confidenceScore: currentReport?.confidenceScore
+                      }
+                    }
+                  });
+                } else {
+                  navigate('/auth?redirect=/diagnostic');
+                }
               }}
               onBack={() => {
                 setShowRepairCenterSelector(false);

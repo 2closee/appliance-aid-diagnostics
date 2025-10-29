@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Settings, Plus, MapPin, Mail, LogOut } from "lucide-react";
+import { Settings, Plus, MapPin, Mail, LogOut, MessageSquare } from "lucide-react";
 
 const Admin = () => {
   const { toast } = useToast();
@@ -257,13 +257,17 @@ const Admin = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
-              Manage Existing Centers
+              Manage Existing Centers & Conversations
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <Button onClick={() => navigate("/dashboard")} className="w-full">
                 View All Centers & Analytics
+              </Button>
+              <Button onClick={() => navigate("/admin-conversations")} variant="outline" className="w-full">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                View All Conversations (Investigative)
               </Button>
               <Button onClick={() => navigate("/repair-center-admin")} variant="outline" className="w-full">
                 Repair Center Admin Portal
