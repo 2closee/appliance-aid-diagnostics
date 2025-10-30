@@ -205,7 +205,7 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
       if (data.usedFallback) {
         toast({
           title: "Using backup AI",
-          description: "Primary AI unavailable, using OpenAI backup",
+          description: "Primary AI service unavailable, using Lovable AI fallback.",
           duration: 3000,
         });
       }

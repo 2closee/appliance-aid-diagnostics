@@ -77,8 +77,8 @@ async function callN8NAgent(params: {
   };
 }
 
-// Helper function to call OpenAI (fallback)
-async function callOpenAI(params: {
+// Helper function to call Lovable AI (fallback)
+async function callLovableAI(params: {
   appliance: string,
   applianceBrand?: string,
   applianceModel?: string,
@@ -139,24 +139,22 @@ Language preference: ${language}`;
     }
   }
 
-  console.log('Calling OpenAI API...');
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  console.log('Calling Lovable AI Gateway...');
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+      'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: images && images.length > 0 ? 'gpt-4o' : 'gpt-4o-mini',
+      model: 'google/gemini-2.5-flash',
       messages: aiMessages,
-      max_tokens: 800,
-      temperature: 0.7,
     }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+    throw new Error(`Lovable AI API error: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
@@ -183,18 +181,19 @@ Provide a JSON response with:
 
 Be realistic with cost estimates based on typical repair costs. Only include parts if confident about specific replacements needed.`;
 
-  console.log('Getting OpenAI analysis...');
-  const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+  console.log('Getting Lovable AI analysis...');
+  const analysisResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+      'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: analysisPrompt }],
-      max_tokens: 200,
-      temperature: 0.3,
+      model: 'google/gemini-2.5-flash',
+      messages: [
+        { role: 'system', content: 'You are a technical analysis assistant. Return only valid JSON.' },
+        { role: 'user', content: analysisPrompt }
+      ],
     }),
   });
 
@@ -202,13 +201,16 @@ Be realistic with cost estimates based on typical repair costs. Only include par
   if (analysisResponse.ok) {
     const analysisData = await analysisResponse.json();
     try {
-      updateInfo = JSON.parse(analysisData.choices[0].message.content);
+      const content = analysisData.choices[0].message.content;
+      // Extract JSON from markdown code blocks if present
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || [null, content];
+      updateInfo = JSON.parse(jsonMatch[1]);
     } catch (e) {
-      console.error('Error parsing OpenAI analysis response:', e);
+      console.error('Error parsing Lovable AI analysis response:', e);
     }
   }
 
-  console.log('OpenAI response received successfully');
+  console.log('Lovable AI response received successfully');
 
   return {
     response: aiResponse,
@@ -220,7 +222,7 @@ Be realistic with cost estimates based on typical repair costs. Only include par
     repairUrgency: updateInfo.repairUrgency || 'medium',
     isProfessionalRepairNeeded: updateInfo.isProfessionalRepairNeeded || false,
     updatedDiagnosis: updateInfo.updatedDiagnosis || null,
-    provider: 'openai'
+    provider: 'lovable-ai'
   };
 }
 
@@ -267,12 +269,12 @@ serve(async (req) => {
       });
       console.log('✓ n8n AI successful');
     } catch (n8nError) {
-      console.warn('✗ n8n failed, falling back to OpenAI:', n8nError);
+      console.warn('✗ n8n failed, falling back to Lovable AI:', n8nError);
       usedFallback = true;
       
       try {
-        console.log('Attempting OpenAI fallback (BACKUP)...');
-        aiResult = await callOpenAI({
+        console.log('Attempting Lovable AI fallback (BACKUP)...');
+        aiResult = await callLovableAI({
           appliance,
           applianceBrand,
           applianceModel,
@@ -281,9 +283,9 @@ serve(async (req) => {
           images,
           language
         });
-        console.log('✓ OpenAI fallback successful');
-      } catch (openAIError) {
-        console.error('✗ Both AI agents failed:', openAIError);
+        console.log('✓ Lovable AI fallback successful');
+      } catch (lovableError) {
+        console.error('✗ Both AI agents failed:', lovableError);
         return new Response(
           JSON.stringify({ 
             error: 'AI diagnostic service unavailable. Please try again later.',
