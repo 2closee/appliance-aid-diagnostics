@@ -201,6 +201,15 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
 
       if (error) throw error;
 
+      // Show notification if fallback was used
+      if (data.usedFallback) {
+        toast({
+          title: "Using backup AI",
+          description: "Primary AI unavailable, using OpenAI backup",
+          duration: 3000,
+        });
+      }
+
       if (data.conversationId && !conversationId) {
         setConversationId(data.conversationId);
       }
