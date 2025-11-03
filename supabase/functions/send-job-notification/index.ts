@@ -154,6 +154,52 @@ const emailTemplates = {
       <br>
       <p>Best regards,<br>Fixbudi Team</p>
     `
+  }),
+
+  device_return_confirmed: (data: any) => ({
+    subject: `Device Returned - Job #${data.job_id.slice(0, 8)}`,
+    html: `
+      <h2>Customer Confirmed Device Return</h2>
+      <p>Hello,</p>
+      <p>The customer has confirmed receiving their device back for the following repair job:</p>
+      <p><strong>Job ID:</strong> ${data.job_id}</p>
+      <p><strong>Customer:</strong> ${data.customer_name}</p>
+      <p><strong>Appliance:</strong> ${data.appliance_type}</p>
+      <p style="margin-top: 20px; padding: 12px; background-color: #dbeafe; border-radius: 6px;">
+        The customer is now being asked to rate their satisfaction with the repair.
+      </p>
+      <br>
+      <p>Best regards,<br>Fixbudi Team</p>
+    `
+  }),
+
+  satisfaction_feedback_received: (data: any) => ({
+    subject: `Customer Feedback Received - Job #${data.job_id.slice(0, 8)}`,
+    html: `
+      <h2>Customer Satisfaction Feedback</h2>
+      <p>Hello,</p>
+      <p>The customer has completed their satisfaction feedback for the following repair job:</p>
+      <p><strong>Job ID:</strong> ${data.job_id}</p>
+      <p><strong>Customer:</strong> ${data.customer_name}</p>
+      <p><strong>Appliance:</strong> ${data.appliance_type}</p>
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+      <h3>Customer Rating</h3>
+      <p style="font-size: 24px; color: #f59e0b;">
+        ${'★'.repeat(data.job_data?.satisfaction_rating || 0)}${'☆'.repeat(5 - (data.job_data?.satisfaction_rating || 0))}
+      </p>
+      <p><strong>Rating:</strong> ${data.job_data?.satisfaction_rating || 0} out of 5 stars</p>
+      ${data.job_data?.satisfaction_feedback ? `
+        <h3>Customer Comments</h3>
+        <p style="padding: 12px; background-color: #f3f4f6; border-radius: 6px; font-style: italic;">
+          "${data.job_data.satisfaction_feedback}"
+        </p>
+      ` : ''}
+      <p style="margin-top: 20px; padding: 12px; background-color: #d1fae5; border-radius: 6px;">
+        ✅ This repair job is now complete!
+      </p>
+      <br>
+      <p>Best regards,<br>Fixbudi Team</p>
+    `
   })
 };
 

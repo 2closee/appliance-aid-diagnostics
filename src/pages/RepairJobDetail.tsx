@@ -7,11 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CreditCard, CheckCircle, Clock, MapPin, Phone, Mail, Loader2, AlertCircle, MessageCircle, Timer } from "lucide-react";
+import { ArrowLeft, CreditCard, CheckCircle, Clock, MapPin, Phone, Mail, Loader2, AlertCircle, MessageCircle, Timer, Star } from "lucide-react";
 import { format, differenceInHours } from "date-fns";
 import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 interface RepairJob {
   id: string;
@@ -31,6 +33,12 @@ interface RepairJob {
   completion_date?: string;
   payment_deadline?: string;
   customer_confirmed: boolean;
+  device_returned_confirmed: boolean;
+  device_returned_confirmed_at?: string;
+  repair_satisfaction_confirmed: boolean;
+  repair_satisfaction_confirmed_at?: string;
+  satisfaction_rating?: number;
+  satisfaction_feedback?: string;
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -81,6 +89,12 @@ const RepairJobDetail = () => {
   const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [deviceReturnConfirmed, setDeviceReturnConfirmed] = useState(false);
+  const [satisfactionConfirmed, setSatisfactionConfirmed] = useState(false);
+  const [showSatisfactionDialog, setShowSatisfactionDialog] = useState(false);
+  const [satisfactionRating, setSatisfactionRating] = useState<number>(0);
+  const [satisfactionFeedback, setSatisfactionFeedback] = useState("");
+  const [confirmationLoading, setConfirmationLoading] = useState(false);
 
   // Check if conversation exists for this job
   const { data: conversation } = useQuery({
@@ -149,6 +163,8 @@ const RepairJobDetail = () => {
 
       if (error) throw error;
       setJob(data);
+      setDeviceReturnConfirmed(data.device_returned_confirmed || false);
+      setSatisfactionConfirmed(data.repair_satisfaction_confirmed || false);
     } catch (error) {
       console.error("Error fetching job details:", error);
       toast({
@@ -247,33 +263,72 @@ const RepairJobDetail = () => {
     }
   };
 
-  const confirmCompletion = async () => {
+  const handleDeviceReturnConfirmation = async () => {
     if (!job) return;
 
+    setConfirmationLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("update-job-status", {
+      const { data, error } = await supabase.functions.invoke("confirm-job-completion", {
         body: {
           repair_job_id: job.id,
-          status: "completed",
-          notes: "Customer confirmed repair completion"
+          confirmation_type: "device_returned"
         }
       });
 
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Repair completion confirmed!",
+        title: "Device Return Confirmed",
+        description: "Thank you for confirming you received your device.",
       });
 
-      setJob({ ...job, job_status: "completed", customer_confirmed: true });
+      setDeviceReturnConfirmed(true);
+      await fetchJobDetails();
     } catch (error) {
-      console.error("Error confirming completion:", error);
+      console.error("Error confirming device return:", error);
       toast({
         title: "Error",
-        description: "Failed to confirm completion",
+        description: "Failed to confirm device return",
         variant: "destructive",
       });
+    } finally {
+      setConfirmationLoading(false);
+    }
+  };
+
+  const handleSatisfactionSubmit = async () => {
+    if (!job || satisfactionRating === 0) return;
+
+    setConfirmationLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("confirm-job-completion", {
+        body: {
+          repair_job_id: job.id,
+          confirmation_type: "repair_satisfaction",
+          satisfaction_rating: satisfactionRating,
+          satisfaction_feedback: satisfactionFeedback
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Feedback Submitted",
+        description: "Thank you for your feedback!",
+      });
+
+      setSatisfactionConfirmed(true);
+      setShowSatisfactionDialog(false);
+      await fetchJobDetails();
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit feedback",
+        variant: "destructive",
+      });
+    } finally {
+      setConfirmationLoading(false);
     }
   };
 
@@ -722,19 +777,141 @@ const RepairJobDetail = () => {
                   </Button>
                 )}
 
-                {job.job_status === "returned" && !job.customer_confirmed && (
-                  <Button 
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    onClick={confirmCompletion}
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Confirm Completion
-                  </Button>
+                {/* Two-Step Confirmation - Only show when status is 'returned' */}
+                {job.job_status === "returned" && (
+                  <div className="space-y-3">
+                    {/* Step 1: Device Return Confirmation */}
+                    {!deviceReturnConfirmed ? (
+                      <div className="border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg space-y-3">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-blue-900 dark:text-blue-100">Step 1: Confirm Device Return</p>
+                            <p className="text-sm text-blue-700 dark:text-blue-300">Have you received your device back?</p>
+                          </div>
+                        </div>
+                        <Button 
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                          onClick={handleDeviceReturnConfirmation}
+                          disabled={confirmationLoading}
+                        >
+                          {confirmationLoading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Confirming...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Yes, I Received My Device
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="border border-green-200 bg-green-50 dark:bg-green-950/20 p-3 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <p className="text-sm text-green-800 dark:text-green-200">Device return confirmed ✓</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Step 2: Satisfaction Confirmation - Only show after Step 1 */}
+                    {deviceReturnConfirmed && !satisfactionConfirmed && (
+                      <div className="border border-amber-200 bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg space-y-3">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-amber-900 dark:text-amber-100">Step 2: Rate Your Experience</p>
+                            <p className="text-sm text-amber-700 dark:text-amber-300">Are you satisfied with the repair?</p>
+                          </div>
+                        </div>
+                        <Button 
+                          className="w-full bg-amber-600 hover:bg-amber-700"
+                          onClick={() => setShowSatisfactionDialog(true)}
+                        >
+                          <Star className="w-4 h-4 mr-2" />
+                          Rate Repair Quality
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Both confirmations complete */}
+                    {deviceReturnConfirmed && satisfactionConfirmed && (
+                      <div className="border border-green-200 bg-green-50 dark:bg-green-950/20 p-4 rounded-lg space-y-2">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <p className="font-medium text-green-800 dark:text-green-200">Repair Job Completed ✓</p>
+                        </div>
+                        <p className="text-sm text-green-700 dark:text-green-300">Thank you for using our service!</p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
           </div>
         </div>
+
+        {/* Satisfaction Feedback Dialog */}
+        <Dialog open={showSatisfactionDialog} onOpenChange={setShowSatisfactionDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Rate Your Repair Experience</DialogTitle>
+              <DialogDescription>
+                Your feedback helps us improve our service
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Star Rating */}
+              <div>
+                <label className="text-sm font-medium">How satisfied are you?</label>
+                <div className="flex gap-2 mt-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setSatisfactionRating(star)}
+                      className={`text-3xl transition-colors ${
+                        satisfactionRating >= star ? 'text-yellow-500' : 'text-gray-300'
+                      }`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Feedback Text */}
+              <div>
+                <label className="text-sm font-medium">Additional Comments (Optional)</label>
+                <Textarea 
+                  value={satisfactionFeedback}
+                  onChange={(e) => setSatisfactionFeedback(e.target.value)}
+                  placeholder="Tell us about your experience..."
+                  rows={4}
+                  className="mt-2"
+                />
+              </div>
+
+              <Button 
+                onClick={handleSatisfactionSubmit}
+                disabled={satisfactionRating === 0 || confirmationLoading}
+                className="w-full"
+              >
+                {confirmationLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit Feedback'
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

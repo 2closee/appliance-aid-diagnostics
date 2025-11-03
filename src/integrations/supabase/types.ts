@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      completion_feedback_notifications: {
+        Row: {
+          id: string
+          notification_data: Json | null
+          notification_type: string
+          recipient_id: string | null
+          repair_job_id: string
+          sent_at: string | null
+          sent_to: string
+        }
+        Insert: {
+          id?: string
+          notification_data?: Json | null
+          notification_type: string
+          recipient_id?: string | null
+          repair_job_id: string
+          sent_at?: string | null
+          sent_to: string
+        }
+        Update: {
+          id?: string
+          notification_data?: Json | null
+          notification_type?: string
+          recipient_id?: string | null
+          repair_job_id?: string
+          sent_at?: string | null
+          sent_to?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "completion_feedback_notifications_repair_job_id_fkey"
+            columns: ["repair_job_id"]
+            isOneToOne: false
+            referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string
@@ -909,6 +947,8 @@ export type Database = {
           customer_phone: string
           deposit_amount: number | null
           deposit_required: boolean | null
+          device_returned_confirmed: boolean | null
+          device_returned_confirmed_at: string | null
           diagnostic_attachments: Json | null
           diagnostic_conversation_id: string | null
           estimated_cost: number | null
@@ -927,6 +967,10 @@ export type Database = {
           quote_response_deadline: string | null
           quoted_cost: number | null
           repair_center_id: number
+          repair_satisfaction_confirmed: boolean | null
+          repair_satisfaction_confirmed_at: string | null
+          satisfaction_feedback: string | null
+          satisfaction_rating: number | null
           updated_at: string
           user_id: string
         }
@@ -949,6 +993,8 @@ export type Database = {
           customer_phone: string
           deposit_amount?: number | null
           deposit_required?: boolean | null
+          device_returned_confirmed?: boolean | null
+          device_returned_confirmed_at?: string | null
           diagnostic_attachments?: Json | null
           diagnostic_conversation_id?: string | null
           estimated_cost?: number | null
@@ -967,6 +1013,10 @@ export type Database = {
           quote_response_deadline?: string | null
           quoted_cost?: number | null
           repair_center_id: number
+          repair_satisfaction_confirmed?: boolean | null
+          repair_satisfaction_confirmed_at?: string | null
+          satisfaction_feedback?: string | null
+          satisfaction_rating?: number | null
           updated_at?: string
           user_id: string
         }
@@ -989,6 +1039,8 @@ export type Database = {
           customer_phone?: string
           deposit_amount?: number | null
           deposit_required?: boolean | null
+          device_returned_confirmed?: boolean | null
+          device_returned_confirmed_at?: string | null
           diagnostic_attachments?: Json | null
           diagnostic_conversation_id?: string | null
           estimated_cost?: number | null
@@ -1007,6 +1059,10 @@ export type Database = {
           quote_response_deadline?: string | null
           quoted_cost?: number | null
           repair_center_id?: number
+          repair_satisfaction_confirmed?: boolean | null
+          repair_satisfaction_confirmed_at?: string | null
+          satisfaction_feedback?: string | null
+          satisfaction_rating?: number | null
           updated_at?: string
           user_id?: string
         }
