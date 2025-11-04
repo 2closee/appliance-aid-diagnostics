@@ -503,9 +503,13 @@ export type Database = {
           average_rating: number | null
           cac_name: string | null
           cac_number: string | null
+          cover_image_updated_at: string | null
+          cover_image_url: string | null
           email: string | null
           hours: string | null
           id: number
+          logo_updated_at: string | null
+          logo_url: string | null
           name: string | null
           number_of_staff: number | null
           phone: string | null
@@ -522,9 +526,13 @@ export type Database = {
           average_rating?: number | null
           cac_name?: string | null
           cac_number?: string | null
+          cover_image_updated_at?: string | null
+          cover_image_url?: string | null
           email?: string | null
           hours?: string | null
           id?: number
+          logo_updated_at?: string | null
+          logo_url?: string | null
           name?: string | null
           number_of_staff?: number | null
           phone?: string | null
@@ -541,9 +549,13 @@ export type Database = {
           average_rating?: number | null
           cac_name?: string | null
           cac_number?: string | null
+          cover_image_updated_at?: string | null
+          cover_image_url?: string | null
           email?: string | null
           hours?: string | null
           id?: number
+          logo_updated_at?: string | null
+          logo_url?: string | null
           name?: string | null
           number_of_staff?: number | null
           phone?: string | null

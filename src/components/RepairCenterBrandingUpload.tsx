@@ -1,0 +1,296 @@
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Card } from "@/components/ui/card";
+
+interface RepairCenterBrandingUploadProps {
+  repairCenterId: number | null;
+  currentLogoUrl?: string | null;
+  currentCoverUrl?: string | null;
+  onUploadComplete?: () => void;
+}
+
+const RepairCenterBrandingUpload = ({
+  repairCenterId,
+  currentLogoUrl,
+  currentCoverUrl,
+  onUploadComplete
+}: RepairCenterBrandingUploadProps) => {
+  const { toast } = useToast();
+  const [logoPreview, setLogoPreview] = useState<string | null>(currentLogoUrl || null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(currentCoverUrl || null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+
+  const handleFileUpload = async (
+    file: File,
+    type: 'logo' | 'cover'
+  ) => {
+    if (!repairCenterId) {
+      toast({
+        title: "Error",
+        description: "Repair center ID not found",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload an image smaller than 5MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const setUploading = type === 'logo' ? setIsUploadingLogo : setIsUploadingCover;
+    const setPreview = type === 'logo' ? setLogoPreview : setCoverPreview;
+
+    setUploading(true);
+
+    try {
+      // Create file path
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${type}.${fileExt}`;
+      const filePath = `${repairCenterId}/${fileName}`;
+
+      // Delete old file if exists
+      const { error: deleteError } = await supabase.storage
+        .from('repair-center-branding')
+        .remove([filePath]);
+
+      if (deleteError && deleteError.message !== 'The resource was not found') {
+        console.error('Error deleting old file:', deleteError);
+      }
+
+      // Upload new file
+      const { error: uploadError } = await supabase.storage
+        .from('repair-center-branding')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('repair-center-branding')
+        .getPublicUrl(filePath);
+
+      // Update database
+      const updateField = type === 'logo' ? 'logo_url' : 'cover_image_url';
+      const updateTimeField = type === 'logo' ? 'logo_updated_at' : 'cover_image_updated_at';
+
+      const { error: updateError } = await supabase
+        .from('Repair Center')
+        .update({ 
+          [updateField]: publicUrl,
+          [updateTimeField]: new Date().toISOString()
+        })
+        .eq('id', repairCenterId);
+
+      if (updateError) throw updateError;
+
+      setPreview(publicUrl);
+      toast({
+        title: "Success",
+        description: `${type === 'logo' ? 'Logo' : 'Cover image'} uploaded successfully`
+      });
+
+      onUploadComplete?.();
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveImage = async (type: 'logo' | 'cover') => {
+    if (!repairCenterId) return;
+
+    const setUploading = type === 'logo' ? setIsUploadingLogo : setIsUploadingCover;
+    const setPreview = type === 'logo' ? setLogoPreview : setCoverPreview;
+
+    setUploading(true);
+
+    try {
+      const updateField = type === 'logo' ? 'logo_url' : 'cover_image_url';
+      const updateTimeField = type === 'logo' ? 'logo_updated_at' : 'cover_image_updated_at';
+
+      const { error } = await supabase
+        .from('Repair Center')
+        .update({ 
+          [updateField]: null,
+          [updateTimeField]: null
+        })
+        .eq('id', repairCenterId);
+
+      if (error) throw error;
+
+      setPreview(null);
+      toast({
+        title: "Success",
+        description: `${type === 'logo' ? 'Logo' : 'Cover image'} removed successfully`
+      });
+
+      onUploadComplete?.();
+    } catch (error) {
+      console.error('Remove error:', error);
+      toast({
+        title: "Failed to remove image",
+        description: "Please try again",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Logo Upload */}
+      <div className="space-y-3">
+        <Label>Logo (Square, 200x200px to 400x400px recommended)</Label>
+        <Card className="p-4">
+          {logoPreview ? (
+            <div className="flex items-center gap-4">
+              <img 
+                src={logoPreview} 
+                alt="Logo preview"
+                className="w-24 h-24 rounded-lg object-cover border-2 border-border"
+              />
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground mb-2">Current logo</p>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => document.getElementById('logo-upload')?.click()}
+                    disabled={isUploadingLogo}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Replace
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleRemoveImage('logo')}
+                    disabled={isUploadingLogo}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-border rounded-lg">
+              <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-sm text-muted-foreground mb-4">No logo uploaded</p>
+              <Button
+                size="sm"
+                onClick={() => document.getElementById('logo-upload')?.click()}
+                disabled={isUploadingLogo}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Logo
+              </Button>
+            </div>
+          )}
+          <input
+            id="logo-upload"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFileUpload(file, 'logo');
+            }}
+          />
+        </Card>
+      </div>
+
+      {/* Cover Image Upload */}
+      <div className="space-y-3">
+        <Label>Cover Image (Wide, 1200x300px recommended)</Label>
+        <Card className="p-4">
+          {coverPreview ? (
+            <div className="space-y-4">
+              <img 
+                src={coverPreview} 
+                alt="Cover preview"
+                className="w-full h-32 rounded-lg object-cover border-2 border-border"
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => document.getElementById('cover-upload')?.click()}
+                  disabled={isUploadingCover}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Replace
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleRemoveImage('cover')}
+                  disabled={isUploadingCover}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Remove
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-border rounded-lg">
+              <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-sm text-muted-foreground mb-4">No cover image uploaded</p>
+              <Button
+                size="sm"
+                onClick={() => document.getElementById('cover-upload')?.click()}
+                disabled={isUploadingCover}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Cover Image
+              </Button>
+            </div>
+          )}
+          <input
+            id="cover-upload"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFileUpload(file, 'cover');
+            }}
+          />
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default RepairCenterBrandingUpload;

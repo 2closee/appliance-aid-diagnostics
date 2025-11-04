@@ -19,6 +19,7 @@ interface Conversation {
   repair_center: {
     id: number;
     name: string;
+    logo_url?: string | null;
   };
   repair_jobs?: {
     id: string;
@@ -39,7 +40,7 @@ const CustomerConversations = () => {
         .from("conversations")
         .select(`
           *,
-          repair_center:"Repair Center"!repair_center_id(id, name),
+          repair_center:"Repair Center"!repair_center_id(id, name, logo_url),
           repair_jobs(id, appliance_type, job_status)
         `)
         .eq("customer_id", user?.id)
@@ -124,9 +125,17 @@ const CustomerConversations = () => {
                         <CardHeader>
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Store className="h-5 w-5 text-primary" />
-                              </div>
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                      {conversation.repair_center?.logo_url ? (
+                        <img 
+                          src={conversation.repair_center.logo_url} 
+                          alt={conversation.repair_center.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Store className="h-5 w-5 text-primary" />
+                      )}
+                    </div>
                               <div>
                                 <CardTitle className="text-lg">
                                   {conversation.repair_center?.name}

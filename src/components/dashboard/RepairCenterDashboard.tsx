@@ -264,12 +264,32 @@ const RepairCenterDashboard = () => {
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <Wrench className="h-7 w-7 text-primary" />
-              {repairCenter?.name || 'Repair Center'} Portal
-            </h1>
-            <p className="text-muted-foreground mt-2">Repair Center Admin - Manage your repair jobs and track performance</p>
+          <div className="relative">
+            {repairCenter?.cover_image_url && (
+              <div className="absolute inset-0 -z-10 rounded-lg overflow-hidden opacity-20">
+                <img 
+                  src={repairCenter.cover_image_url} 
+                  alt="Cover" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <div className="flex items-center gap-4">
+              {repairCenter?.logo_url && (
+                <img 
+                  src={repairCenter.logo_url} 
+                  alt={`${repairCenter.name} logo`}
+                  className="w-16 h-16 rounded-full object-cover border-2 border-primary"
+                />
+              )}
+              <div>
+                <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+                  {!repairCenter?.logo_url && <Wrench className="h-7 w-7 text-primary" />}
+                  {repairCenter?.name || 'Repair Center'} Portal
+                </h1>
+                <p className="text-muted-foreground mt-2">Repair Center Admin - Manage your repair jobs and track performance</p>
+              </div>
+            </div>
           </div>
           <div className="flex gap-2">
             <Card className="p-4">

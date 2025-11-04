@@ -49,6 +49,7 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
   const [isOnline, setIsOnline] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [priority, setPriority] = useState<'normal' | 'high' | 'urgent'>('normal');
+  const [repairCenterLogo, setRepairCenterLogo] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -57,7 +58,29 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
     if (!conversationId) return;
 
     // Fetch initial messages
-    const fetchMessages = async () => {
+  const fetchRepairCenterLogo = async () => {
+    if (!conversationId) return;
+
+    const { data: conversation } = await supabase
+      .from('conversations')
+      .select('repair_center_id')
+      .eq('id', conversationId)
+      .single();
+
+    if (conversation?.repair_center_id) {
+      const { data: center } = await supabase
+        .from('Repair Center')
+        .select('logo_url')
+        .eq('id', conversation.repair_center_id)
+        .single();
+
+      if (center?.logo_url) {
+        setRepairCenterLogo(center.logo_url);
+      }
+    }
+  };
+
+  const fetchMessages = async () => {
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -73,6 +96,7 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
     };
 
     fetchMessages();
+    fetchRepairCenterLogo();
 
     // Fetch repair center online status
     if (repairCenterId) {
@@ -288,10 +312,19 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
     <Card className="w-full h-[600px] flex flex-col">
       <CardHeader className="border-b">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Wrench className="h-5 w-5" />
-            {repairCenterName ? `Chat with ${repairCenterName}` : 'Live Chat'}
-          </CardTitle>
+          <div className="flex items-center gap-3">
+            {repairCenterLogo && (
+              <img 
+                src={repairCenterLogo} 
+                alt={repairCenterName}
+                className="w-10 h-10 rounded-full object-cover border border-border"
+              />
+            )}
+            <CardTitle className="flex items-center gap-2">
+              {!repairCenterLogo && <Wrench className="h-5 w-5" />}
+              {repairCenterName ? `Chat with ${repairCenterName}` : 'Live Chat'}
+            </CardTitle>
+          </div>
           {!isRepairCenterStaff && (
             <div className="flex items-center gap-2">
               <Circle className={`h-2 w-2 ${isOnline ? 'fill-green-500 text-green-500' : 'fill-gray-400 text-gray-400'}`} />
