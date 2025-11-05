@@ -47,6 +47,8 @@ interface RepairJob {
     phone: string;
     email: string;
     address: string;
+    logo_url?: string | null;
+    cover_image_url?: string | null;
   };
 }
 
@@ -149,7 +151,7 @@ const RepairJobDetail = () => {
         .from("repair_jobs")
         .select(`
           *,
-          repair_center:"Repair Center"(name, phone, email, address)
+          repair_center:"Repair Center"(name, phone, email, address, logo_url, cover_image_url)
         `)
         .eq("id", id);
 
@@ -532,10 +534,42 @@ const RepairJobDetail = () => {
               <CardHeader>
                 <CardTitle>Repair Center</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="font-medium">{job.repair_center?.name}</p>
-                </div>
+              <CardContent className="space-y-4">
+                {/* Branding Section */}
+                {(job.repair_center?.logo_url || job.repair_center?.cover_image_url) && (
+                  <div className="relative">
+                    {job.repair_center?.cover_image_url && (
+                      <div className="h-24 rounded-lg overflow-hidden mb-3">
+                        <img 
+                          src={job.repair_center.cover_image_url} 
+                          alt={`${job.repair_center.name} cover`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    {job.repair_center?.logo_url && (
+                      <div className="flex items-center gap-3 mb-3">
+                        <img 
+                          src={job.repair_center.logo_url} 
+                          alt={`${job.repair_center.name} logo`}
+                          className="w-16 h-16 rounded-full object-cover border-2 border-primary"
+                        />
+                        <div>
+                          <p className="font-medium text-lg">{job.repair_center?.name}</p>
+                          <p className="text-xs text-muted-foreground">Your Service Provider</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Repair Center Info - Show name only if no logo */}
+                {!job.repair_center?.logo_url && (
+                  <div>
+                    <p className="font-medium">{job.repair_center?.name}</p>
+                  </div>
+                )}
+                
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm">{job.repair_center?.phone}</span>
