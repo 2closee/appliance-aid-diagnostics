@@ -17,6 +17,7 @@ const RepairCenterSettings = () => {
   const [autoReplyMessage, setAutoReplyMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [repairCenter, setRepairCenter] = useState<any>(null);
+  const [centerName, setCenterName] = useState<string>("Your Repair Center");
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -44,7 +45,7 @@ const RepairCenterSettings = () => {
 
       const { data, error } = await supabase
         .from('Repair Center')
-        .select('logo_url, cover_image_url')
+        .select('logo_url, cover_image_url, name')
         .eq('id', repairCenterId)
         .single();
 
@@ -54,6 +55,7 @@ const RepairCenterSettings = () => {
       }
 
       setRepairCenter(data);
+      if (data?.name) setCenterName(data.name);
     };
 
     fetchSettings();
@@ -105,6 +107,7 @@ const RepairCenterSettings = () => {
         <CardContent>
           <RepairCenterBrandingUpload
             repairCenterId={repairCenterId}
+            centerName={centerName}
             currentLogoUrl={repairCenter?.logo_url}
             currentCoverUrl={repairCenter?.cover_image_url}
             onUploadComplete={() => {
@@ -112,10 +115,13 @@ const RepairCenterSettings = () => {
               if (repairCenterId) {
                 supabase
                   .from('Repair Center')
-                  .select('logo_url, cover_image_url')
+                  .select('logo_url, cover_image_url, name')
                   .eq('id', repairCenterId)
                   .single()
-                  .then(({ data }) => setRepairCenter(data));
+                  .then(({ data }) => {
+                    setRepairCenter(data);
+                    if (data?.name) setCenterName(data.name);
+                  });
               }
             }}
           />

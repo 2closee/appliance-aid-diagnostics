@@ -5,9 +5,12 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BrandingPreview } from "@/components/BrandingPreview";
 
 interface RepairCenterBrandingUploadProps {
   repairCenterId: number | null;
+  centerName?: string;
   currentLogoUrl?: string | null;
   currentCoverUrl?: string | null;
   onUploadComplete?: () => void;
@@ -15,6 +18,7 @@ interface RepairCenterBrandingUploadProps {
 
 const RepairCenterBrandingUpload = ({
   repairCenterId,
+  centerName = "Your Repair Center",
   currentLogoUrl,
   currentCoverUrl,
   onUploadComplete
@@ -168,9 +172,15 @@ const RepairCenterBrandingUpload = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Logo Upload */}
-      <div className="space-y-3">
+    <Tabs defaultValue="upload" className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="upload">Upload Branding</TabsTrigger>
+        <TabsTrigger value="preview">Live Preview</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="upload" className="space-y-6 mt-6">
+        {/* Logo Upload */}
+        <div className="space-y-3">
         <Label>Logo (Square, 200x200px to 400x400px recommended)</Label>
         <Card className="p-4">
           {logoPreview ? (
@@ -288,8 +298,17 @@ const RepairCenterBrandingUpload = ({
             }}
           />
         </Card>
-      </div>
-    </div>
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="preview" className="mt-6">
+        <BrandingPreview 
+          logoUrl={logoPreview || undefined}
+          coverUrl={coverPreview || undefined}
+          centerName={centerName}
+        />
+      </TabsContent>
+    </Tabs>
   );
 };
 
