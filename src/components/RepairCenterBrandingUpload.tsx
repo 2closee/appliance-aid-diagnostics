@@ -68,10 +68,34 @@ const RepairCenterBrandingUpload = ({
     setUploading(true);
 
     try {
+      // Debug: Log current user context
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log('🔍 Current user ID:', user?.id);
+      console.log('🔍 Repair center ID:', repairCenterId);
+      
+      if (userError) {
+        console.error('❌ User auth error:', userError);
+      }
+
+      // Debug: Verify staff relationship
+      const { data: staffCheck, error: staffError } = await supabase
+        .from('repair_center_staff')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('repair_center_id', repairCenterId)
+        .eq('is_active', true);
+      
+      console.log('🔍 Staff check result:', staffCheck);
+      if (staffError) {
+        console.error('❌ Staff check error:', staffError);
+      }
+
       // Create file path
       const fileExt = file.name.split('.').pop();
       const fileName = `${type}.${fileExt}`;
       const filePath = `${repairCenterId}/${fileName}`;
+
+      console.log('📤 Uploading to path:', filePath);
 
       // Delete old file if exists
       const { error: deleteError } = await supabase.storage
@@ -79,7 +103,7 @@ const RepairCenterBrandingUpload = ({
         .remove([filePath]);
 
       if (deleteError && deleteError.message !== 'The resource was not found') {
-        console.error('Error deleting old file:', deleteError);
+        console.warn('⚠️ Error deleting old file:', deleteError);
       }
 
       // Upload new file
@@ -90,26 +114,38 @@ const RepairCenterBrandingUpload = ({
           upsert: true
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('❌ Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('✅ File uploaded successfully');
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('repair-center-branding')
         .getPublicUrl(filePath);
 
-      // Update database
-      const updateField = type === 'logo' ? 'logo_url' : 'cover_image_url';
-      const updateTimeField = type === 'logo' ? 'logo_updated_at' : 'cover_image_updated_at';
+      console.log('🔗 Public URL:', publicUrl);
 
-      const { error: updateError } = await supabase
-        .from('Repair Center')
-        .update({ 
-          [updateField]: publicUrl,
-          [updateTimeField]: new Date().toISOString()
-        })
-        .eq('id', repairCenterId);
+      // Use RPC function for secure database update
+      const { error: updateError } = await supabase.rpc('update_repair_center_branding', {
+        _center_id: repairCenterId,
+        [type === 'logo' ? '_logo_url' : '_cover_url']: publicUrl
+      });
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('❌ Database update error:', updateError);
+        console.error('❌ Error details:', {
+          message: updateError.message,
+          details: updateError.details,
+          hint: updateError.hint,
+          code: updateError.code
+        });
+        throw updateError;
+      }
+
+      console.log('✅ Database updated successfully');
 
       setPreview(publicUrl);
       toast({
@@ -118,11 +154,19 @@ const RepairCenterBrandingUpload = ({
       });
 
       onUploadComplete?.();
-    } catch (error) {
-      console.error('Upload error:', error);
+    } catch (error: any) {
+      console.error('❌ Upload error details:', {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code,
+        repairCenterId,
+        type
+      });
+      
       toast({
         title: "Upload failed",
-        description: "Failed to upload image. Please try again.",
+        description: error?.message || "Failed to upload image. Please check console for details.",
         variant: "destructive"
       });
     } finally {
@@ -139,18 +183,20 @@ const RepairCenterBrandingUpload = ({
     setUploading(true);
 
     try {
-      const updateField = type === 'logo' ? 'logo_url' : 'cover_image_url';
-      const updateTimeField = type === 'logo' ? 'logo_updated_at' : 'cover_image_updated_at';
+      console.log('🗑️ Removing image:', { type, repairCenterId });
 
-      const { error } = await supabase
-        .from('Repair Center')
-        .update({ 
-          [updateField]: null,
-          [updateTimeField]: null
-        })
-        .eq('id', repairCenterId);
+      // Use RPC function for secure removal (set to null)
+      const { error } = await supabase.rpc('update_repair_center_branding', {
+        _center_id: repairCenterId,
+        [type === 'logo' ? '_logo_url' : '_cover_url']: null
+      });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Remove error:', error);
+        throw error;
+      }
+
+      console.log('✅ Image removed successfully');
 
       setPreview(null);
       toast({
@@ -159,11 +205,17 @@ const RepairCenterBrandingUpload = ({
       });
 
       onUploadComplete?.();
-    } catch (error) {
-      console.error('Remove error:', error);
+    } catch (error: any) {
+      console.error('❌ Remove error details:', {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code
+      });
+      
       toast({
         title: "Failed to remove image",
-        description: "Please try again",
+        description: error?.message || "Please try again",
         variant: "destructive"
       });
     } finally {

@@ -1174,6 +1174,10 @@ export type Database = {
         Args: { _center_id: number; _user_id: string }
         Returns: boolean
       }
+      update_repair_center_branding: {
+        Args: { _center_id: number; _cover_url?: string; _logo_url?: string }
+        Returns: undefined
+      }
       user_is_center_owner: {
         Args: { _center_id: number; _user_id: string }
         Returns: boolean
