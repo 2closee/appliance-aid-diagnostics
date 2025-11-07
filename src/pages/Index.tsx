@@ -27,6 +27,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/Navigation";
+import { InstallPromptBanner } from "@/components/InstallPromptBanner";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+      <InstallPromptBanner />
       {/* Hero Section */}
       <section className="relative py-20 px-4 bg-gradient-hero">
         <div className="container mx-auto max-w-6xl">

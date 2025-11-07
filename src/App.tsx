@@ -31,6 +31,7 @@ import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import EmailTest from "./pages/EmailTest";
 import EmailVerification from "./pages/EmailVerification";
+import Install from "./pages/Install";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -100,6 +101,7 @@ const App = () => (
             <Route path="/admin-conversation-view" element={<AdminConversationView />} />
             <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="/email-test" element={<EmailTest />} />
+            <Route path="/install" element={<Install />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="*" element={<NotFound />} />
