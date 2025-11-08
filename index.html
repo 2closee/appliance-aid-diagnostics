@@ -8,12 +8,17 @@
     <meta name="author" content="Fixbudi" />
     
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#1a1f2e" />
+    <meta name="theme-color" content="#0a0a0a" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Fixbudi" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    
+    <!-- iOS Splash Screens -->
+    <link rel="apple-touch-startup-image" href="/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="/splash-1536x1536.png" media="(device-width: 768px) and (device-height: 1024px)" />
+    <link rel="apple-touch-startup-image" href="/splash-1920x1080.png" media="(min-device-width: 1024px)" />
 
     
     
@@ -37,7 +42,46 @@
 </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Initial Loading Splash Screen -->
+      <div id="splash-screen" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #f5f5f5;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      ">
+        <img src="/fixbudi-icon.png" alt="Fixbudi" style="width: 160px; height: auto; margin-bottom: 20px;" />
+        <div style="
+          width: 60px;
+          height: 60px;
+          border: 4px solid #e0e0e0;
+          border-top-color: #0a0a0a;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        "></div>
+      </div>
+      <style>
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        @media (prefers-color-scheme: dark) {
+          #splash-screen {
+            background: #0a0a0a !important;
+          }
+          #splash-screen div {
+            border-color: #2a2a2a !important;
+            border-top-color: #f5f5f5 !important;
+          }
+        }
+      </style>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
       // Handle client-side routing for direct URL access and page refreshes

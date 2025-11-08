@@ -62,6 +62,11 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB limit for Nigerian market apps
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        additionalManifestEntries: [
+          { url: '/splash-1125x2436.png', revision: null },
+          { url: '/splash-1536x1536.png', revision: null },
+          { url: '/splash-1920x1080.png', revision: null }
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
