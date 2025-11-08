@@ -38,10 +38,10 @@ export default defineConfig(({ mode }) => ({
         name: 'Fixbudi - Smart Appliance Repair',
         short_name: 'Fixbudi',
         description: 'AI-powered appliance diagnosis and repair platform for Nigeria',
-        theme_color: '#1a1f2e',
-        background_color: '#ffffff',
+        theme_color: '#0a0a0a',
+        background_color: '#0a0a0a',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'any',
         scope: '/',
         start_url: '/',
         icons: [
