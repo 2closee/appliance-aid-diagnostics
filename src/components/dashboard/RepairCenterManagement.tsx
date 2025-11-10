@@ -21,6 +21,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import CenterPerformance from "./CenterPerformance";
+import { DeleteTestCenter } from "./DeleteTestCenter";
 
 const RepairCenterManagement = () => {
   const { toast } = useToast();
@@ -49,7 +50,7 @@ const RepairCenterManagement = () => {
     },
   });
 
-  // Fetch all repair centers with staff
+  // Fetch all repair centers with staff (excluding soft-deleted)
   const { data: allCenters, isLoading: loadingCenters } = useQuery({
     queryKey: ["all-centers"],
     queryFn: async () => {
@@ -59,6 +60,7 @@ const RepairCenterManagement = () => {
           *,
           repair_center_staff(*)
         `)
+        .is("deleted_at", null)
         .order("name", { ascending: true });
 
       if (error) throw error;
@@ -214,31 +216,29 @@ const RepairCenterManagement = () => {
     },
   });
 
-  // Delete repair center permanently
+  // Soft delete repair center
   const deleteCenter = useMutation({
     mutationFn: async (centerId: number) => {
-      // First delete all staff records
-      const { error: staffError } = await supabase
-        .from("repair_center_staff")
-        .delete()
-        .eq("repair_center_id", centerId);
-
-      if (staffError) throw staffError;
-
-      // Then delete the center
-      const { error: centerError } = await supabase
+      // Get current user for audit trail
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Soft delete: update deleted_at timestamp
+      const { error } = await supabase
         .from("Repair Center")
-        .delete()
+        .update({ 
+          deleted_at: new Date().toISOString(),
+          deleted_by: user?.id,
+          status: 'deleted'
+        })
         .eq("id", centerId);
 
-      if (centerError) throw centerError;
-
+      if (error) throw error;
       return centerId;
     },
     onSuccess: () => {
       toast({
         title: "Center Deleted",
-        description: "Repair center has been permanently deleted.",
+        description: "Repair center has been archived successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["all-centers"] });
       queryClient.invalidateQueries({ queryKey: ["pending-applications"] });
@@ -254,9 +254,12 @@ const RepairCenterManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Building className="h-8 w-8 text-primary" />
-        <h2 className="text-2xl font-bold">Repair Center Management</h2>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Building className="h-8 w-8 text-primary" />
+          <h2 className="text-2xl font-bold">Repair Center Management</h2>
+        </div>
+        <DeleteTestCenter />
       </div>
 
       <Tabs defaultValue="applications" className="space-y-6">

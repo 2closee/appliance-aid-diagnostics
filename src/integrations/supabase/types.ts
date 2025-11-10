@@ -505,6 +505,8 @@ export type Database = {
           cac_number: string | null
           cover_image_updated_at: string | null
           cover_image_url: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           email: string | null
           hours: string | null
           id: number
@@ -528,6 +530,8 @@ export type Database = {
           cac_number?: string | null
           cover_image_updated_at?: string | null
           cover_image_url?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           email?: string | null
           hours?: string | null
           id?: number
@@ -551,6 +555,8 @@ export type Database = {
           cac_number?: string | null
           cover_image_updated_at?: string | null
           cover_image_url?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           email?: string | null
           hours?: string | null
           id?: number
