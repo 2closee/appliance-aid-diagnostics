@@ -113,6 +113,130 @@ export type Database = {
           },
         ]
       }
+      delivery_requests: {
+        Row: {
+          actual_cost: number | null
+          actual_delivery_time: string | null
+          actual_pickup_time: string | null
+          created_at: string | null
+          customer_name: string
+          customer_phone: string
+          delivery_address: string
+          delivery_status: string | null
+          delivery_type: string
+          driver_name: string | null
+          driver_phone: string | null
+          estimated_cost: number | null
+          estimated_delivery_time: string | null
+          id: string
+          notes: string | null
+          pickup_address: string
+          provider: string
+          provider_order_id: string | null
+          provider_response: Json | null
+          repair_job_id: string | null
+          scheduled_pickup_time: string | null
+          tracking_url: string | null
+          updated_at: string | null
+          vehicle_details: string | null
+        }
+        Insert: {
+          actual_cost?: number | null
+          actual_delivery_time?: string | null
+          actual_pickup_time?: string | null
+          created_at?: string | null
+          customer_name: string
+          customer_phone: string
+          delivery_address: string
+          delivery_status?: string | null
+          delivery_type: string
+          driver_name?: string | null
+          driver_phone?: string | null
+          estimated_cost?: number | null
+          estimated_delivery_time?: string | null
+          id?: string
+          notes?: string | null
+          pickup_address: string
+          provider?: string
+          provider_order_id?: string | null
+          provider_response?: Json | null
+          repair_job_id?: string | null
+          scheduled_pickup_time?: string | null
+          tracking_url?: string | null
+          updated_at?: string | null
+          vehicle_details?: string | null
+        }
+        Update: {
+          actual_cost?: number | null
+          actual_delivery_time?: string | null
+          actual_pickup_time?: string | null
+          created_at?: string | null
+          customer_name?: string
+          customer_phone?: string
+          delivery_address?: string
+          delivery_status?: string | null
+          delivery_type?: string
+          driver_name?: string | null
+          driver_phone?: string | null
+          estimated_cost?: number | null
+          estimated_delivery_time?: string | null
+          id?: string
+          notes?: string | null
+          pickup_address?: string
+          provider?: string
+          provider_order_id?: string | null
+          provider_response?: Json | null
+          repair_job_id?: string | null
+          scheduled_pickup_time?: string | null
+          tracking_url?: string | null
+          updated_at?: string | null
+          vehicle_details?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_requests_repair_job_id_fkey"
+            columns: ["repair_job_id"]
+            isOneToOne: false
+            referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_status_history: {
+        Row: {
+          changed_at: string | null
+          delivery_request_id: string | null
+          id: string
+          location: Json | null
+          notes: string | null
+          status: string
+        }
+        Insert: {
+          changed_at?: string | null
+          delivery_request_id?: string | null
+          id?: string
+          location?: Json | null
+          notes?: string | null
+          status: string
+        }
+        Update: {
+          changed_at?: string | null
+          delivery_request_id?: string | null
+          id?: string
+          location?: Json | null
+          notes?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_status_history_delivery_request_id_fkey"
+            columns: ["delivery_request_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diagnostic_conversations: {
         Row: {
           appliance_brand: string | null
@@ -351,6 +475,47 @@ export type Database = {
             columns: ["repair_job_id"]
             isOneToOne: false
             referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logistics_provider_settings: {
+        Row: {
+          auto_assign: boolean | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          preferred_vehicle_type: string | null
+          provider: string
+          repair_center_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_assign?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          preferred_vehicle_type?: string | null
+          provider: string
+          repair_center_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_assign?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          preferred_vehicle_type?: string | null
+          provider?: string
+          repair_center_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_provider_settings_repair_center_id_fkey"
+            columns: ["repair_center_id"]
+            isOneToOne: false
+            referencedRelation: "Repair Center"
             referencedColumns: ["id"]
           },
         ]
