@@ -47,3 +47,15 @@ verify_jwt = true
 
 [functions.delete-test-center]
 verify_jwt = true
+
+[functions.create-sendstack-delivery]
+verify_jwt = true
+
+[functions.sendstack-webhook]
+verify_jwt = false
+
+[functions.get-sendstack-quote]
+verify_jwt = false
+
+[functions.cancel-sendstack-delivery]
+verify_jwt = true
