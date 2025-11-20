@@ -170,7 +170,7 @@ const PickupRequest = () => {
 
     try {
       // Create repair job
-      const { data, error } = await supabase
+      const { data: jobData, error: jobError } = await supabase
         .from("repair_jobs")
         .insert({
           user_id: user.id,
@@ -195,7 +195,7 @@ const PickupRequest = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (jobError) throw jobError;
       
       setIsSubmitted(true);
       

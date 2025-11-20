@@ -104,26 +104,26 @@ serve(async (req) => {
         notes: webhookData.notes || `Status updated to ${mappedStatus}`,
       });
 
-    // Update repair job status if delivery is complete
-    if (mappedStatus === 'delivered' && deliveryRequest.repair_jobs) {
-      const job = deliveryRequest.repair_jobs;
-      
-      if (deliveryRequest.delivery_type === 'pickup' && job.job_status === 'pickup_scheduled') {
-        await supabase
-          .from('repair_jobs')
-          .update({ job_status: 'picked_up' })
-          .eq('id', deliveryRequest.repair_job_id);
+      // Update repair job status if delivery is complete
+      if (mappedStatus === 'delivered' && deliveryRequest.repair_jobs) {
+        const job = deliveryRequest.repair_jobs;
         
-        console.log('Updated job status to picked_up');
-      } else if (deliveryRequest.delivery_type === 'return' && job.job_status === 'ready_for_return') {
-        await supabase
-          .from('repair_jobs')
-          .update({ job_status: 'returned' })
-          .eq('id', deliveryRequest.repair_job_id);
-        
-        console.log('Updated job status to returned');
+        if (deliveryRequest.delivery_type === 'pickup' && job.job_status === 'quote_accepted') {
+          await supabase
+            .from('repair_jobs')
+            .update({ job_status: 'pickup_scheduled' })
+            .eq('id', deliveryRequest.repair_job_id);
+          
+          console.log('Updated job status to pickup_scheduled');
+        } else if (deliveryRequest.delivery_type === 'return' && job.job_status === 'repair_completed') {
+          await supabase
+            .from('repair_jobs')
+            .update({ job_status: 'ready_for_return' })
+            .eq('id', deliveryRequest.repair_job_id);
+          
+          console.log('Updated job status to ready_for_return');
+        }
       }
-    }
 
     return new Response(
       JSON.stringify({ success: true, status: mappedStatus }),
