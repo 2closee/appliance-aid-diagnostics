@@ -61,9 +61,9 @@ serve(async (req) => {
 
     switch (response) {
       case 'accept':
-        newStatus = 'requested'; // Auto-progress to workflow start
+        newStatus = 'quote_accepted';
         notificationType = 'quote_accepted';
-        updateData.quote_accepted_at = new Date().toISOString(); // Track acceptance time
+        updateData.quote_accepted_at = new Date().toISOString();
         break;
       case 'reject':
         newStatus = 'quote_rejected';
@@ -89,6 +89,38 @@ serve(async (req) => {
     if (updateError) throw updateError;
     logStep("Job status updated", { newStatus });
 
+    // Automatically create pickup delivery when quote is accepted
+    if (response === 'accept') {
+      logStep("Creating pickup delivery automatically");
+      
+      const { data: existingPickupDelivery } = await supabase
+        .from('delivery_requests')
+        .select('id, delivery_status')
+        .eq('repair_job_id', repair_job_id)
+        .eq('delivery_type', 'pickup')
+        .maybeSingle();
+
+      if (!existingPickupDelivery || ['cancelled', 'failed'].includes(existingPickupDelivery.delivery_status)) {
+        try {
+          const { error: deliveryError } = await supabase.functions.invoke('create-sendstack-delivery', {
+            body: {
+              repair_job_id,
+              delivery_type: 'pickup',
+              notes: `Automatic pickup scheduling after quote acceptance for ${job.appliance_type}`
+            }
+          });
+
+          if (deliveryError) {
+            logStep('Pickup delivery creation failed', { error: deliveryError });
+          } else {
+            logStep('Pickup delivery created successfully');
+          }
+        } catch (deliveryError) {
+          logStep('Error creating pickup delivery', { error: String(deliveryError) });
+        }
+      }
+    }
+
     // If negotiating, create or ensure conversation exists
     if (response === 'negotiate') {
       const { data: existingConv } = await supabase
@@ -110,21 +142,33 @@ serve(async (req) => {
       }
     }
 
-    // Send email notification to repair center
-    try {
-      await supabase.functions.invoke('send-job-notification', {
-        body: {
-          repair_job_id,
-          notification_type: notificationType,
-          repair_center_id: job.repair_center_id,
-          customer_notes,
-          customer_name: job.customer_name,
-          appliance_type: job.appliance_type
-        }
-      });
-      logStep("Email notification sent to repair center");
-    } catch (emailError) {
-      console.error('Email error (non-fatal):', emailError);
+    // Get repair center contact phone
+    const { data: centerData } = await supabase
+      .from('Repair Center')
+      .select('phone')
+      .eq('id', job.repair_center_id)
+      .single();
+
+    // Send WhatsApp/SMS notification to repair center
+    if (centerData?.phone) {
+      try {
+        await supabase.functions.invoke('send-whatsapp-notification', {
+          body: {
+            phone_number: centerData.phone,
+            notification_type: notificationType,
+            data: {
+              repair_job_id,
+              job_id: repair_job_id,
+              customer_notes,
+              customer_name: job.customer_name,
+              appliance_type: job.appliance_type
+            }
+          }
+        });
+        logStep("WhatsApp notification sent to repair center");
+      } catch (notifError) {
+        console.error('WhatsApp notification error (non-fatal):', notifError);
+      }
     }
 
     return new Response(JSON.stringify({ success: true, status: newStatus }), {
