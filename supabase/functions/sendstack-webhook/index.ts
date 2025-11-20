@@ -59,27 +59,36 @@ serve(async (req) => {
     const mappedStatus = statusMap[status] || status;
     console.log(`Updating delivery ${deliveryRequest.id} status: ${status} -> ${mappedStatus}`);
 
-    // Update delivery request
+    // Prepare update data
     const updateData: any = {
       delivery_status: mappedStatus,
+      driver_name: driverInfo?.name,
+      driver_phone: driverInfo?.phone,
+      vehicle_details: driverInfo?.vehicle_details,
       updated_at: new Date().toISOString(),
     };
 
-    if (driverInfo) {
-      updateData.driver_name = driverInfo.name;
-      updateData.driver_phone = driverInfo.phone;
-      updateData.vehicle_details = driverInfo.vehicle;
-    }
-
+    // Set pickup/delivery times
     if (mappedStatus === 'picked_up' && !deliveryRequest.actual_pickup_time) {
       updateData.actual_pickup_time = new Date().toISOString();
     }
-
+    
     if (mappedStatus === 'delivered' && !deliveryRequest.actual_delivery_time) {
       updateData.actual_delivery_time = new Date().toISOString();
-      updateData.actual_cost = webhookData.final_cost || deliveryRequest.estimated_cost;
+      // Auto-confirm payment when delivered (driver confirms delivery)
+      updateData.cash_payment_status = 'confirmed';
+      updateData.cash_payment_confirmed_at = new Date().toISOString();
+      updateData.cash_payment_confirmed_by = 'driver';
     }
 
+    // Get actual cost from payload if available
+    if (webhookData.cost || webhookData.final_cost || webhookData.amount) {
+      const actualCost = webhookData.cost || webhookData.final_cost || webhookData.amount;
+      updateData.actual_cost = actualCost;
+      updateData.app_delivery_commission = actualCost * 0.05;
+    }
+
+    // Update the delivery request with the new status
     const { error: updateError } = await supabase
       .from('delivery_requests')
       .update(updateData)

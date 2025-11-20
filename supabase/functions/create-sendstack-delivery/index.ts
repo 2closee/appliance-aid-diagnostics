@@ -99,6 +99,34 @@ serve(async (req) => {
 
     console.log('SendStack API payload:', sendstackPayload);
 
+    // Get a fresh quote first to get accurate cost
+    console.log('Fetching delivery quote before creating delivery...');
+    const quoteResponse = await fetch('https://api.sendstack.africa/v1/quotes', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sendstackApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        pickup_address: pickupAddress,
+        delivery_address: deliveryAddress,
+        vehicle_type: 'bike',
+        package_size: 'medium',
+      }),
+    });
+
+    let estimatedCost = 0;
+    let appCommission = 0;
+    
+    if (quoteResponse.ok) {
+      const quoteData = await quoteResponse.json();
+      estimatedCost = quoteData.price || quoteData.estimated_cost || 0;
+      appCommission = estimatedCost * 0.05; // 5% commission
+      console.log('Quote obtained:', { estimatedCost, appCommission });
+    } else {
+      console.warn('Could not get quote, proceeding with delivery creation');
+    }
+
     const sendstackResponse = await fetch('https://api.sendstack.africa/v1/deliveries', {
       method: 'POST',
       headers: {
@@ -128,7 +156,10 @@ serve(async (req) => {
         customer_phone: job.customer_phone,
         pickup_address: pickupAddress,
         delivery_address: deliveryAddress,
-        estimated_cost: sendstackData.estimated_cost || sendstackData.price,
+        estimated_cost: estimatedCost || sendstackData.estimated_cost || sendstackData.price || 0,
+        app_delivery_commission: appCommission,
+        currency: 'NGN',
+        cash_payment_status: 'pending',
         delivery_status: 'pending',
         provider_order_id: sendstackData.id || sendstackData.delivery_id,
         tracking_url: sendstackData.tracking_url,
@@ -153,13 +184,34 @@ serve(async (req) => {
         notes: 'Delivery request created',
       });
 
+    // Create commission record
+    if (estimatedCost > 0) {
+      const { error: commissionError } = await supabase
+        .from('delivery_commissions')
+        .insert({
+          delivery_request_id: deliveryRequest.id,
+          repair_job_id: repair_job_id,
+          delivery_cost: estimatedCost,
+          commission_amount: appCommission,
+          commission_rate: 0.05,
+          status: 'pending',
+        });
+      
+      if (commissionError) {
+        console.error('Failed to create commission record:', commissionError);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         delivery_request_id: deliveryRequest.id,
         provider_order_id: sendstackData.id || sendstackData.delivery_id,
         tracking_url: sendstackData.tracking_url,
-        estimated_cost: sendstackData.estimated_cost || sendstackData.price,
+        estimated_cost: estimatedCost || sendstackData.estimated_cost || sendstackData.price,
+        app_commission: appCommission,
+        currency: 'NGN',
+        payment_method: 'cash_to_rider',
         estimated_delivery_time: sendstackData.estimated_delivery_time,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

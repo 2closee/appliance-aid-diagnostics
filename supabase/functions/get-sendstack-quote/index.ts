@@ -50,16 +50,24 @@ serve(async (req) => {
     const quoteData = await response.json();
     console.log('SendStack quote response:', quoteData);
 
+    const estimatedCost = quoteData.price || quoteData.estimated_cost || 0;
+    const appCommission = estimatedCost * 0.05; // 5% commission
+    const currency = quoteData.currency || 'NGN';
+
     return new Response(
       JSON.stringify({
         success: true,
         quote: {
           provider: 'sendstack',
-          cost: quoteData.price || quoteData.estimated_cost,
-          currency: quoteData.currency || 'NGN',
-          estimated_time: quoteData.estimated_duration_minutes || 60,
+          estimated_cost: estimatedCost,
+          currency: currency,
+          estimated_time_minutes: quoteData.estimated_duration_minutes || 60,
           vehicle_type: vehicle_type || 'bike',
           distance_km: quoteData.distance_km,
+          app_commission: appCommission,
+          total_customer_pays: estimatedCost, // Customer pays full amount to rider
+          commission_rate: 0.05,
+          quote_expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes from now
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -113,12 +113,77 @@ export type Database = {
           },
         ]
       }
+      delivery_commissions: {
+        Row: {
+          commission_amount: number
+          commission_rate: number
+          created_at: string | null
+          delivery_cost: number
+          delivery_request_id: string
+          id: string
+          notes: string | null
+          repair_job_id: string | null
+          settlement_date: string | null
+          settlement_reference: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          commission_amount: number
+          commission_rate?: number
+          created_at?: string | null
+          delivery_cost: number
+          delivery_request_id: string
+          id?: string
+          notes?: string | null
+          repair_job_id?: string | null
+          settlement_date?: string | null
+          settlement_reference?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string | null
+          delivery_cost?: number
+          delivery_request_id?: string
+          id?: string
+          notes?: string | null
+          repair_job_id?: string | null
+          settlement_date?: string | null
+          settlement_reference?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_commissions_delivery_request_id_fkey"
+            columns: ["delivery_request_id"]
+            isOneToOne: true
+            referencedRelation: "delivery_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_commissions_repair_job_id_fkey"
+            columns: ["repair_job_id"]
+            isOneToOne: false
+            referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_requests: {
         Row: {
           actual_cost: number | null
           actual_delivery_time: string | null
           actual_pickup_time: string | null
+          app_delivery_commission: number | null
+          cash_payment_confirmed_at: string | null
+          cash_payment_confirmed_by: string | null
+          cash_payment_status: string | null
           created_at: string | null
+          currency: string | null
           customer_name: string
           customer_phone: string
           delivery_address: string
@@ -126,7 +191,7 @@ export type Database = {
           delivery_type: string
           driver_name: string | null
           driver_phone: string | null
-          estimated_cost: number | null
+          estimated_cost: number
           estimated_delivery_time: string | null
           id: string
           notes: string | null
@@ -144,7 +209,12 @@ export type Database = {
           actual_cost?: number | null
           actual_delivery_time?: string | null
           actual_pickup_time?: string | null
+          app_delivery_commission?: number | null
+          cash_payment_confirmed_at?: string | null
+          cash_payment_confirmed_by?: string | null
+          cash_payment_status?: string | null
           created_at?: string | null
+          currency?: string | null
           customer_name: string
           customer_phone: string
           delivery_address: string
@@ -152,7 +222,7 @@ export type Database = {
           delivery_type: string
           driver_name?: string | null
           driver_phone?: string | null
-          estimated_cost?: number | null
+          estimated_cost?: number
           estimated_delivery_time?: string | null
           id?: string
           notes?: string | null
@@ -170,7 +240,12 @@ export type Database = {
           actual_cost?: number | null
           actual_delivery_time?: string | null
           actual_pickup_time?: string | null
+          app_delivery_commission?: number | null
+          cash_payment_confirmed_at?: string | null
+          cash_payment_confirmed_by?: string | null
+          cash_payment_status?: string | null
           created_at?: string | null
+          currency?: string | null
           customer_name?: string
           customer_phone?: string
           delivery_address?: string
@@ -178,7 +253,7 @@ export type Database = {
           delivery_type?: string
           driver_name?: string | null
           driver_phone?: string | null
-          estimated_cost?: number | null
+          estimated_cost?: number
           estimated_delivery_time?: string | null
           id?: string
           notes?: string | null
