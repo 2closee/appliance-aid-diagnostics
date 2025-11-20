@@ -37,6 +37,7 @@ interface RepairJob {
   repair_center: {
     name: string;
     phone: string;
+    address: string;
   };
 }
 
@@ -89,7 +90,7 @@ const RepairJobs = () => {
         .from("repair_jobs")
         .select(`
           *,
-          repair_center:"Repair Center"(name, phone)
+          repair_center:"Repair Center"(name, phone, address)
         `)
         .eq("user_id", user?.id)
         .order("created_at", { ascending: false });

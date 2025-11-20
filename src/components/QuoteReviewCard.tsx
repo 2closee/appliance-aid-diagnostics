@@ -1,19 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Clock, CheckCircle, XCircle, MessageCircle, Eye, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { AlertCircle, Clock, CheckCircle, XCircle, MessageCircle, Eye, TrendingUp, Truck, Info } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useQuoteActions } from "@/hooks/useQuoteActions";
+import { useDeliveryActions } from "@/hooks/useDeliveryActions";
 import { MediaViewer } from "./MediaViewer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface QuoteReviewCardProps {
   repairJob: {
     id: string;
     appliance_type: string;
     appliance_brand?: string;
-    repair_center: { name: string };
+    repair_center: { name: string; address: string };
     quoted_cost: number;
     quote_notes?: string;
     quote_response_deadline?: string;
@@ -21,16 +23,44 @@ interface QuoteReviewCardProps {
     ai_estimated_cost_min?: number;
     ai_estimated_cost_max?: number;
     diagnostic_attachments?: any;
+    pickup_address: string;
   };
 }
 
 export const QuoteReviewCard = ({ repairJob }: QuoteReviewCardProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showMedia, setShowMedia] = useState(false);
+  const [deliveryQuote, setDeliveryQuote] = useState<any>(null);
   const { acceptQuote, rejectQuote, negotiateQuote } = useQuoteActions();
+  const { getDeliveryQuote, isFetchingQuote } = useDeliveryActions();
 
   const serviceFee = repairJob.quoted_cost * 0.075;
-  const totalPayment = repairJob.quoted_cost + serviceFee;
+  const totalRepairPayment = repairJob.quoted_cost + serviceFee;
+  const deliveryCost = deliveryQuote?.estimated_cost || 0;
+  const deliveryCommission = deliveryQuote?.app_commission || 0;
+  const totalDeliveryCost = deliveryCost + deliveryCommission;
+  const grandTotal = totalRepairPayment + deliveryCost;
+
+  // Fetch delivery quote on component mount
+  useEffect(() => {
+    const fetchDeliveryQuote = async () => {
+      try {
+        const quote = await getDeliveryQuote({
+          pickup_address: repairJob.pickup_address,
+          delivery_address: repairJob.repair_center.address,
+          package_description: `${repairJob.appliance_type} repair pickup`
+        });
+        setDeliveryQuote(quote);
+      } catch (error) {
+        console.error('Failed to fetch delivery quote:', error);
+        // Non-fatal - user can still accept quote
+      }
+    };
+
+    if (repairJob.pickup_address && repairJob.repair_center.address) {
+      fetchDeliveryQuote();
+    }
+  }, [repairJob.pickup_address, repairJob.repair_center.address]);
 
   const handleAccept = async () => {
     setIsProcessing(true);
@@ -94,24 +124,81 @@ export const QuoteReviewCard = ({ repairJob }: QuoteReviewCardProps) => {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Price Display */}
-          <div className="bg-background p-4 rounded-lg border-2 border-primary/20">
-            <div className="flex justify-between items-start mb-2">
-              <span className="text-sm font-medium">Repair Cost:</span>
-              <span className="text-2xl font-bold text-primary">
-                ₦{repairJob.quoted_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
+          {/* Full Cost Breakdown */}
+          <div className="bg-background p-4 rounded-lg border-2 border-primary/20 space-y-3">
+            {/* Repair Costs Section */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-semibold text-primary">Repair Service (Pay Online)</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Repair Cost:</span>
+                  <span className="font-medium">
+                    ₦{repairJob.quoted_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm text-muted-foreground">
+                  <span>Service Fee (7.5%):</span>
+                  <span>₦{serviceFee.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between items-center font-semibold pt-1 border-t">
+                  <span>Repair Total:</span>
+                  <span className="text-primary">
+                    ₦{totalRepairPayment.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between items-center text-sm text-muted-foreground">
-              <span>Service Fee (7.5%):</span>
-              <span>₦{serviceFee.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+
+            {/* Delivery Costs Section */}
+            <div className="pt-3 border-t">
+              <div className="flex items-center gap-2 mb-2">
+                <Truck className="h-4 w-4 text-amber-600" />
+                <span className="text-sm font-semibold text-amber-700">Pickup Delivery (Pay Cash to Rider)</span>
+              </div>
+              {isFetchingQuote ? (
+                <div className="text-sm text-muted-foreground italic">Calculating delivery cost...</div>
+              ) : deliveryQuote ? (
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Delivery Cost:</span>
+                    <span className="font-medium">
+                      ₦{deliveryCost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm text-muted-foreground">
+                    <span>Platform Fee (5%):</span>
+                    <span>₦{deliveryCommission.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between items-center font-semibold pt-1 border-t">
+                    <span>Delivery Total:</span>
+                    <span className="text-amber-700">
+                      ₦{totalDeliveryCost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <Alert className="mt-2 bg-amber-50 border-amber-200">
+                    <Info className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-xs text-amber-800">
+                      Pickup delivery will be scheduled automatically. Pay the rider in cash upon pickup.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground italic">Delivery cost unavailable</div>
+              )}
             </div>
-            <div className="flex justify-between items-center font-bold text-lg pt-2 mt-2 border-t">
-              <span>Your Total Payment:</span>
+
+            {/* Grand Total */}
+            <div className="flex justify-between items-center font-bold text-xl pt-3 border-t-2 border-primary/20">
+              <span>Total Cost:</span>
               <span className="text-primary">
-                ₦{totalPayment.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ₦{grandTotal.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Online: ₦{totalRepairPayment.toLocaleString('en-NG')} | Cash to Rider: ₦{totalDeliveryCost.toLocaleString('en-NG')}
+            </p>
           </div>
 
           {/* Quote Notes */}

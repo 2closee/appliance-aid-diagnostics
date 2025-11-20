@@ -61,7 +61,7 @@ serve(async (req) => {
 
     switch (response) {
       case 'accept':
-        newStatus = 'requested'; // Auto-progress to workflow start
+        newStatus = 'quote_accepted'; // Changed to explicit quote_accepted status
         notificationType = 'quote_accepted';
         updateData.quote_accepted_at = new Date().toISOString(); // Track acceptance time
         break;
@@ -88,6 +88,44 @@ serve(async (req) => {
 
     if (updateError) throw updateError;
     logStep("Job status updated", { newStatus });
+
+    // Automatically create pickup delivery when quote is accepted
+    if (response === 'accept') {
+      logStep("Creating pickup delivery automatically");
+      
+      // Check if delivery already exists
+      const { data: existingPickupDelivery } = await supabase
+        .from('delivery_requests')
+        .select('id, delivery_status')
+        .eq('repair_job_id', repair_job_id)
+        .eq('delivery_type', 'pickup')
+        .maybeSingle();
+
+      // Only create if no delivery exists or existing was cancelled/failed
+      if (!existingPickupDelivery || ['cancelled', 'failed'].includes(existingPickupDelivery.delivery_status)) {
+        try {
+          const { error: deliveryError } = await supabase.functions.invoke('create-sendstack-delivery', {
+            body: {
+              repair_job_id,
+              delivery_type: 'pickup',
+              notes: `Automatic pickup scheduling after quote acceptance for ${job.appliance_type}`
+            }
+          });
+
+          if (deliveryError) {
+            logStep('Pickup delivery creation failed (non-fatal)', { error: deliveryError });
+            // Don't throw - allow quote acceptance to succeed even if delivery fails
+          } else {
+            logStep('Pickup delivery created successfully');
+          }
+        } catch (deliveryError) {
+          logStep('Error creating pickup delivery (non-fatal)', { error: String(deliveryError) });
+          // Don't throw - allow quote acceptance to succeed
+        }
+      } else {
+        logStep('Pickup delivery already exists', { existingDeliveryId: existingPickupDelivery.id });
+      }
+    }
 
     // If negotiating, create or ensure conversation exists
     if (response === 'negotiate') {
