@@ -1,9 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Truck, MapPin, Phone, User, Package, Clock, ExternalLink, X } from "lucide-react";
+import { Truck, MapPin, Phone, User, Package, Clock, ExternalLink, X, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useDeliveryActions } from "@/hooks/useDeliveryActions";
+import { formatCurrency } from "@/lib/currency";
+import { CashPaymentInstructions } from "./CashPaymentInstructions";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 
 interface DeliveryRequest {
   id: string;
@@ -18,6 +23,9 @@ interface DeliveryRequest {
   vehicle_details?: string;
   estimated_cost?: number;
   actual_cost?: number;
+  app_delivery_commission?: number;
+  cash_payment_status?: string;
+  currency?: string;
   tracking_url?: string;
   scheduled_pickup_time?: string;
   actual_pickup_time?: string;
@@ -57,6 +65,8 @@ const statusLabels: Record<string, string> = {
 
 export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTrackingProps) => {
   const { cancelDelivery, isCancellingDelivery } = useDeliveryActions();
+  const { toast } = useToast();
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
 
   const handleCancelDelivery = async () => {
     if (window.confirm("Are you sure you want to cancel this delivery?")) {
@@ -69,7 +79,54 @@ export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTracking
     }
   };
 
+  const handleConfirmPayment = async () => {
+    if (deliveryRequest.cash_payment_status === 'confirmed') {
+      toast({
+        title: "Already Confirmed",
+        description: "Payment has already been confirmed.",
+        variant: "default",
+      });
+      return;
+    }
+
+    if (!window.confirm("Confirm that you have paid the rider in cash?")) {
+      return;
+    }
+
+    setIsConfirmingPayment(true);
+    try {
+      const { error } = await supabase
+        .from('delivery_requests')
+        .update({
+          cash_payment_status: 'paid',
+        })
+        .eq('id', deliveryRequest.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Payment Recorded",
+        description: "Your payment confirmation has been recorded. The rider will verify receipt.",
+      });
+      
+      // Refresh the page to show updated status
+      window.location.reload();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to confirm payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConfirmingPayment(false);
+    }
+  };
+
   const canCancel = ["pending", "assigned", "driver_on_way"].includes(deliveryRequest.delivery_status);
+  const deliveryCost = deliveryRequest.actual_cost || deliveryRequest.estimated_cost || 0;
+  const showPaymentConfirmation = 
+    deliveryRequest.delivery_status === 'delivered' && 
+    deliveryRequest.cash_payment_status !== 'confirmed';
 
   return (
     <Card>
@@ -175,17 +232,20 @@ export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTracking
           </div>
         </div>
 
-        {/* Cost */}
-        {(deliveryRequest.estimated_cost || deliveryRequest.actual_cost) && (
+        {/* Cost & Payment */}
+        {deliveryCost > 0 && (
           <div className="border-t pt-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                {deliveryRequest.actual_cost ? "Delivery Cost:" : "Estimated Cost:"}
-              </span>
-              <span className="font-medium">
-                ₦{((deliveryRequest.actual_cost || deliveryRequest.estimated_cost) / 100).toFixed(2)}
-              </span>
-            </div>
+            <CashPaymentInstructions
+              amount={deliveryCost}
+              currency={deliveryRequest.currency || "NGN"}
+              status={deliveryRequest.cash_payment_status || "pending"}
+              variant="default"
+            />
+            {deliveryRequest.app_delivery_commission && (
+              <p className="text-xs text-muted-foreground mt-2">
+                (Includes {formatCurrency(deliveryRequest.app_delivery_commission, deliveryRequest.currency as any)} service fee)
+              </p>
+            )}
           </div>
         )}
 
@@ -206,6 +266,20 @@ export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTracking
               </a>
             </Button>
           )}
+          
+          {showPaymentConfirmation && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleConfirmPayment}
+              disabled={isConfirmingPayment}
+              className="flex-1"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              {isConfirmingPayment ? "Confirming..." : "I Paid the Rider"}
+            </Button>
+          )}
+          
           {canCancel && (
             <Button
               variant="destructive"

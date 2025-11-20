@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Textarea } from "@/components/ui/textarea";
 import { DeliveryTracking } from "@/components/DeliveryTracking";
 import { useDeliveryActions } from "@/hooks/useDeliveryActions";
+import { CostBreakdownCard } from "@/components/CostBreakdownCard";
 
 interface RepairJob {
   id: string;
