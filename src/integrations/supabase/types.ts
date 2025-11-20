@@ -740,6 +740,7 @@ export type Database = {
       "Repair Center": {
         Row: {
           address: string | null
+          address_updated_at: string | null
           average_rating: number | null
           cac_name: string | null
           cac_number: string | null
@@ -765,6 +766,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          address_updated_at?: string | null
           average_rating?: number | null
           cac_name?: string | null
           cac_number?: string | null
@@ -790,6 +792,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          address_updated_at?: string | null
           average_rating?: number | null
           cac_name?: string | null
           cac_number?: string | null

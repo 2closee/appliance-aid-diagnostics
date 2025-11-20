@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Building, 
@@ -16,7 +18,9 @@ import {
   Users,
   Settings,
   Play,
-  BarChart3
+  BarChart3,
+  MapPin,
+  Save
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -28,6 +32,7 @@ const RepairCenterManagement = () => {
   const queryClient = useQueryClient();
   const [selectedCenter, setSelectedCenter] = useState<any>(null);
   const [performanceCenter, setPerformanceCenter] = useState<any>(null);
+  const [editedAddress, setEditedAddress] = useState("");
 
   // Fetch repair center applications (pending users) from repair_center_applications table
   const { data: pendingApplications, isLoading: loadingApplications } = useQuery({
@@ -252,6 +257,38 @@ const RepairCenterManagement = () => {
     },
   });
 
+  // Update center address (admin only)
+  const updateAddress = useMutation({
+    mutationFn: async ({ centerId, address }: { centerId: number, address: string }) => {
+      const { error } = await supabase
+        .from("Repair Center")
+        .update({ 
+          address: address.trim(),
+          address_updated_at: new Date().toISOString()
+        })
+        .eq("id", centerId);
+
+      if (error) throw error;
+      return { centerId, address };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Address Updated",
+        description: "Repair center address has been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["all-centers"] });
+      setSelectedCenter(null);
+      setEditedAddress("");
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update address: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -417,7 +454,10 @@ const RepairCenterManagement = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setSelectedCenter(center)}
+                              onClick={() => {
+                                setSelectedCenter(center);
+                                setEditedAddress(center.address || "");
+                              }}
                               className="flex items-center gap-1"
                             >
                               <Eye className="h-4 w-4" />
@@ -520,7 +560,10 @@ const RepairCenterManagement = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setSelectedCenter(center)}
+                              onClick={() => {
+                                setSelectedCenter(center);
+                                setEditedAddress(center.address || "");
+                              }}
                               className="flex items-center gap-1"
                             >
                               <Eye className="h-4 w-4" />
@@ -558,7 +601,12 @@ const RepairCenterManagement = () => {
 
       {/* Manage Center Dialog */}
       {selectedCenter && (
-        <Dialog open={!!selectedCenter} onOpenChange={() => setSelectedCenter(null)}>
+        <Dialog open={!!selectedCenter} onOpenChange={(open) => {
+          if (!open) {
+            setSelectedCenter(null);
+            setEditedAddress("");
+          }
+        }}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -585,6 +633,41 @@ const RepairCenterManagement = () => {
                     <p><strong>Active Staff:</strong> {selectedCenter.repair_center_staff?.filter((staff: any) => staff.is_active).length || 0}</p>
                     <p><strong>Total Staff:</strong> {selectedCenter.repair_center_staff?.length || 0}</p>
                   </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Update Address (Admin)
+                </h4>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-address">New Address</Label>
+                    <Textarea
+                      id="admin-address"
+                      placeholder="Enter new address..."
+                      value={editedAddress || selectedCenter.address}
+                      onChange={(e) => setEditedAddress(e.target.value)}
+                      rows={3}
+                    />
+                    {selectedCenter.address_updated_at && (
+                      <p className="text-xs text-muted-foreground">
+                        Last updated: {new Date(selectedCenter.address_updated_at).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    onClick={() => updateAddress.mutate({
+                      centerId: selectedCenter.id,
+                      address: editedAddress || selectedCenter.address
+                    })}
+                    disabled={updateAddress.isPending || (!editedAddress && editedAddress !== "")}
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    Save Address
+                  </Button>
                 </div>
               </div>
 

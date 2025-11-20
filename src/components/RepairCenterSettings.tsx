@@ -6,18 +6,23 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Settings, Image as ImageIcon } from "lucide-react";
+import { Save, Settings, Image as ImageIcon, MapPin, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import RepairCenterBrandingUpload from "./RepairCenterBrandingUpload";
 
 const RepairCenterSettings = () => {
-  const { repairCenterId } = useAuth();
+  const { repairCenterId, isAdmin } = useAuth();
   const { toast } = useToast();
   const [autoReplyEnabled, setAutoReplyEnabled] = useState(true);
   const [autoReplyMessage, setAutoReplyMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [repairCenter, setRepairCenter] = useState<any>(null);
   const [centerName, setCenterName] = useState<string>("Your Repair Center");
+  const [address, setAddress] = useState("");
+  const [addressUpdatedAt, setAddressUpdatedAt] = useState<string | null>(null);
+  const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -45,7 +50,7 @@ const RepairCenterSettings = () => {
 
       const { data, error } = await supabase
         .from('Repair Center')
-        .select('logo_url, cover_image_url, name')
+        .select('logo_url, cover_image_url, name, address, address_updated_at')
         .eq('id', repairCenterId)
         .single();
 
@@ -56,6 +61,8 @@ const RepairCenterSettings = () => {
 
       setRepairCenter(data);
       if (data?.name) setCenterName(data.name);
+      if (data?.address) setAddress(data.address);
+      if (data?.address_updated_at) setAddressUpdatedAt(data.address_updated_at);
     };
 
     fetchSettings();
@@ -89,6 +96,60 @@ const RepairCenterSettings = () => {
     }
 
     setIsLoading(false);
+  };
+
+  const handleUpdateAddress = async () => {
+    if (!repairCenterId || !address.trim()) {
+      toast({
+        title: "Error",
+        description: "Address cannot be empty",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUpdatingAddress(true);
+    const { error } = await supabase
+      .from('Repair Center')
+      .update({
+        address: address.trim(),
+        address_updated_at: new Date().toISOString()
+      })
+      .eq('id', repairCenterId);
+
+    if (error) {
+      console.error('Error updating address:', error);
+      toast({
+        title: "Error",
+        description: error.message.includes('policy') 
+          ? "You can only update your address once per month" 
+          : "Failed to update address",
+        variant: "destructive"
+      });
+    } else {
+      setAddressUpdatedAt(new Date().toISOString());
+      toast({
+        title: "Success",
+        description: "Address updated successfully"
+      });
+    }
+
+    setIsUpdatingAddress(false);
+  };
+
+  const canUpdateAddress = () => {
+    if (isAdmin) return true;
+    if (!addressUpdatedAt) return true;
+    const lastUpdate = new Date(addressUpdatedAt);
+    const daysSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24);
+    return daysSinceUpdate >= 30;
+  };
+
+  const getDaysUntilNextUpdate = () => {
+    if (!addressUpdatedAt) return 0;
+    const lastUpdate = new Date(addressUpdatedAt);
+    const daysSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24);
+    return Math.max(0, Math.ceil(30 - daysSinceUpdate));
   };
 
   return (
@@ -125,6 +186,59 @@ const RepairCenterSettings = () => {
               }
             }}
           />
+        </CardContent>
+      </Card>
+
+      {/* Address Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Shop Address
+          </CardTitle>
+          <CardDescription>
+            Update your repair center's physical address
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="address">Address</Label>
+            <Textarea
+              id="address"
+              placeholder="Enter your full shop address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          {!canUpdateAddress() && !isAdmin && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                You can update your address again in {getDaysUntilNextUpdate()} days. 
+                Last updated: {addressUpdatedAt ? new Date(addressUpdatedAt).toLocaleDateString() : 'Never'}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {isAdmin && addressUpdatedAt && (
+            <Alert className="bg-blue-50 border-blue-200">
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                As an admin, you can update this address anytime. 
+                Last updated: {new Date(addressUpdatedAt).toLocaleDateString()}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <Button 
+            onClick={handleUpdateAddress} 
+            disabled={isUpdatingAddress || (!canUpdateAddress() && !isAdmin) || !address.trim()}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Update Address
+          </Button>
         </CardContent>
       </Card>
 
