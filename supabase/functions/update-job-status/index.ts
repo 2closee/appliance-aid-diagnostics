@@ -39,6 +39,7 @@ serve(async (req) => {
 
     // Define sequential workflow validation
     const statusWorkflow: Record<string, string[]> = {
+      'quote_accepted': ['pickup_scheduled', 'cancelled'],
       'requested': ['pickup_scheduled', 'cancelled'],
       'pickup_scheduled': ['picked_up', 'cancelled'],
       'picked_up': ['in_repair', 'cancelled'],
