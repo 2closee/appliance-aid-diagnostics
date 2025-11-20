@@ -135,6 +135,73 @@ serve(async (req) => {
     }
     logStep("Job updated successfully");
 
+    // Automatically create delivery requests based on status
+    if (status === 'pickup_scheduled' || status === 'quote_accepted') {
+      // Check if there's already a pickup delivery request
+      const { data: existingPickupDelivery } = await supabaseClient
+        .from('delivery_requests')
+        .select('id, delivery_status')
+        .eq('repair_job_id', repair_job_id)
+        .eq('delivery_type', 'pickup')
+        .maybeSingle();
+
+      // Only create if no delivery exists or if the existing one was cancelled/failed
+      if (!existingPickupDelivery || ['cancelled', 'failed'].includes(existingPickupDelivery.delivery_status)) {
+        logStep('Creating pickup delivery automatically');
+        
+        try {
+          const { error: deliveryError } = await supabaseClient.functions.invoke('create-sendstack-delivery', {
+            body: {
+              repair_job_id,
+              delivery_type: 'pickup',
+              notes: `Automatic pickup scheduling for ${repairJob.appliance_type} repair`
+            }
+          });
+
+          if (deliveryError) {
+            logStep('Pickup delivery creation failed', { error: deliveryError });
+          } else {
+            logStep('Pickup delivery created successfully');
+          }
+        } catch (deliveryError) {
+          logStep('Error creating pickup delivery', { error: String(deliveryError) });
+        }
+      }
+    }
+
+    if (status === 'repair_completed') {
+      // Check if there's already a return delivery request
+      const { data: existingReturnDelivery } = await supabaseClient
+        .from('delivery_requests')
+        .select('id, delivery_status')
+        .eq('repair_job_id', repair_job_id)
+        .eq('delivery_type', 'return')
+        .maybeSingle();
+
+      // Only create if no delivery exists or if the existing one was cancelled/failed
+      if (!existingReturnDelivery || ['cancelled', 'failed'].includes(existingReturnDelivery.delivery_status)) {
+        logStep('Creating return delivery automatically');
+        
+        try {
+          const { error: deliveryError } = await supabaseClient.functions.invoke('create-sendstack-delivery', {
+            body: {
+              repair_job_id,
+              delivery_type: 'return',
+              notes: `Automatic return delivery for ${repairJob.appliance_type} repair`
+            }
+          });
+
+          if (deliveryError) {
+            logStep('Return delivery creation failed', { error: deliveryError });
+          } else {
+            logStep('Return delivery created successfully');
+          }
+        } catch (deliveryError) {
+          logStep('Error creating return delivery', { error: String(deliveryError) });
+        }
+      }
+    }
+
     // Send notification email when repair is completed
     if (status === 'repair_completed') {
       logStep("Sending repair completion notification");
