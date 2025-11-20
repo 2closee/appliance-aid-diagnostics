@@ -24,6 +24,23 @@ serve(async (req) => {
 
     console.log('Getting SendStack quote:', { pickup_address, delivery_address, vehicle_type });
 
+    // Validate Nigerian addresses (SendStack only operates in Nigeria)
+    const isNigerianAddress = (address: string): boolean => {
+      const nigerianKeywords = ['nigeria', 'lagos', 'abuja', 'kano', 'ibadan', 'port harcourt', 'benin city', 'kaduna', 'jos', 'ilorin', 'oyo', 'enugu', 'abeokuta', 'ng'];
+      return nigerianKeywords.some(keyword => address.toLowerCase().includes(keyword));
+    };
+
+    if (!isNigerianAddress(pickup_address) || !isNigerianAddress(delivery_address)) {
+      console.log('Address validation failed: Not in Nigeria service area');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Delivery service is only available within Nigeria',
+          service_area_restriction: true 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Get quote from SendStack
     const quotePayload = {
       pickup_address,
