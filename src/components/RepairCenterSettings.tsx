@@ -108,6 +108,15 @@ const RepairCenterSettings = () => {
       return;
     }
 
+    const oldAddress = repairCenter?.address || "";
+    if (oldAddress === address.trim()) {
+      toast({
+        title: "Info",
+        description: "Address hasn't changed",
+      });
+      return;
+    }
+
     setIsUpdatingAddress(true);
     const { error } = await supabase
       .from('Repair Center')
@@ -128,9 +137,26 @@ const RepairCenterSettings = () => {
       });
     } else {
       setAddressUpdatedAt(new Date().toISOString());
+      
+      // Send notification email
+      try {
+        await supabase.functions.invoke('send-address-change-notification', {
+          body: {
+            repair_center_id: repairCenterId,
+            old_address: oldAddress,
+            new_address: address.trim(),
+            changed_by_admin: isAdmin || false
+          }
+        });
+        console.log('Address change notification sent');
+      } catch (emailError) {
+        console.error('Failed to send notification:', emailError);
+        // Don't fail the update if email fails
+      }
+
       toast({
         title: "Success",
-        description: "Address updated successfully"
+        description: "Address updated successfully. Notification emails sent."
       });
     }
 

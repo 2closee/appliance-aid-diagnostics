@@ -259,7 +259,11 @@ const RepairCenterManagement = () => {
 
   // Update center address (admin only)
   const updateAddress = useMutation({
-    mutationFn: async ({ centerId, address }: { centerId: number, address: string }) => {
+    mutationFn: async ({ centerId, address, oldAddress }: { centerId: number, address: string, oldAddress: string }) => {
+      if (oldAddress === address.trim()) {
+        throw new Error("Address hasn't changed");
+      }
+
       const { error } = await supabase
         .from("Repair Center")
         .update({ 
@@ -269,21 +273,40 @@ const RepairCenterManagement = () => {
         .eq("id", centerId);
 
       if (error) throw error;
+
+      // Send notification email
+      try {
+        await supabase.functions.invoke('send-address-change-notification', {
+          body: {
+            repair_center_id: centerId,
+            old_address: oldAddress,
+            new_address: address.trim(),
+            changed_by_admin: true
+          }
+        });
+        console.log('Address change notification sent');
+      } catch (emailError) {
+        console.error('Failed to send notification:', emailError);
+        // Don't fail the update if email fails
+      }
+
       return { centerId, address };
     },
     onSuccess: () => {
       toast({
         title: "Address Updated",
-        description: "Repair center address has been updated successfully.",
+        description: "Repair center address has been updated successfully. Notification emails sent.",
       });
       queryClient.invalidateQueries({ queryKey: ["all-centers"] });
       setSelectedCenter(null);
       setEditedAddress("");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: `Failed to update address: ${error.message}`,
+        description: error.message === "Address hasn't changed" 
+          ? "Address hasn't changed" 
+          : `Failed to update address: ${error.message}`,
         variant: "destructive",
       });
     },
@@ -660,7 +683,8 @@ const RepairCenterManagement = () => {
                   <Button
                     onClick={() => updateAddress.mutate({
                       centerId: selectedCenter.id,
-                      address: editedAddress || selectedCenter.address
+                      address: editedAddress || selectedCenter.address,
+                      oldAddress: selectedCenter.address || ""
                     })}
                     disabled={updateAddress.isPending || (!editedAddress && editedAddress !== "")}
                     className="flex items-center gap-2"
