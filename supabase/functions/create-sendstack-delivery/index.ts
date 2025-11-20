@@ -202,24 +202,6 @@ serve(async (req) => {
       }
     }
 
-    // Send WhatsApp notification to customer about delivery
-    try {
-      await supabase.functions.invoke('send-whatsapp-notification', {
-        body: {
-          phone_number: repairJob.customer_phone,
-          notification_type: 'delivery_created',
-          data: {
-            delivery_type: deliveryType,
-            estimated_cost: estimatedCost,
-            app_commission: appCommission,
-            job_id: repair_job_id
-          }
-        }
-      });
-    } catch (notifError) {
-      console.error('Failed to send delivery notification:', notifError);
-    }
-
     return new Response(
       JSON.stringify({
         success: true,

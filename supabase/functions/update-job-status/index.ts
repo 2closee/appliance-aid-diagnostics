@@ -39,7 +39,6 @@ serve(async (req) => {
 
     // Define sequential workflow validation
     const statusWorkflow: Record<string, string[]> = {
-      'quote_accepted': ['pickup_scheduled', 'cancelled'],
       'requested': ['pickup_scheduled', 'cancelled'],
       'pickup_scheduled': ['picked_up', 'cancelled'],
       'picked_up': ['in_repair', 'cancelled'],
@@ -203,31 +202,30 @@ serve(async (req) => {
       }
     }
 
-    // Send WhatsApp/SMS notification when repair is completed
+    // Send notification email when repair is completed
     if (status === 'repair_completed') {
       logStep("Sending repair completion notification");
       try {
-        const { error: notifError } = await supabaseClient.functions.invoke('send-whatsapp-notification', {
+        const { error: notifError } = await supabaseClient.functions.invoke('send-job-notification', {
           body: {
-            phone_number: repairJob.customer_phone,
-            notification_type: 'repair_completed',
-            data: {
-              repair_job_id,
-              job_id: repair_job_id,
-              customer_name: repairJob.customer_name,
-              appliance_type: repairJob.appliance_type,
-              final_cost: updateData.final_cost || repairJob.final_cost
-            }
+            email_type: 'repair_completed',
+            repair_job_id: repair_job_id,
+            customer_email: repairJob.customer_email,
+            customer_name: repairJob.customer_name,
+            appliance_type: repairJob.appliance_type,
+            final_cost: updateData.final_cost || repairJob.final_cost,
           }
         });
         
         if (notifError) {
           logStep("Notification send failed", { error: notifError });
+          // Don't fail the status update if email fails
         } else {
           logStep("Notification sent successfully");
         }
       } catch (notifError) {
         logStep("Notification error", { error: notifError });
+        // Don't fail the status update if email fails
       }
     }
 
