@@ -105,6 +105,9 @@ serve(async (req) => {
       if (!existingPickupDelivery || ['cancelled', 'failed'].includes(existingPickupDelivery.delivery_status)) {
         try {
           const { error: deliveryError } = await supabase.functions.invoke('create-sendstack-delivery', {
+            headers: {
+              Authorization: authHeader // Pass auth header for authorization
+            },
             body: {
               repair_job_id,
               delivery_type: 'pickup',

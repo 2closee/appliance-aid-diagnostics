@@ -51,9 +51,15 @@ export const QuoteReviewCard = ({ repairJob }: QuoteReviewCardProps) => {
           package_description: `${repairJob.appliance_type} repair pickup`
         });
         setDeliveryQuote(quote);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to fetch delivery quote:', error);
-        // Non-fatal - user can still accept quote
+        // Set delivery quote to null but don't block quote acceptance
+        setDeliveryQuote(null);
+        
+        // Log specific error type for debugging
+        if (error?.message?.includes('service is only available')) {
+          console.log('Delivery not available in this service area');
+        }
       }
     };
 
@@ -185,7 +191,15 @@ export const QuoteReviewCard = ({ repairJob }: QuoteReviewCardProps) => {
                   </Alert>
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground italic">Delivery cost unavailable</div>
+                <div className="space-y-1">
+                  <div className="text-sm text-muted-foreground italic">Delivery cost unavailable for this location</div>
+                  <Alert className="mt-2 bg-blue-50 border-blue-200">
+                    <Info className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-xs text-blue-800">
+                      Delivery cost will be confirmed after quote acceptance. Service may not be available in your area.
+                    </AlertDescription>
+                  </Alert>
+                </div>
               )}
             </div>
 
