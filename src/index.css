@@ -174,3 +174,19 @@ All colors MUST be HSL.
 #root {
   padding-top: calc(4rem + env(safe-area-inset-top, 0px));
 }
+
+/* Delivery map marker animations */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.driver-marker {
+  animation: pulse 2s infinite;
+}

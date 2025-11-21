@@ -8,7 +8,8 @@ import { formatCurrency } from "@/lib/currency";
 import { CashPaymentInstructions } from "./CashPaymentInstructions";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { DeliveryMapView } from "./DeliveryMapView";
 
 interface DeliveryRequest {
   id: string;
@@ -67,6 +68,58 @@ export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTracking
   const { cancelDelivery, isCancellingDelivery } = useDeliveryActions();
   const { toast } = useToast();
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
+  const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | undefined>();
+
+  // Fetch latest driver location from delivery history
+  useEffect(() => {
+    const fetchDriverLocation = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('delivery_status_history')
+          .select('location')
+          .eq('delivery_request_id', deliveryRequest.id)
+          .not('location', 'is', null)
+          .order('changed_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (!error && data?.location) {
+          const loc = data.location as any;
+          if (loc.lat && loc.lng) {
+            setDriverLocation({ lat: loc.lat, lng: loc.lng });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching driver location:', error);
+      }
+    };
+
+    fetchDriverLocation();
+
+    // Set up realtime subscription for location updates
+    const locationChannel = supabase
+      .channel(`delivery-location-${deliveryRequest.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'delivery_status_history',
+          filter: `delivery_request_id=eq.${deliveryRequest.id}`
+        },
+        (payload) => {
+          const loc = payload.new.location as any;
+          if (loc?.lat && loc?.lng) {
+            setDriverLocation({ lat: loc.lat, lng: loc.lng });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(locationChannel);
+    };
+  }, [deliveryRequest.id]);
 
   const handleCancelDelivery = async () => {
     if (window.confirm("Are you sure you want to cancel this delivery?")) {
@@ -142,6 +195,19 @@ export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTracking
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Live Map View */}
+        {(deliveryRequest.delivery_status === 'driver_on_way' || 
+          deliveryRequest.delivery_status === 'driver_arrived' ||
+          deliveryRequest.delivery_status === 'picked_up' ||
+          deliveryRequest.delivery_status === 'in_transit') && (
+          <DeliveryMapView
+            pickupAddress={deliveryRequest.pickup_address}
+            deliveryAddress={deliveryRequest.delivery_address}
+            driverLocation={driverLocation}
+            deliveryStatus={deliveryRequest.delivery_status}
+          />
+        )}
+
         {/* Addresses */}
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
