@@ -1371,6 +1371,45 @@ export type Database = {
           },
         ]
       }
+      saved_addresses: {
+        Row: {
+          address_line: string
+          city: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          label: string | null
+          state: string
+          updated_at: string | null
+          user_id: string
+          zip_code: string
+        }
+        Insert: {
+          address_line: string
+          city: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          label?: string | null
+          state: string
+          updated_at?: string | null
+          user_id: string
+          zip_code: string
+        }
+        Update: {
+          address_line?: string
+          city?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          label?: string | null
+          state?: string
+          updated_at?: string | null
+          user_id?: string
+          zip_code?: string
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           key: string

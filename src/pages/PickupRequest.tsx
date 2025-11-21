@@ -18,7 +18,8 @@ import {
   Package,
   CheckCircle,
   AlertCircle,
-  Send
+  Send,
+  Bookmark
 } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -56,6 +57,16 @@ interface RepairCenter {
   years_of_experience: number;
 }
 
+interface SavedAddress {
+  id: string;
+  label: string | null;
+  address_line: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  is_default: boolean;
+}
+
 const PickupRequest = () => {
   const location = useLocation();
   const { toast } = useToast();
@@ -86,6 +97,8 @@ const PickupRequest = () => {
   });
 
   const [repairCenters, setRepairCenters] = useState<RepairCenter[]>([]);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -99,7 +112,7 @@ const PickupRequest = () => {
             .from('profiles')
             .select('full_name, email, phone')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
 
           if (error) throw error;
 
@@ -131,7 +144,26 @@ const PickupRequest = () => {
       }
     };
 
+    const fetchSavedAddresses = async () => {
+      if (user) {
+        try {
+          const { data, error } = await supabase
+            .from('saved_addresses')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('is_default', { ascending: false })
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+          setSavedAddresses(data || []);
+        } catch (error) {
+          console.error('Error fetching saved addresses:', error);
+        }
+      }
+    };
+
     fetchUserProfile();
+    fetchSavedAddresses();
     
     // Pre-select repair center if passed via state
     if (selectedCenter) {
@@ -169,6 +201,59 @@ const PickupRequest = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleSavedAddressSelect = (addressId: string) => {
+    setSelectedAddressId(addressId);
+    
+    if (addressId === 'new') {
+      setFormData(prev => ({
+        ...prev,
+        address: '',
+        city: '',
+        state: '',
+        zipCode: ''
+      }));
+      return;
+    }
+
+    const address = savedAddresses.find(a => a.id === addressId);
+    if (address) {
+      setFormData(prev => ({
+        ...prev,
+        address: address.address_line,
+        city: address.city,
+        state: address.state,
+        zipCode: address.zip_code
+      }));
+    }
+  };
+
+  const saveAddressIfNew = async () => {
+    if (!user || !formData.address) return;
+
+    // Check if this address already exists
+    const addressExists = savedAddresses.some(
+      addr => 
+        addr.address_line.toLowerCase() === formData.address.toLowerCase() &&
+        addr.city.toLowerCase() === formData.city.toLowerCase() &&
+        addr.zip_code === formData.zipCode
+    );
+
+    if (addressExists) return;
+
+    try {
+      await supabase.from('saved_addresses').insert({
+        user_id: user.id,
+        address_line: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zip_code: formData.zipCode,
+        is_default: savedAddresses.length === 0
+      });
+    } catch (error) {
+      console.error('Error saving address:', error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -231,6 +316,9 @@ const PickupRequest = () => {
         .single();
 
       if (jobError) throw jobError;
+      
+      // Save address if it's new
+      await saveAddressIfNew();
       
       setIsSubmitted(true);
       
@@ -396,6 +484,34 @@ const PickupRequest = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {savedAddresses.length > 0 && (
+                  <div>
+                    <Label htmlFor="savedAddress" className="flex items-center gap-2">
+                      <Bookmark className="h-4 w-4" />
+                      Use Saved Address
+                    </Label>
+                    <Select value={selectedAddressId} onValueChange={handleSavedAddressSelect}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a saved address or enter new" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="new">+ Enter New Address</SelectItem>
+                        <Separator className="my-1" />
+                        {savedAddresses.map((address) => (
+                          <SelectItem key={address.id} value={address.id}>
+                            {address.label && (
+                              <span className="font-medium">{address.label} - </span>
+                            )}
+                            {address.address_line}, {address.city}, {address.state} {address.zip_code}
+                            {address.is_default && (
+                              <Badge variant="secondary" className="ml-2 text-xs">Default</Badge>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div>
                   <Label htmlFor="address">Street Address *</Label>
                   <Input
@@ -405,7 +521,7 @@ const PickupRequest = () => {
                     required
                   />
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="city">City *</Label>
                     <Input
@@ -413,6 +529,16 @@ const PickupRequest = () => {
                       value={formData.city}
                       onChange={(e) => handleInputChange('city', e.target.value)}
                       required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state">State *</Label>
+                    <Input
+                      id="state"
+                      value={formData.state}
+                      onChange={(e) => handleInputChange('state', e.target.value)}
+                      required
+                      placeholder="e.g., Lagos, Abuja"
                     />
                   </div>
                   <div>
