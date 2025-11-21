@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,9 +30,26 @@ interface RepairCenter {
 interface RepairCenterSelectorProps {
   onSelectCenter: (center: RepairCenter) => void;
   onBack: () => void;
+  mode?: 'chat' | 'pickup';
+  actionButtonText?: string;
+  actionButtonIcon?: ReactNode;
 }
 
-const RepairCenterSelector = ({ onSelectCenter, onBack }: RepairCenterSelectorProps) => {
+const RepairCenterSelector = ({ 
+  onSelectCenter, 
+  onBack,
+  mode = 'chat',
+  actionButtonText,
+  actionButtonIcon
+}: RepairCenterSelectorProps) => {
+  // Determine button configuration based on mode
+  const buttonConfig = {
+    text: actionButtonText || (mode === 'pickup' ? 'Schedule Pickup' : 'Start Chat'),
+    icon: actionButtonIcon || (mode === 'pickup' ? <Truck className="h-4 w-4 mr-2" /> : <MessageCircle className="h-4 w-4 mr-2" />),
+    description: mode === 'pickup' 
+      ? 'Select a repair center near you to schedule your device pickup'
+      : 'Find repair centers near you and start chatting with their experts'
+  };
   const [searchLocation, setSearchLocation] = useState("");
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationError, setLocationError] = useState("");
@@ -98,7 +115,7 @@ const RepairCenterSelector = ({ onSelectCenter, onBack }: RepairCenterSelectorPr
           <div>
             <CardTitle className="text-xl lg:text-2xl">Choose a Repair Center</CardTitle>
             <CardDescription className="text-sm lg:text-base">
-              Select a repair center near you to start chatting with their experts
+              {buttonConfig.description}
             </CardDescription>
           </div>
           <Button variant="outline" onClick={onBack} size="sm">
@@ -194,8 +211,8 @@ const RepairCenterSelector = ({ onSelectCenter, onBack }: RepairCenterSelectorPr
                         onClick={() => onSelectCenter(center)}
                         className="flex items-center gap-2"
                       >
-                        <MessageCircle className="h-4 w-4" />
-                        Start Chat
+                        {buttonConfig.icon}
+                        {buttonConfig.text}
                       </Button>
                       <Button
                         variant="outline"
