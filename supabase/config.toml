@@ -59,3 +59,6 @@ verify_jwt = false
 
 [functions.cancel-sendstack-delivery]
 verify_jwt = true
+
+[functions.get-mapbox-token]
+verify_jwt = false
