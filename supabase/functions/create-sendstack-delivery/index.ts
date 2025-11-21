@@ -23,6 +23,12 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const sendstackApiKey = Deno.env.get('SENDSTACK_API_KEY')!;
     
+    // Parse SendStack credentials (format: app_id:app_secret)
+    const [sendstackAppId, sendstackAppSecret] = sendstackApiKey.split(':');
+    if (!sendstackAppId || !sendstackAppSecret) {
+      throw new Error('SENDSTACK_API_KEY must be in format: app_id:app_secret');
+    }
+    
     // Create Supabase client with service role
     const supabase = createClient(supabaseUrl, supabaseKey);
     
@@ -87,61 +93,42 @@ serve(async (req) => {
       ? job.repair_center.address
       : job.pickup_address;
 
-    // Create SendStack delivery order
+    // Format pickup date as YYYY-MM-DD
+    const pickupDate = scheduled_pickup_time 
+      ? new Date(scheduled_pickup_time).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0];
+
+    // Create SendStack delivery order (correct format)
     const sendstackPayload = {
-      pickup_location: {
+      orderType: 'PROCESSING',
+      bookingName: job.customer_name,
+      bookingPhone: job.customer_phone,
+      bookingEmail: job.customer_email,
+      pickup: {
         address: pickupAddress,
-        contact_name: delivery_type === 'pickup' ? job.customer_name : job.repair_center.name,
-        contact_phone: delivery_type === 'pickup' ? job.customer_phone : job.repair_center.phone,
+        pickupName: delivery_type === 'pickup' ? job.customer_name : job.repair_center.name,
+        pickupNumber: delivery_type === 'pickup' ? job.customer_phone : job.repair_center.phone,
+        pickupDate: pickupDate,
       },
-      delivery_location: {
-        address: deliveryAddress,
-        contact_name: delivery_type === 'pickup' ? job.repair_center.name : job.customer_name,
-        contact_phone: delivery_type === 'pickup' ? job.repair_center.phone : job.customer_phone,
-      },
-      package_details: {
-        description: `${job.appliance_type} - ${job.appliance_brand || ''} ${job.appliance_model || ''}`.trim(),
-        value: job.estimated_cost || 0,
-        size: 'medium',
-      },
-      scheduled_time: scheduled_pickup_time || new Date().toISOString(),
-      notes: notes || `Repair job: ${delivery_type}`,
+      drops: [
+        {
+          address: deliveryAddress,
+          recipientName: delivery_type === 'pickup' ? job.repair_center.name : job.customer_name,
+          recipientNumber: delivery_type === 'pickup' ? job.repair_center.phone : job.customer_phone,
+          itemDescription: `${job.appliance_type} - ${job.appliance_brand || ''} ${job.appliance_model || ''}`.trim(),
+          notes: notes || `${delivery_type === 'pickup' ? 'Pickup' : 'Return'} delivery for ${job.appliance_type} repair`,
+        }
+      ],
     };
 
-    console.log('SendStack API payload:', sendstackPayload);
+    console.log('SendStack API payload:', JSON.stringify(sendstackPayload, null, 2));
 
-    // Get a fresh quote first to get accurate cost
-    console.log('Fetching delivery quote before creating delivery...');
-    const quoteResponse = await fetch('https://api.sendstack.africa/v1/quotes', {
+    // Create delivery with SendStack
+    const sendstackResponse = await fetch('https://api.sendstack.africa/api/v1/deliveries', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${sendstackApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        pickup_address: pickupAddress,
-        delivery_address: deliveryAddress,
-        vehicle_type: 'bike',
-        package_size: 'medium',
-      }),
-    });
-
-    let estimatedCost = 0;
-    let appCommission = 0;
-    
-    if (quoteResponse.ok) {
-      const quoteData = await quoteResponse.json();
-      estimatedCost = quoteData.price || quoteData.estimated_cost || 0;
-      appCommission = estimatedCost * 0.05; // 5% commission
-      console.log('Quote obtained:', { estimatedCost, appCommission });
-    } else {
-      console.warn('Could not get quote, proceeding with delivery creation');
-    }
-
-    const sendstackResponse = await fetch('https://api.sendstack.africa/v1/deliveries', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${sendstackApiKey}`,
+        'app_id': sendstackAppId,
+        'app_secret': sendstackAppSecret,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(sendstackPayload),
@@ -154,7 +141,11 @@ serve(async (req) => {
     }
 
     const sendstackData = await sendstackResponse.json();
-    console.log('SendStack response:', sendstackData);
+    console.log('SendStack response:', JSON.stringify(sendstackData, null, 2));
+
+    // Extract cost information from response
+    const estimatedCost = sendstackData.totalAmount || 0;
+    const appCommission = estimatedCost * 0.05; // 5% commission
 
     // Store delivery request in database
     const { data: deliveryRequest, error: insertError } = await supabase
@@ -167,13 +158,13 @@ serve(async (req) => {
         customer_phone: job.customer_phone,
         pickup_address: pickupAddress,
         delivery_address: deliveryAddress,
-        estimated_cost: estimatedCost || sendstackData.estimated_cost || sendstackData.price || 0,
+        estimated_cost: estimatedCost,
         app_delivery_commission: appCommission,
         currency: 'NGN',
         cash_payment_status: 'pending',
         delivery_status: 'pending',
-        provider_order_id: sendstackData.id || sendstackData.delivery_id,
-        tracking_url: sendstackData.tracking_url,
+        provider_order_id: sendstackData.id || sendstackData.batchId,
+        tracking_url: sendstackData.trackingUrl,
         scheduled_pickup_time: scheduled_pickup_time || new Date().toISOString(),
         provider_response: sendstackData,
         notes,
@@ -217,9 +208,9 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         delivery_request_id: deliveryRequest.id,
-        provider_order_id: sendstackData.id || sendstackData.delivery_id,
-        tracking_url: sendstackData.tracking_url,
-        estimated_cost: estimatedCost || sendstackData.estimated_cost || sendstackData.price,
+        provider_order_id: sendstackData.id || sendstackData.batchId,
+        tracking_url: sendstackData.trackingUrl,
+        estimated_cost: estimatedCost,
         app_commission: appCommission,
         currency: 'NGN',
         payment_method: 'cash_to_rider',
