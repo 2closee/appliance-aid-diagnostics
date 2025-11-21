@@ -1394,6 +1394,10 @@ export type Database = {
           years_of_experience: number
         }[]
       }
+      get_repair_center_address: {
+        Args: { _center_id: number }
+        Returns: string
+      }
       get_repair_center_contact_for_customer: {
         Args: { _repair_center_id: number; _user_id: string }
         Returns: {
