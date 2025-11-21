@@ -12,12 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Wrench, Clock, CheckCircle, AlertCircle, DollarSign, Users, MessageCircle, Settings as SettingsIcon, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import RepairCenterSettings from "@/components/RepairCenterSettings";
 import { useConversationNotifications } from "@/hooks/useConversationNotifications";
 import { QuoteProvisionForm } from "@/components/QuoteProvisionForm";
 import BankAccountManager from "@/components/BankAccountManager";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const RepairCenterDashboard = () => {
   const { user, repairCenterId } = useAuth();
@@ -26,7 +27,19 @@ const RepairCenterDashboard = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [selectedQuoteJob, setSelectedQuoteJob] = useState<any>(null);
   const [showBankAccount, setShowBankAccount] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
   const { totalUnread } = useConversationNotifications(repairCenterId || undefined);
+
+  useEffect(() => {
+    const hasSeenSettingsGuide = localStorage.getItem('hasSeenSettingsGuide');
+    if (!hasSeenSettingsGuide) {
+      setShowTooltip(true);
+      setTimeout(() => {
+        setShowTooltip(false);
+        localStorage.setItem('hasSeenSettingsGuide', 'true');
+      }, 8000);
+    }
+  }, []);
 
   const { data: repairJobs, isLoading, refetch } = useQuery({
     queryKey: ["repair-center-jobs", repairCenterId],
@@ -307,14 +320,30 @@ const RepairCenterDashboard = () => {
                 </span>
               </div>
             </Card>
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={() => setShowSettings(!showSettings)}
-            >
-              <SettingsIcon className="h-4 w-4" />
-              Settings
-            </Button>
+            <TooltipProvider>
+              <Tooltip open={showTooltip} onOpenChange={setShowTooltip}>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={() => setShowSettings(!showSettings)}
+                  >
+                    <SettingsIcon className="h-4 w-4" />
+                    Settings
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs p-4" side="bottom">
+                  <div className="space-y-2">
+                    <p className="font-semibold text-sm">Available Settings:</p>
+                    <ul className="text-xs space-y-1 list-disc list-inside">
+                      <li>Update your shop logo and cover image</li>
+                      <li>Change your shop address (once per month)</li>
+                      <li>Configure auto-reply messages for customers</li>
+                    </ul>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Link to="/repair-center-conversations">
               <Button variant="outline" className="flex items-center gap-2 relative">
                 <MessageCircle className="h-4 w-4" />
