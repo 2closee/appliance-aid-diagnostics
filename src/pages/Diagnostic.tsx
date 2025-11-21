@@ -521,6 +521,7 @@ const Diagnostic = () => {
 
           {showRepairCenterSelector && selectedAppliance && (
             <RepairCenterSelector
+              mode="chat"
               onSelectCenter={(center) => {
                 // Navigate to live chat with diagnostic context
                 if (user) {

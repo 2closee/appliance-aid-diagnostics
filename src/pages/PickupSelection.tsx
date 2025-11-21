@@ -41,6 +41,7 @@ const PickupSelection = () => {
           <RepairCenterSelector 
             onSelectCenter={handleSelectCenter}
             onBack={handleBack}
+            mode="pickup"
           />
         </div>
       </div>
