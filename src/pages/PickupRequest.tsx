@@ -19,7 +19,8 @@ import {
   CheckCircle,
   AlertCircle,
   Send,
-  Bookmark
+  Bookmark,
+  AlertTriangle
 } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -67,6 +68,11 @@ interface SavedAddress {
   is_default: boolean;
 }
 
+interface AddressSuggestion {
+  address: string;
+  coordinates: [number, number];
+}
+
 const PickupRequest = () => {
   const location = useLocation();
   const { toast } = useToast();
@@ -104,6 +110,7 @@ const PickupRequest = () => {
   const [isVerifyingAddress, setIsVerifyingAddress] = useState(false);
   const [addressVerified, setAddressVerified] = useState(false);
   const [addressVerificationMessage, setAddressVerificationMessage] = useState('');
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
 
   useEffect(() => {
     fetchRepairCenters();
@@ -204,6 +211,7 @@ const PickupRequest = () => {
     if (['address', 'city', 'state', 'zipCode'].includes(field as string)) {
       setAddressVerified(false);
       setAddressVerificationMessage('');
+      setAddressSuggestions([]);
     }
     
     setFormData(prev => ({
@@ -225,6 +233,7 @@ const PickupRequest = () => {
       }));
       setAddressVerified(false);
       setAddressVerificationMessage('');
+      setAddressSuggestions([]);
       return;
     }
 
@@ -240,7 +249,31 @@ const PickupRequest = () => {
       // Saved addresses are pre-verified
       setAddressVerified(true);
       setAddressVerificationMessage('Using saved verified address');
+      setAddressSuggestions([]);
     }
+  };
+
+  const handleSuggestionSelect = (suggestion: AddressSuggestion) => {
+    // Parse the suggestion address
+    const parts = suggestion.address.split(',').map(p => p.trim());
+    const zipMatch = parts[parts.length - 1].match(/\d{5,6}/);
+    
+    setFormData(prev => ({
+      ...prev,
+      address: parts[0] || '',
+      city: parts[1] || '',
+      state: parts[2]?.split(' ')[0] || '',
+      zipCode: zipMatch ? zipMatch[0] : ''
+    }));
+    
+    setAddressVerified(true);
+    setAddressVerificationMessage('Address selected from suggestions');
+    setAddressSuggestions([]);
+    
+    toast({
+      title: "Address Selected",
+      description: "Address has been populated from suggestions.",
+    });
   };
 
   const verifyAddress = async () => {
@@ -271,6 +304,7 @@ const PickupRequest = () => {
       if (data.valid) {
         setAddressVerified(true);
         setAddressVerificationMessage(data.message);
+        setAddressSuggestions([]);
         toast({
           title: "Address Verified",
           description: "Your address has been verified successfully.",
@@ -278,11 +312,20 @@ const PickupRequest = () => {
       } else {
         setAddressVerified(false);
         setAddressVerificationMessage(data.error || 'Address could not be verified');
-        toast({
-          title: "Address Verification Failed",
-          description: data.error || 'Please check your address and try again.',
-          variant: "destructive",
-        });
+        setAddressSuggestions(data.suggestions || []);
+        
+        if (data.suggestions && data.suggestions.length > 0) {
+          toast({
+            title: "Multiple Addresses Found",
+            description: "Please select the correct address from suggestions below.",
+          });
+        } else {
+          toast({
+            title: "Address Verification Failed",
+            description: data.error || 'Please check your address and try again.',
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error('Error verifying address:', error);
@@ -670,6 +713,31 @@ const PickupRequest = () => {
                       <p>{addressVerificationMessage}</p>
                     </div>
                   )}
+                  
+                  {/* Address Suggestions */}
+                  {addressSuggestions.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Did you mean:</Label>
+                      {addressSuggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleSuggestionSelect(suggestion)}
+                          className="w-full text-left p-3 rounded-md border border-border hover:border-primary hover:bg-accent transition-colors"
+                        >
+                          <div className="flex items-start gap-2">
+                            <MapPin className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
+                            <div>
+                              <p className="text-sm font-medium">{suggestion.address}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Click to use this address
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -779,6 +847,26 @@ const PickupRequest = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Address Warning Banner */}
+            {!addressVerified && formData.address && (
+              <Card className="shadow-medium border-warning bg-warning/5">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-semibold text-warning mb-1">
+                        Unverified Address
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Your address has not been verified. While you can still submit the request, 
+                        we recommend verifying your address to ensure accurate pickup and delivery.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Terms and Submit */}
             <Card className="shadow-medium">
