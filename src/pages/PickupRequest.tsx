@@ -357,11 +357,10 @@ const PickupRequest = () => {
 
     if (!addressVerified) {
       toast({
-        title: "Address Verification Required",
-        description: "Please verify your address before submitting.",
-        variant: "destructive",
+        title: "Address Not Verified",
+        description: "Your request will be submitted with an unverified address.",
+        variant: "default",
       });
-      return;
     }
 
     setIsSubmitting(true);
