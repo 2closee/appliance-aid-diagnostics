@@ -91,12 +91,47 @@ const PickupRequest = () => {
 
   useEffect(() => {
     fetchRepairCenters();
-    if (user) {
-      setFormData(prev => ({
-        ...prev,
-        email: user.email || '',
-      }));
-    }
+    
+    const fetchUserProfile = async () => {
+      if (user) {
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('full_name, email, phone')
+            .eq('id', user.id)
+            .single();
+
+          if (error) throw error;
+
+          if (profile) {
+            const nameParts = profile.full_name?.split(' ') || [];
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            setFormData(prev => ({
+              ...prev,
+              firstName,
+              lastName,
+              email: profile.email || user.email || '',
+              phone: profile.phone || '',
+            }));
+          } else {
+            setFormData(prev => ({
+              ...prev,
+              email: user.email || '',
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          setFormData(prev => ({
+            ...prev,
+            email: user.email || '',
+          }));
+        }
+      }
+    };
+
+    fetchUserProfile();
     
     // Pre-select repair center if passed via state
     if (selectedCenter) {
