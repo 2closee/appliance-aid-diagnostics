@@ -23,13 +23,15 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const sendstackApiKey = Deno.env.get('SENDSTACK_API_KEY')!;
     
+    // Create Supabase client with service role
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get user from auth header for permission checks
     const authHeader = req.headers.get('Authorization')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
+      console.error('Auth error:', authError);
       throw new Error('Unauthorized');
     }
 
@@ -38,11 +40,12 @@ serve(async (req) => {
     console.log('Creating SendStack delivery:', { repair_job_id, delivery_type });
 
     // Get repair job details
+    console.log('Querying repair job:', repair_job_id);
     const { data: job, error: jobError } = await supabase
       .from('repair_jobs')
       .select(`
         *,
-        repair_center:Repair Center!repair_center_id (
+        repair_center:"Repair Center"!repair_center_id (
           id,
           name,
           address,
@@ -52,9 +55,17 @@ serve(async (req) => {
       .eq('id', repair_job_id)
       .single();
 
-    if (jobError || !job) {
+    if (jobError) {
+      console.error('Job query error:', jobError);
+      throw new Error(`Repair job not found: ${jobError.message}`);
+    }
+
+    if (!job) {
+      console.error('No job data returned for id:', repair_job_id);
       throw new Error('Repair job not found');
     }
+
+    console.log('Job found:', { id: job.id, repair_center_id: job.repair_center_id, has_repair_center: !!job.repair_center });
 
     // Check user has permission (customer or staff)
     const isCustomer = job.user_id === user.id;
