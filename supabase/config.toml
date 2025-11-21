@@ -62,3 +62,6 @@ verify_jwt = true
 
 [functions.get-mapbox-token]
 verify_jwt = false
+
+[functions.verify-address]
+verify_jwt = false

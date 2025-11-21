@@ -101,6 +101,9 @@ const PickupRequest = () => {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isVerifyingAddress, setIsVerifyingAddress] = useState(false);
+  const [addressVerified, setAddressVerified] = useState(false);
+  const [addressVerificationMessage, setAddressVerificationMessage] = useState('');
 
   useEffect(() => {
     fetchRepairCenters();
@@ -197,6 +200,12 @@ const PickupRequest = () => {
   };
 
   const handleInputChange = (field: keyof FormData, value: string | boolean) => {
+    // Reset verification when address fields change
+    if (['address', 'city', 'state', 'zipCode'].includes(field as string)) {
+      setAddressVerified(false);
+      setAddressVerificationMessage('');
+    }
+    
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -214,6 +223,8 @@ const PickupRequest = () => {
         state: '',
         zipCode: ''
       }));
+      setAddressVerified(false);
+      setAddressVerificationMessage('');
       return;
     }
 
@@ -226,6 +237,64 @@ const PickupRequest = () => {
         state: address.state,
         zipCode: address.zip_code
       }));
+      // Saved addresses are pre-verified
+      setAddressVerified(true);
+      setAddressVerificationMessage('Using saved verified address');
+    }
+  };
+
+  const verifyAddress = async () => {
+    if (!formData.address || !formData.city) {
+      toast({
+        title: "Incomplete Address",
+        description: "Please enter at least street address and city.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsVerifyingAddress(true);
+    setAddressVerificationMessage('');
+
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-address', {
+        body: {
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.valid) {
+        setAddressVerified(true);
+        setAddressVerificationMessage(data.message);
+        toast({
+          title: "Address Verified",
+          description: "Your address has been verified successfully.",
+        });
+      } else {
+        setAddressVerified(false);
+        setAddressVerificationMessage(data.error || 'Address could not be verified');
+        toast({
+          title: "Address Verification Failed",
+          description: data.error || 'Please check your address and try again.',
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error verifying address:', error);
+      setAddressVerified(false);
+      setAddressVerificationMessage('Failed to verify address');
+      toast({
+        title: "Verification Error",
+        description: "Could not verify address. Please check and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifyingAddress(false);
     }
   };
 
@@ -281,6 +350,15 @@ const PickupRequest = () => {
       toast({
         title: "Repair Center Required",
         description: "Please select a repair center.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!addressVerified) {
+      toast({
+        title: "Address Verification Required",
+        description: "Please verify your address before submitting.",
         variant: "destructive",
       });
       return;
@@ -550,6 +628,49 @@ const PickupRequest = () => {
                       required
                     />
                   </div>
+                </div>
+                
+                {/* Address Verification */}
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    onClick={verifyAddress}
+                    disabled={isVerifyingAddress || !formData.address || !formData.city}
+                    variant={addressVerified ? "outline" : "default"}
+                    className="w-full"
+                  >
+                    {isVerifyingAddress ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Verifying Address...
+                      </>
+                    ) : addressVerified ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Address Verified
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="h-4 w-4 mr-2" />
+                        Verify Address
+                      </>
+                    )}
+                  </Button>
+                  
+                  {addressVerificationMessage && (
+                    <div className={`flex items-start gap-2 p-3 rounded-md text-sm ${
+                      addressVerified 
+                        ? 'bg-success/10 text-success border border-success/20' 
+                        : 'bg-destructive/10 text-destructive border border-destructive/20'
+                    }`}>
+                      {addressVerified ? (
+                        <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      )}
+                      <p>{addressVerificationMessage}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
