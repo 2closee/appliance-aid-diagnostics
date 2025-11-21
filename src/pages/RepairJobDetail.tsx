@@ -142,6 +142,64 @@ const RepairJobDetail = () => {
     }
   }, [user, id, searchParams]);
 
+  // Set up real-time subscription for delivery updates
+  useEffect(() => {
+    if (!id) return;
+
+    console.log('Setting up delivery tracking realtime subscription for job:', id);
+
+    const deliveryChannel = supabase
+      .channel(`delivery-updates-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'delivery_requests',
+          filter: `repair_job_id=eq.${id}`
+        },
+        (payload) => {
+          console.log('Delivery status update received:', payload);
+          
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            // Update the delivery requests immediately
+            fetchDeliveryRequests();
+            
+            // Show toast notification for status changes
+            if (payload.eventType === 'UPDATE' && payload.new.delivery_status !== payload.old?.delivery_status) {
+              const statusLabels: Record<string, string> = {
+                pending: "Pending Assignment",
+                assigned: "Driver Assigned",
+                driver_on_way: "Driver On The Way",
+                driver_arrived: "Driver Arrived",
+                picked_up: "Item Picked Up",
+                in_transit: "In Transit",
+                delivered: "Delivered",
+                failed: "Delivery Failed",
+                cancelled: "Cancelled",
+              };
+              
+              toast({
+                title: "Delivery Update",
+                description: `Status: ${statusLabels[payload.new.delivery_status] || payload.new.delivery_status}`,
+              });
+            }
+          } else if (payload.eventType === 'DELETE') {
+            fetchDeliveryRequests();
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Delivery channel subscription status:', status);
+      });
+
+    // Clean up subscription on unmount
+    return () => {
+      console.log('Cleaning up delivery tracking subscription');
+      supabase.removeChannel(deliveryChannel);
+    };
+  }, [id, toast]);
+
   const fetchJobDetails = async () => {
     try {
       // Check if user is repair center staff
