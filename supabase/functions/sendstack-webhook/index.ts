@@ -32,7 +32,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const webhookData = await req.json();
-    console.log('SendStack webhook received:', webhookData);
+    console.log('SendStack webhook received:', JSON.stringify(webhookData, null, 2));
 
     // Extract delivery information from webhook
     const deliveryId = webhookData.delivery_id || webhookData.id;
@@ -118,19 +118,27 @@ serve(async (req) => {
         const job = deliveryRequest.repair_jobs;
         
         if (deliveryRequest.delivery_type === 'pickup' && job.job_status === 'quote_accepted') {
-          await supabase
+          const { error: jobUpdateError } = await supabase
             .from('repair_jobs')
             .update({ job_status: 'pickup_scheduled' })
             .eq('id', deliveryRequest.repair_job_id);
           
-          console.log('Updated job status to pickup_scheduled');
+          if (jobUpdateError) {
+            console.error('Failed to update job status:', jobUpdateError);
+          } else {
+            console.log('Updated job status to pickup_scheduled');
+          }
         } else if (deliveryRequest.delivery_type === 'return' && job.job_status === 'repair_completed') {
-          await supabase
+          const { error: jobUpdateError } = await supabase
             .from('repair_jobs')
             .update({ job_status: 'ready_for_return' })
             .eq('id', deliveryRequest.repair_job_id);
           
-          console.log('Updated job status to ready_for_return');
+          if (jobUpdateError) {
+            console.error('Failed to update job status:', jobUpdateError);
+          } else {
+            console.log('Updated job status to ready_for_return');
+          }
         }
       }
 
