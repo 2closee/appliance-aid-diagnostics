@@ -36,11 +36,20 @@ export const useDeliveryActions = () => {
       });
 
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating delivery:", error);
+      
+      // Extract error message from response
+      let errorMessage = "Failed to create delivery. Please try again.";
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to create delivery. Please try again.",
+        title: "Delivery Error",
+        description: errorMessage,
         variant: "destructive",
       });
       throw error;

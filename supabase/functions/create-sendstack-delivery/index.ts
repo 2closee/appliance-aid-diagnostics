@@ -137,7 +137,21 @@ serve(async (req) => {
     if (!sendstackResponse.ok) {
       const errorText = await sendstackResponse.text();
       console.error('SendStack API error:', errorText);
-      throw new Error(`SendStack API error: ${sendstackResponse.status} - ${errorText}`);
+      
+      // Try to parse error details
+      let errorMessage = `SendStack API error (${sendstackResponse.status})`;
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const sendstackData = await sendstackResponse.json();
@@ -221,8 +235,23 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error creating SendStack delivery:', error);
+    
+    // Provide user-friendly error messages
+    let userMessage = error.message;
+    if (error.message.includes('Invalid app_id or app_secret')) {
+      userMessage = 'SendStack configuration error. Please contact support.';
+    } else if (error.message.includes('Unauthorized')) {
+      userMessage = 'You are not authorized to create this delivery.';
+    } else if (error.message.includes('not found')) {
+      userMessage = 'Repair job not found or has been removed.';
+    }
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: userMessage,
+        details: error.message,
+        timestamp: new Date().toISOString()
+      }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
