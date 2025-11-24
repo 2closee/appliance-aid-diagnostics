@@ -69,6 +69,22 @@ serve(async (req) => {
 
     const repairCenter = job.repair_centers;
     
+    // Helper function to parse Nigerian addresses
+    const parseNigerianAddress = (fullAddress: string) => {
+      const parts = fullAddress.split(',').map(p => p.trim());
+      // Common format: "Street, Area/City, State PostalCode" or "Street, City State"
+      const line1 = parts[0] || fullAddress;
+      const city = parts[1] || 'Port Harcourt'; // Default to Port Harcourt if not found
+      const state = parts[2]?.split(' ')[0] || 'Rivers'; // Extract state, default to Rivers
+      
+      return {
+        line1,
+        city,
+        state: state.replace(/\d+/g, '').trim() || 'Rivers', // Remove postal codes
+        country: 'NG'
+      };
+    };
+
     // Determine addresses based on delivery type
     const pickupAddress = delivery_type === 'pickup' ? job.pickup_address : repairCenter.address;
     const deliveryAddress = delivery_type === 'pickup' ? repairCenter.address : job.pickup_address;
@@ -76,6 +92,9 @@ serve(async (req) => {
     const pickupPhone = delivery_type === 'pickup' ? job.customer_phone : repairCenter.phone;
     const deliveryName = delivery_type === 'pickup' ? repairCenter.name : job.customer_name;
     const deliveryPhone = delivery_type === 'pickup' ? repairCenter.phone : job.customer_phone;
+
+    const parsedPickupAddress = parseNigerianAddress(pickupAddress);
+    const parsedDeliveryAddress = parseNigerianAddress(deliveryAddress);
 
     console.log('Delivery details:', {
       type: delivery_type,
@@ -94,8 +113,10 @@ serve(async (req) => {
       body: JSON.stringify({
         name: pickupName,
         phone: pickupPhone,
-        line1: pickupAddress,
-        country: 'NG'
+        line1: parsedPickupAddress.line1,
+        city: parsedPickupAddress.city,
+        state: parsedPickupAddress.state,
+        country: parsedPickupAddress.country
       }),
     });
 
@@ -120,8 +141,10 @@ serve(async (req) => {
       body: JSON.stringify({
         name: deliveryName,
         phone: deliveryPhone,
-        line1: deliveryAddress,
-        country: 'NG'
+        line1: parsedDeliveryAddress.line1,
+        city: parsedDeliveryAddress.city,
+        state: parsedDeliveryAddress.state,
+        country: parsedDeliveryAddress.country
       }),
     });
 
