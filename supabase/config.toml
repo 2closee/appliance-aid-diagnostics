@@ -48,16 +48,22 @@ verify_jwt = true
 [functions.delete-test-center]
 verify_jwt = true
 
-[functions.create-sendstack-delivery]
+[functions.create-repair-payment]
 verify_jwt = true
 
-[functions.sendstack-webhook]
+[functions.update-job-status]
+verify_jwt = true
+
+[functions.get-delivery-quote]
 verify_jwt = false
 
-[functions.get-sendstack-quote]
+[functions.create-delivery]
+verify_jwt = true
+
+[functions.terminal-webhook]
 verify_jwt = false
 
-[functions.cancel-sendstack-delivery]
+[functions.cancel-delivery]
 verify_jwt = true
 
 [functions.get-mapbox-token]

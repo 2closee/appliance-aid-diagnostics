@@ -24,15 +24,15 @@ export const useDeliveryActions = () => {
   const createDelivery = async (params: CreateDeliveryParams) => {
     setIsCreatingDelivery(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-sendstack-delivery", {
+      const { data, error } = await supabase.functions.invoke("create-delivery", {
         body: params
       });
 
       if (error) throw error;
 
       toast({
-        title: "Delivery Created",
-        description: "Your delivery has been scheduled successfully.",
+        title: "Success",
+        description: "Delivery scheduled successfully with Terminal Africa",
       });
 
       return data;
@@ -61,15 +61,15 @@ export const useDeliveryActions = () => {
   const cancelDelivery = async (deliveryRequestId: string) => {
     setIsCancellingDelivery(true);
     try {
-      const { data, error } = await supabase.functions.invoke("cancel-sendstack-delivery", {
+      const { data, error } = await supabase.functions.invoke("cancel-delivery", {
         body: { delivery_request_id: deliveryRequestId }
       });
 
       if (error) throw error;
 
       toast({
-        title: "Delivery Cancelled",
-        description: "The delivery has been cancelled successfully.",
+        title: "Success",
+        description: "Delivery cancelled successfully",
       });
 
       return data;
@@ -89,7 +89,7 @@ export const useDeliveryActions = () => {
   const getDeliveryQuote = async (params: DeliveryQuoteParams) => {
     setIsFetchingQuote(true);
     try {
-      const { data, error } = await supabase.functions.invoke("get-sendstack-quote", {
+      const { data, error } = await supabase.functions.invoke("get-delivery-quote", {
         body: params
       });
 
