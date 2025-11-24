@@ -202,11 +202,13 @@ serve(async (req) => {
           name: job.appliance_type,
           description: `${job.appliance_type} - ${job.appliance_brand || 'Appliance'}`,
           weight: weight,
+          weight_unit: 'kg',
           quantity: 1,
           type: 'electronics',
           value: job.quoted_cost || 10000
         }],
         weight: weight,
+        weight_unit: 'kg',
         packaging: 'box'
       }),
     });
