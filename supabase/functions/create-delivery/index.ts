@@ -72,15 +72,25 @@ serve(async (req) => {
     // Helper function to parse Nigerian addresses
     const parseNigerianAddress = (fullAddress: string) => {
       const parts = fullAddress.split(',').map(p => p.trim());
-      // Common format: "Street, Area/City, State PostalCode" or "Street, City State"
+      
+      // Look for Port Harcourt or Rivers state in the address
+      const addressLower = fullAddress.toLowerCase();
+      let city = 'Port Harcourt'; // Default
+      let state = 'Rivers'; // Default
+      
+      // Check if Port Harcourt is mentioned anywhere
+      if (addressLower.includes('port harcourt') || addressLower.includes('portharcourt')) {
+        city = 'Port Harcourt';
+        state = 'Rivers';
+      }
+      
+      // Extract street address (first part)
       const line1 = parts[0] || fullAddress;
-      const city = parts[1] || 'Port Harcourt'; // Default to Port Harcourt if not found
-      const state = parts[2]?.split(' ')[0] || 'Rivers'; // Extract state, default to Rivers
       
       return {
         line1,
         city,
-        state: state.replace(/\d+/g, '').trim() || 'Rivers', // Remove postal codes
+        state,
         country: 'NG'
       };
     };
