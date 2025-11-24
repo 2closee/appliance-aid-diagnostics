@@ -85,6 +85,25 @@ serve(async (req) => {
       };
     };
 
+    // Helper function to format phone to international format
+    const formatPhoneNumber = (phone: string): string => {
+      // Remove all non-numeric characters
+      const cleaned = phone.replace(/\D/g, '');
+      
+      // If starts with 234, return with +
+      if (cleaned.startsWith('234')) {
+        return `+${cleaned}`;
+      }
+      
+      // If starts with 0, replace with +234
+      if (cleaned.startsWith('0')) {
+        return `+234${cleaned.substring(1)}`;
+      }
+      
+      // Otherwise assume it's already without country code, add +234
+      return `+234${cleaned}`;
+    };
+
     // Determine addresses based on delivery type
     const pickupAddress = delivery_type === 'pickup' ? job.pickup_address : repairCenter.address;
     const deliveryAddress = delivery_type === 'pickup' ? repairCenter.address : job.pickup_address;
@@ -112,7 +131,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         name: pickupName,
-        phone: pickupPhone,
+        phone: formatPhoneNumber(pickupPhone),
         line1: parsedPickupAddress.line1,
         city: parsedPickupAddress.city,
         state: parsedPickupAddress.state,
@@ -140,7 +159,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         name: deliveryName,
-        phone: deliveryPhone,
+        phone: formatPhoneNumber(deliveryPhone),
         line1: parsedDeliveryAddress.line1,
         city: parsedDeliveryAddress.city,
         state: parsedDeliveryAddress.state,
