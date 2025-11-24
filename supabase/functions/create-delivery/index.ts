@@ -83,62 +83,125 @@ serve(async (req) => {
       to: deliveryAddress,
     });
 
-    // Create shipment on Terminal Africa
-    const shipmentPayload = {
-      pickup_address: pickupAddress,
-      delivery_address: deliveryAddress,
-      pickup_name: pickupName,
-      pickup_phone: pickupPhone,
-      delivery_name: deliveryName,
-      delivery_phone: deliveryPhone,
-      parcel_items: [{
-        weight: 10,
-        type: 'electronics',
-        description: `${job.appliance_type} - ${job.appliance_brand || 'Appliance'}`,
-        value: job.quoted_cost || 0,
-      }],
-      metadata: {
-        repair_job_id,
-        delivery_type,
-        customer_email: job.customer_email,
-      },
-    };
-
-    console.log('Terminal Africa shipment payload:', JSON.stringify(shipmentPayload, null, 2));
-
-    const shipmentResponse = await fetch('https://api.terminal.africa/v1/shipments/create', {
+    // Step 1: Create pickup address
+    console.log('Step 1: Creating pickup address');
+    const pickupAddressResponse = await fetch('https://api.terminal.africa/v1/addresses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${terminalApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(shipmentPayload),
+      body: JSON.stringify({
+        name: pickupName,
+        phone: pickupPhone,
+        line1: pickupAddress,
+        country: 'NG'
+      }),
+    });
+
+    if (!pickupAddressResponse.ok) {
+      const errorText = await pickupAddressResponse.text();
+      console.error('Pickup address creation failed:', errorText);
+      throw new Error(`Failed to create pickup address: ${pickupAddressResponse.status}`);
+    }
+
+    const pickupAddressData = await pickupAddressResponse.json();
+    const addressFromId = pickupAddressData.data?.address_id || pickupAddressData.address_id;
+    console.log('Pickup address created:', addressFromId);
+
+    // Step 2: Create delivery address
+    console.log('Step 2: Creating delivery address');
+    const deliveryAddressResponse = await fetch('https://api.terminal.africa/v1/addresses', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${terminalApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: deliveryName,
+        phone: deliveryPhone,
+        line1: deliveryAddress,
+        country: 'NG'
+      }),
+    });
+
+    if (!deliveryAddressResponse.ok) {
+      const errorText = await deliveryAddressResponse.text();
+      console.error('Delivery address creation failed:', errorText);
+      throw new Error(`Failed to create delivery address: ${deliveryAddressResponse.status}`);
+    }
+
+    const deliveryAddressData = await deliveryAddressResponse.json();
+    const addressToId = deliveryAddressData.data?.address_id || deliveryAddressData.address_id;
+    console.log('Delivery address created:', addressToId);
+
+    // Step 3: Create parcel
+    console.log('Step 3: Creating parcel');
+    const weight = 10;
+    const parcelResponse = await fetch('https://api.terminal.africa/v1/parcels', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${terminalApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        description: `${job.appliance_type} for repair`,
+        items: [{
+          name: job.appliance_type,
+          description: `${job.appliance_type} - ${job.appliance_brand || 'Appliance'}`,
+          weight: weight,
+          quantity: 1,
+          type: 'electronics',
+          value: job.quoted_cost || 10000
+        }],
+        weight: weight,
+        packaging: 'box'
+      }),
+    });
+
+    if (!parcelResponse.ok) {
+      const errorText = await parcelResponse.text();
+      console.error('Parcel creation failed:', errorText);
+      throw new Error(`Failed to create parcel: ${parcelResponse.status}`);
+    }
+
+    const parcelData = await parcelResponse.json();
+    const parcelId = parcelData.data?.parcel_id || parcelData.parcel_id;
+    console.log('Parcel created:', parcelId);
+
+    // Step 4: Create shipment with IDs
+    console.log('Step 4: Creating shipment with address and parcel IDs');
+    const shipmentResponse = await fetch('https://api.terminal.africa/v1/shipments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${terminalApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        address_from: addressFromId,
+        address_to: addressToId,
+        parcel: parcelId,
+        metadata: {
+          repair_job_id,
+          delivery_type,
+          customer_email: job.customer_email,
+        }
+      }),
     });
 
     if (!shipmentResponse.ok) {
       const errorText = await shipmentResponse.text();
-      console.error('Terminal Africa shipment error:', errorText);
-      
-      let errorMessage = `Terminal Africa API error (${shipmentResponse.status})`;
-      try {
-        const errorData = JSON.parse(errorText);
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        }
-      } catch {
-        errorMessage = errorText || errorMessage;
-      }
-      
-      throw new Error(errorMessage);
+      console.error('Shipment creation failed:', errorText);
+      throw new Error(`Failed to create shipment: ${shipmentResponse.status}`);
     }
 
     const shipmentData = await shipmentResponse.json();
     const shipmentId = shipmentData.data?.shipment_id || shipmentData.shipment_id;
-    
     console.log('Shipment created:', shipmentId);
 
-    // Get quotes for the shipment
-    const quotesResponse = await fetch('https://api.terminal.africa/v1/rates/shipment/quotes', {
+    // Step 5: Get rates for the shipment
+    console.log('Step 5: Getting rates');
+    const quotesResponse = await fetch('https://api.terminal.africa/v1/rates/shipment', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${terminalApiKey}`,
@@ -149,15 +212,17 @@ serve(async (req) => {
 
     if (!quotesResponse.ok) {
       const errorText = await quotesResponse.text();
-      console.error('Terminal Africa quotes error:', errorText);
-      throw new Error(`Failed to get quotes: ${quotesResponse.status}`);
+      console.error('Rates fetch failed:', errorText);
+      throw new Error(`Failed to get rates: ${quotesResponse.status}`);
     }
 
     const quotesData = await quotesResponse.json();
+    console.log('Terminal Africa rates response:', JSON.stringify(quotesData, null, 2));
+
+    // Get the rates array
     const quotes = quotesData.data || [];
-    
     if (!quotes.length) {
-      throw new Error('No quotes available for this route');
+      throw new Error('No carriers available for this route');
     }
 
     // Get best quote (cheapest)
@@ -165,18 +230,12 @@ serve(async (req) => {
       (curr.amount < prev.amount) ? curr : prev
     );
 
-    console.log('Selected quote:', bestQuote);
+    console.log('Selected best rate:', bestQuote);
 
-    // Arrange pickup with Terminal Africa
+    // Step 6: Arrange pickup with Terminal Africa
     const pickupDate = scheduled_pickup_time || new Date().toISOString().split('T')[0];
     
-    const arrangePayload = {
-      shipment_id: shipmentId,
-      rate_id: bestQuote.rate_id,
-      pickup_date: pickupDate,
-    };
-
-    console.log('Arranging pickup:', arrangePayload);
+    console.log('Step 6: Arranging pickup for', pickupDate);
 
     const arrangeResponse = await fetch(`https://api.terminal.africa/v1/shipments/${shipmentId}/arrange`, {
       method: 'POST',
@@ -184,7 +243,10 @@ serve(async (req) => {
         'Authorization': `Bearer ${terminalApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(arrangePayload),
+      body: JSON.stringify({
+        rate_id: bestQuote.rate_id,
+        pickup_date: pickupDate,
+      }),
     });
 
     if (!arrangeResponse.ok) {
