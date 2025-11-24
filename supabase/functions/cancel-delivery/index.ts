@@ -14,7 +14,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const sendstackApiKey = Deno.env.get('SENDSTACK_API_KEY')!;
+    const terminalApiKey = Deno.env.get('TERMINAL_AFRICA_API_KEY')!;
     
     const authHeader = req.headers.get('Authorization')!;
     const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -28,7 +28,7 @@ serve(async (req) => {
 
     const { delivery_request_id, reason } = await req.json();
 
-    console.log('Cancelling SendStack delivery:', delivery_request_id);
+    console.log('Cancelling Terminal Africa delivery:', delivery_request_id);
 
     // Get delivery request
     const { data: delivery, error: fetchError } = await supabase
@@ -57,13 +57,13 @@ serve(async (req) => {
       throw new Error('Cannot cancel delivery - already in progress or completed');
     }
 
-    // Cancel with SendStack
+    // Cancel with Terminal Africa
     const cancelResponse = await fetch(
-      `https://api.sendstack.africa/v1/deliveries/${delivery.provider_order_id}/cancel`,
+      `https://api.terminal.africa/v1/shipments/${delivery.provider_order_id}/cancel`,
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${sendstackApiKey}`,
+          'Authorization': `Bearer ${terminalApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ reason: reason || 'Customer requested cancellation' }),
@@ -72,8 +72,8 @@ serve(async (req) => {
 
     if (!cancelResponse.ok) {
       const errorText = await cancelResponse.text();
-      console.error('SendStack cancel error:', errorText);
-      throw new Error(`Failed to cancel with SendStack: ${cancelResponse.status}`);
+      console.error('Terminal Africa cancel error:', errorText);
+      throw new Error(`Failed to cancel with Terminal Africa: ${cancelResponse.status}`);
     }
 
     // Update database
@@ -105,7 +105,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error cancelling SendStack delivery:', error);
+    console.error('Error cancelling Terminal Africa delivery:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
