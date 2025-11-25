@@ -47,6 +47,22 @@ const CustomerDashboard = () => {
         return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
       case 'requested':
         return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+      case 'quote_pending_review':
+        return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+      case 'quote_accepted':
+        return 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20';
+      case 'quote_rejected':
+        return 'bg-red-500/10 text-red-500 border-red-500/20';
+      case 'quote_negotiating':
+        return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
+      case 'pickup_scheduled':
+        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+      case 'picked_up':
+        return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+      case 'repair_completed':
+        return 'bg-green-500/10 text-green-500 border-green-500/20';
+      case 'returned':
+        return 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20';
       default:
         return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
     }
@@ -60,6 +76,18 @@ const CustomerDashboard = () => {
         return <Wrench className="w-4 h-4" />;
       case 'requested':
         return <Clock className="w-4 h-4" />;
+      case 'quote_pending_review':
+      case 'quote_accepted':
+      case 'quote_negotiating':
+        return <FileText className="w-4 h-4" />;
+      case 'quote_rejected':
+        return <AlertCircle className="w-4 h-4" />;
+      case 'pickup_scheduled':
+      case 'picked_up':
+        return <Clock className="w-4 h-4" />;
+      case 'repair_completed':
+      case 'returned':
+        return <CheckCircle className="w-4 h-4" />;
       default:
         return <AlertCircle className="w-4 h-4" />;
     }

@@ -62,6 +62,8 @@ interface StatusHistory {
 
 const statusSteps = [
   { key: "requested", label: "Request Submitted", description: "Your repair request has been submitted" },
+  { key: "quote_pending_review", label: "Quote Pending", description: "Waiting for repair center to provide a quote" },
+  { key: "quote_accepted", label: "Quote Accepted", description: "You accepted the repair quote" },
   { key: "pickup_scheduled", label: "Pickup Scheduled", description: "Pickup date and time confirmed" },
   { key: "picked_up", label: "Item Picked Up", description: "Your appliance has been collected" },
   { key: "in_repair", label: "In Repair", description: "Repair work is in progress" },
@@ -72,6 +74,10 @@ const statusSteps = [
 
 const statusColors = {
   requested: "bg-blue-100 text-blue-800",
+  quote_pending_review: "bg-amber-100 text-amber-800",
+  quote_accepted: "bg-cyan-100 text-cyan-800",
+  quote_rejected: "bg-red-100 text-red-800",
+  quote_negotiating: "bg-purple-100 text-purple-800",
   pickup_scheduled: "bg-yellow-100 text-yellow-800",
   picked_up: "bg-orange-100 text-orange-800",
   in_repair: "bg-purple-100 text-purple-800",
