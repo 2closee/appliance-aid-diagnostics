@@ -124,6 +124,7 @@ const RepairCenterDashboard = () => {
   // Define sequential workflow - only allow valid next statuses
   const statusWorkflow: Record<string, string[]> = {
     'requested': ['pickup_scheduled', 'cancelled'],
+    'quote_accepted': ['pickup_scheduled', 'cancelled'],
     'pickup_scheduled': ['picked_up', 'cancelled'],
     'picked_up': ['in_repair', 'cancelled'],
     'in_repair': ['repair_completed', 'cancelled'],
