@@ -7,15 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CreditCard, CheckCircle, Clock, MapPin, Phone, Mail, Loader2, AlertCircle, MessageCircle, Timer, Star, Truck } from "lucide-react";
+import { ArrowLeft, CreditCard, CheckCircle, Clock, MapPin, Phone, Mail, Loader2, AlertCircle, MessageCircle, Timer, Star } from "lucide-react";
 import { format, differenceInHours } from "date-fns";
 import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { DeliveryTracking } from "@/components/DeliveryTracking";
-import { useDeliveryActions } from "@/hooks/useDeliveryActions";
 import { CostBreakdownCard } from "@/components/CostBreakdownCard";
 
 interface RepairJob {
@@ -90,10 +88,8 @@ const RepairJobDetail = () => {
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
-  const { createDelivery, isCreatingDelivery } = useDeliveryActions();
   const [job, setJob] = useState<RepairJob | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
-  const [deliveryRequests, setDeliveryRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [deviceReturnConfirmed, setDeviceReturnConfirmed] = useState(false);
@@ -124,7 +120,6 @@ const RepairJobDetail = () => {
     if (user && id) {
       fetchJobDetails();
       fetchStatusHistory();
-      fetchDeliveryRequests();
       
       // Handle payment success/failure from URL parameters
       const payment = searchParams.get('payment');
@@ -141,64 +136,6 @@ const RepairJobDetail = () => {
       }
     }
   }, [user, id, searchParams]);
-
-  // Set up real-time subscription for delivery updates
-  useEffect(() => {
-    if (!id) return;
-
-    console.log('Setting up delivery tracking realtime subscription for job:', id);
-
-    const deliveryChannel = supabase
-      .channel(`delivery-updates-${id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'delivery_requests',
-          filter: `repair_job_id=eq.${id}`
-        },
-        (payload) => {
-          console.log('Delivery status update received:', payload);
-          
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            // Update the delivery requests immediately
-            fetchDeliveryRequests();
-            
-            // Show toast notification for status changes
-            if (payload.eventType === 'UPDATE' && payload.new.delivery_status !== payload.old?.delivery_status) {
-              const statusLabels: Record<string, string> = {
-                pending: "Pending Assignment",
-                assigned: "Driver Assigned",
-                driver_on_way: "Driver On The Way",
-                driver_arrived: "Driver Arrived",
-                picked_up: "Item Picked Up",
-                in_transit: "In Transit",
-                delivered: "Delivered",
-                failed: "Delivery Failed",
-                cancelled: "Cancelled",
-              };
-              
-              toast({
-                title: "Delivery Update",
-                description: `Status: ${statusLabels[payload.new.delivery_status] || payload.new.delivery_status}`,
-              });
-            }
-          } else if (payload.eventType === 'DELETE') {
-            fetchDeliveryRequests();
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('Delivery channel subscription status:', status);
-      });
-
-    // Clean up subscription on unmount
-    return () => {
-      console.log('Cleaning up delivery tracking subscription');
-      supabase.removeChannel(deliveryChannel);
-    };
-  }, [id, toast]);
 
   const fetchJobDetails = async () => {
     try {
@@ -255,37 +192,6 @@ const RepairJobDetail = () => {
       setStatusHistory(data || []);
     } catch (error) {
       console.error("Error fetching status history:", error);
-    }
-  };
-
-  const fetchDeliveryRequests = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("delivery_requests")
-        .select("*")
-        .eq("repair_job_id", id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setDeliveryRequests(data || []);
-    } catch (error) {
-      console.error("Error fetching delivery requests:", error);
-    }
-  };
-
-  const handleScheduleDelivery = async (deliveryType: 'pickup' | 'return') => {
-    if (!job) return;
-
-    try {
-      await createDelivery({
-        repair_job_id: job.id,
-        delivery_type: deliveryType,
-        notes: `${deliveryType === 'pickup' ? 'Pickup' : 'Return'} delivery for ${job.appliance_type} repair`
-      });
-      
-      await fetchDeliveryRequests();
-    } catch (error) {
-      // Error handling is done in the hook
     }
   };
 
@@ -600,81 +506,6 @@ const RepairJobDetail = () => {
               </CardContent>
             </Card>
 
-            {/* Delivery Tracking */}
-            {deliveryRequests.length > 0 && deliveryRequests.map((delivery) => (
-              <DeliveryTracking 
-                key={delivery.id}
-                deliveryRequest={delivery}
-                onCancel={fetchDeliveryRequests}
-              />
-            ))}
-
-            {/* Schedule Delivery Button */}
-            {job.job_status === 'quote_accepted' && deliveryRequests.filter(d => d.delivery_type === 'pickup').length === 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Truck className="h-5 w-5" />
-                    Schedule Pickup Delivery
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Schedule a pickup delivery to have your appliance collected.
-                  </p>
-                  <Button 
-                    onClick={() => handleScheduleDelivery('pickup')}
-                    disabled={isCreatingDelivery}
-                    className="w-full"
-                  >
-                    {isCreatingDelivery ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Scheduling...
-                      </>
-                    ) : (
-                      <>
-                        <Truck className="h-4 w-4 mr-2" />
-                        Schedule Pickup
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {job.job_status === 'repair_completed' && deliveryRequests.filter(d => d.delivery_type === 'return').length === 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Truck className="h-5 w-5" />
-                    Schedule Return Delivery
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Schedule a return delivery to have your repaired appliance delivered back to you.
-                  </p>
-                  <Button 
-                    onClick={() => handleScheduleDelivery('return')}
-                    disabled={isCreatingDelivery}
-                    className="w-full"
-                  >
-                    {isCreatingDelivery ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Scheduling...
-                      </>
-                    ) : (
-                      <>
-                        <Truck className="h-4 w-4 mr-2" />
-                        Schedule Return
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* Sidebar */}
