@@ -60,7 +60,7 @@ const Navigation = () => {
             <img 
               src={theme === 'dark' ? logoDark : logoLight}
               alt="Fixbudi" 
-              className="h-8 w-auto group-hover:scale-105 transition-transform"
+              className="h-8 w-auto group-hover:scale-105 transition-all duration-500 ease-in-out"
             />
           </Link>
 
