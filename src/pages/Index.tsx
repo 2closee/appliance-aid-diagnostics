@@ -26,12 +26,16 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "next-themes";
 import Navigation from "@/components/Navigation";
 import { InstallPromptBanner } from "@/components/InstallPromptBanner";
+import fixbudiHeroLight from "@/assets/fixbudi-hero-light.webp";
+import fixbudiHeroDark from "@/assets/fixbudi-hero-dark.webp";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, isAdmin, signOut, userRole } = useAuth();
+  const { theme } = useTheme();
 
   const handleSignOut = async () => {
     await signOut();
@@ -46,14 +50,11 @@ const Index = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center animate-fade-in">
             <div className="flex items-center justify-center mb-6">
-              <div className="flex items-center space-x-3 group">
-                <div className="p-3 bg-primary rounded-xl group-hover:scale-105 transition-transform shadow-lg">
-                  <Wrench className="h-8 w-8 text-primary-foreground" />
-                </div>
-                <span className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
-                  Fixbudi
-                </span>
-              </div>
+              <img 
+                src={theme === 'dark' ? fixbudiHeroDark : fixbudiHeroLight}
+                alt="Fixbudi Logo"
+                className="h-32 md:h-40 w-auto transition-all duration-500 ease-in-out hover:scale-105"
+              />
             </div>
             <h2 className="text-2xl md:text-3xl font-semibold text-primary mb-4">
               Smart Appliance Diagnosis & Repair Solutions
