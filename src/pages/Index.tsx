@@ -53,7 +53,7 @@ const Index = () => {
               <img 
                 src={theme === 'dark' ? fixbudiHeroDark : fixbudiHeroLight}
                 alt="Fixbudi Logo"
-                className="h-32 md:h-40 w-auto transition-all duration-500 ease-in-out hover:scale-105"
+                className="h-16 sm:h-20 md:h-28 lg:h-32 w-auto transition-all duration-500 ease-in-out hover:scale-105"
               />
             </div>
             <h2 className="text-2xl md:text-3xl font-semibold text-primary mb-4">
