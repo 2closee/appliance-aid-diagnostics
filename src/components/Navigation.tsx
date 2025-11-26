@@ -21,7 +21,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { useConversationNotifications } from "@/hooks/useConversationNotifications";
-import logoLight from "@/assets/fixbudi-logo.png";
+import logoLight from "@/assets/fixbudi-logo-light.webp";
 import logoDark from "@/assets/fixbudi-logo-dark.webp";
 
 const Navigation = () => {
