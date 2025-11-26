@@ -56,10 +56,10 @@ const Index = () => {
                 className="h-16 sm:h-20 md:h-28 lg:h-32 w-auto transition-all duration-500 ease-in-out hover:scale-105"
               />
             </div>
-            <h2 className="text-2xl md:text-3xl font-semibold text-primary mb-4">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-primary mb-4">
               Smart Appliance Diagnosis & Repair Solutions
             </h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
               Experience the future of appliance repair with our AI-powered diagnostic platform. 
               Get instant troubleshooting, connect with verified repair centers, and schedule convenient pickup services.
             </p>
