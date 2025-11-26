@@ -34,6 +34,7 @@ import NotFound from "./pages/NotFound";
 import EmailTest from "./pages/EmailTest";
 import EmailVerification from "./pages/EmailVerification";
 import Install from "./pages/Install";
+import PaymentHistory from "./pages/PaymentHistory";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -89,6 +90,7 @@ const App = () => (
             <Route path="/pickup-request" element={<PickupRequest />} />
             <Route path="/repair-jobs" element={<RepairJobs />} />
             <Route path="/repair-jobs/:id" element={<RepairJobDetail />} />
+            <Route path="/payment-history" element={<PaymentHistory />} />
             <Route path="/revenue-analytics" element={<RevenueAnalytics />} />
             <Route path="/payout-management" element={<PayoutManagement />} />
             <Route path="/center-earnings" element={<CenterEarnings />} />

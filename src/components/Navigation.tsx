@@ -43,6 +43,10 @@ const Navigation = () => {
       { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
       { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },
     ] : []),
+    // Show payment history for customers
+    ...(userRole === 'customer' ? [
+      { path: "/payment-history", label: "Payment History", icon: CreditCard },
+    ] : []),
     // Super Admin specific navigation
     ...(userRole === 'admin' ? [
       { path: "/admin", label: "Super Admin Panel", icon: Settings },
