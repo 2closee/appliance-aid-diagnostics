@@ -515,7 +515,15 @@ const Index = () => {
             <p className="text-sm text-muted-foreground text-center sm:text-left">
               © 2025 Fixbudi. All rights reserved.
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-2 sm:gap-4 justify-center">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate('/faq')}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Help & FAQ
+              </Button>
               <Button 
                 variant="ghost" 
                 size="sm"

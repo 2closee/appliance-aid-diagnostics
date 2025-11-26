@@ -18,6 +18,7 @@ import RevenueAnalytics from "./pages/RevenueAnalytics";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import ContactSupport from "./pages/ContactSupport";
+import FAQ from "./pages/FAQ";
 import RepairCenterApplication from "./pages/RepairCenterApplication";
 import RepairCenterAdmin from "./pages/RepairCenterAdmin";
 import RepairCenterChat from "./pages/RepairCenterChat";
@@ -106,6 +107,7 @@ const App = () => (
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/contact-support" element={<ContactSupport />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route path="*" element={<NotFound />} />
               </Routes>
             </RouteHandler>

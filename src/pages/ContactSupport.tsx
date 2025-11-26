@@ -200,12 +200,22 @@ const ContactSupport = () => {
               </form>
             </Form>
 
-            <div className="mt-8 p-4 bg-muted/50 rounded-lg">
+            <div className="mt-8 p-4 bg-muted/50 rounded-lg space-y-3">
               <p className="text-sm text-muted-foreground">
                 <strong>Need immediate assistance?</strong> You can also reach us directly at{" "}
                 <a href="mailto:support@fixbudi.com" className="text-primary hover:underline">
                   support@fixbudi.com
                 </a>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <strong>Looking for answers?</strong> Check our{" "}
+                <button 
+                  onClick={() => navigate("/faq")}
+                  className="text-primary hover:underline font-medium"
+                >
+                  Frequently Asked Questions
+                </button>
+                {" "}for quick solutions to common issues.
               </p>
             </div>
           </CardContent>
