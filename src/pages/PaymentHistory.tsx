@@ -6,8 +6,10 @@ import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CreditCard, ExternalLink, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
+import { CreditCard, ExternalLink, CheckCircle, XCircle, Clock, AlertCircle, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface Payment {
   id: string;
@@ -67,6 +69,8 @@ const statusConfig = {
 
 const PaymentHistory = () => {
   const { user, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ["payment-history", user?.id],
@@ -91,6 +95,42 @@ const PaymentHistory = () => {
     },
     enabled: !!user?.id,
   });
+
+  const handleDownloadReceipt = async (paymentId: string, reference: string | null) => {
+    setDownloadingId(paymentId);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-payment-receipt", {
+        body: { payment_id: paymentId },
+      });
+
+      if (error) throw error;
+
+      // Create a blob from the response
+      const blob = new Blob([data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `receipt-${reference || paymentId.substring(0, 8)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "Receipt downloaded successfully",
+      });
+    } catch (error) {
+      console.error("Error downloading receipt:", error);
+      toast({
+        title: "Error",
+        description: "Failed to download receipt",
+        variant: "destructive",
+      });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -220,6 +260,27 @@ const PaymentHistory = () => {
                     </div>
 
                     <div className="flex gap-2 mt-4 pt-4 border-t">
+                      {payment.payment_status === 'completed' && (
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleDownloadReceipt(payment.id, payment.payment_reference)}
+                          disabled={downloadingId === payment.id}
+                        >
+                          {downloadingId === payment.id ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4 mr-2" />
+                              Download Receipt
+                            </>
+                          )}
+                        </Button>
+                      )}
                       <Link to={`/repair-jobs/${payment.repair_job?.id}`} className="flex-1">
                         <Button variant="outline" size="sm" className="w-full">
                           <ExternalLink className="w-4 h-4 mr-2" />
