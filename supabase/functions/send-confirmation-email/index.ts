@@ -10,7 +10,7 @@ interface ConfirmationEmailRequest {
   email: string;
   name: string;
   centerName?: string;
-  type: "application" | "approval" | "rejection" | "custom";
+  type: "application" | "approval" | "rejection" | "custom" | "support";
   subject?: string;
   message?: string;
   centerId?: number;
@@ -49,6 +49,28 @@ const handler = async (req: Request): Promise<Response> => {
     let html: string;
 
     switch (type) {
+      case "support":
+        subject = customSubject || "Support Request Received";
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #2563eb;">Thank You for Contacting FixBudi Support</h1>
+            <p>Dear ${name},</p>
+            <p>We have received your support request and our team will review it shortly.</p>
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0; color: #374151;">Your Message:</h3>
+              <p style="color: #6b7280; white-space: pre-wrap;">${customMessage || 'No message provided'}</p>
+            </div>
+            <p>We aim to respond to all inquiries within 24-48 hours. If your issue is urgent, please don't hesitate to call us directly.</p>
+            <p>Best regards,<br>The FixBudi Support Team</p>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="font-size: 12px; color: #9ca3af;">
+                Contact: support@fixbudi.com<br>
+                Port Harcourt, Rivers State, Nigeria
+              </p>
+            </div>
+          </div>
+        `;
+        break;
       case "custom":
         subject = customSubject || "Message from FixBudi Admin";
         html = `
