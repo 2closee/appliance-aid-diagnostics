@@ -11,7 +11,6 @@ import {
   X,
   LayoutDashboard,
   LogOut,
-  Wrench,
   Moon,
   Sun,
   Settings,
@@ -22,6 +21,8 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { useConversationNotifications } from "@/hooks/useConversationNotifications";
+import logoLight from "@/assets/fixbudi-logo.png";
+import logoDark from "@/assets/fixbudi-logo-dark.webp";
 
 const Navigation = () => {
   const location = useLocation();
@@ -56,14 +57,11 @@ const Navigation = () => {
       <div className="container mx-auto px-safe-x">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center space-x-2 group">
-            <div className="flex items-center space-x-2">
-              <div className="p-1.5 bg-primary rounded-lg group-hover:scale-105 transition-transform">
-                <Wrench className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold text-foreground tracking-tight">
-                Fixbudi
-              </span>
-            </div>
+            <img 
+              src={theme === 'dark' ? logoDark : logoLight}
+              alt="Fixbudi" 
+              className="h-8 w-auto group-hover:scale-105 transition-transform"
+            />
           </Link>
 
           {/* Dark Mode Toggle - Mobile & Tablet */}
