@@ -46,7 +46,39 @@
   <meta property="og:title" content="Fixbudi - Smart Appliance Repair">
   <meta name="twitter:title" content="Fixbudi - Smart Appliance Repair">
   <meta property="og:description" content="AI-powered appliance diagnosis and repair platform for Nigeria. Get instant diagnostics and connect with verified repair centers.">
-  <meta name="twitter:description" content="AI-powered appliance diagnosis and repair platform for Nigeria. Get instant diagnostics and connect with verified repair centers.">
+    <meta name="twitter:description" content="AI-powered appliance diagnosis and repair platform for Nigeria. Get instant diagnostics and connect with verified repair centers.">
+    
+    <!-- Theme-aware favicon script -->
+    <script>
+      (function() {
+        function updateFavicon() {
+          const theme = localStorage.getItem('theme') || 
+                       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          const favicon = document.querySelector("link[rel='icon']");
+          const appleTouchIcon = document.querySelector("link[rel='apple-touch-icon']");
+          const shortcutIcon = document.querySelector("link[rel='shortcut icon']");
+          
+          const faviconPath = theme === 'dark' ? '/favicon-dark.webp' : '/favicon-light.webp';
+          
+          if (favicon) favicon.href = faviconPath;
+          if (appleTouchIcon) appleTouchIcon.href = faviconPath;
+          if (shortcutIcon) shortcutIcon.href = faviconPath;
+        }
+        
+        // Update on load
+        updateFavicon();
+        
+        // Listen for theme changes
+        window.addEventListener('storage', function(e) {
+          if (e.key === 'theme') {
+            updateFavicon();
+          }
+        });
+        
+        // Watch for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateFavicon);
+      })();
+    </script>
 </head>
 
   <body>
