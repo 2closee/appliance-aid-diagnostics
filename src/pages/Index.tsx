@@ -507,8 +507,31 @@ const Index = () => {
         )}
 
       </div>
+
+      {/* Footer */}
+      <footer className="bg-muted/30 mt-16 py-8 border-t">
+        <div className="container mx-auto max-w-6xl px-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-muted-foreground text-center sm:text-left">
+              © 2025 Fixbudi. All rights reserved.
+            </p>
+            <div className="flex gap-4">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate('/contact-support')}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Contact Support
+              </Button>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
 
 export default Index;
+
