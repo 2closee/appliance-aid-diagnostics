@@ -226,8 +226,8 @@ const RepairCenters = () => {
                 <Button variant="secondary" onClick={() => navigate('/pickup-request')}>
                   Schedule Pickup Service
                 </Button>
-                <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-                  Contact Support
+                <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20" asChild>
+                  <a href="mailto:support@fixbudi.com">Contact Support</a>
                 </Button>
               </div>
             </CardContent>
