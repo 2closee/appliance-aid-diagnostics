@@ -1070,6 +1070,45 @@ export type Database = {
           },
         ]
       }
+      repair_center_recommendations: {
+        Row: {
+          center_name: string
+          contact_info: string | null
+          created_at: string
+          id: string
+          location: string
+          notes: string | null
+          recommended_by_user_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          center_name: string
+          contact_info?: string | null
+          created_at?: string
+          id?: string
+          location: string
+          notes?: string | null
+          recommended_by_user_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          center_name?: string
+          contact_info?: string | null
+          created_at?: string
+          id?: string
+          location?: string
+          notes?: string | null
+          recommended_by_user_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       repair_center_reviews: {
         Row: {
           created_at: string | null

@@ -16,6 +16,7 @@ import {
   Truck,
   Bot
 } from "lucide-react";
+import { NoRepairCentersFound } from "./NoRepairCentersFound";
 
 interface RepairCenter {
   id: number;
@@ -164,9 +165,7 @@ const RepairCenterSelector = ({
               ))}
             </div>
           ) : filteredCenters.length === 0 ? (
-            <Card className="p-6 text-center">
-              <p className="text-muted-foreground">No repair centers found matching your search.</p>
-            </Card>
+            <NoRepairCentersFound />
           ) : (
             filteredCenters.map((center) => (
               <Card key={center.id} className="hover:shadow-medium transition-shadow">

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
+import { NoRepairCentersFound } from "@/components/NoRepairCentersFound";
 
 type RepairCenter = {
   id: number;
@@ -209,15 +210,7 @@ const RepairCenters = () => {
           </div>
 
           {!isLoading && filteredCenters.length === 0 && (
-            <Card className="shadow-medium">
-              <CardContent className="text-center py-12">
-                <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No repair centers found</h3>
-                <p className="text-muted-foreground">
-                  Try adjusting your search terms or contact us for assistance finding a repair center near you.
-                </p>
-              </CardContent>
-            </Card>
+            <NoRepairCentersFound />
           )}
 
           {/* Call to Action */}
