@@ -58,12 +58,14 @@ export const NoRepairCentersFound = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() => navigate('/contact-support')}
+              asChild
               className="gap-2"
               size="lg"
             >
-              <MessageCircle className="h-4 w-4" />
-              Contact Support
+              <a href="mailto:support@fixbudi.com">
+                <MessageCircle className="h-4 w-4" />
+                Contact Support
+              </a>
             </Button>
           </div>
 

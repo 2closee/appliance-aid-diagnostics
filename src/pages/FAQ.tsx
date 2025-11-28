@@ -224,8 +224,8 @@ const FAQ = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     Can't find the answer you're looking for? Our support team is here to help.
                   </p>
-                  <Button onClick={() => navigate("/contact-support")}>
-                    Contact Support
+                  <Button asChild>
+                    <a href="mailto:support@fixbudi.com">Contact Support</a>
                   </Button>
                 </div>
               </div>

@@ -525,14 +525,16 @@ const Index = () => {
               >
                 Help & FAQ
               </Button>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
-                onClick={() => navigate('/contact-support')}
+                asChild
                 className="text-muted-foreground hover:text-foreground"
               >
-                <Mail className="mr-2 h-4 w-4" />
-                Contact Support
+                <a href="mailto:support@fixbudi.com">
+                  <Mail className="mr-2 h-4 w-4" />
+                  Contact Support
+                </a>
               </Button>
             </div>
           </div>
