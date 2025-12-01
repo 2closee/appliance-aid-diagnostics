@@ -18,6 +18,9 @@ import RevenueAnalytics from "./pages/RevenueAnalytics";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import ContactSupport from "./pages/ContactSupport";
+import SupportTickets from "./pages/SupportTickets";
+import SupportTicketDetail from "./pages/SupportTicketDetail";
+import AdminSupportTickets from "./pages/AdminSupportTickets";
 import FAQ from "./pages/FAQ";
 import RepairCenterApplication from "./pages/RepairCenterApplication";
 import RepairCenterAdmin from "./pages/RepairCenterAdmin";
@@ -109,6 +112,9 @@ const App = () => (
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/contact-support" element={<ContactSupport />} />
+            <Route path="/support-tickets" element={<SupportTickets />} />
+            <Route path="/support-tickets/:id" element={<SupportTicketDetail />} />
+            <Route path="/admin/support-tickets" element={<AdminSupportTickets />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="*" element={<NotFound />} />
               </Routes>
