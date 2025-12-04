@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-terminal-signature',
 };
 
 // Map Terminal Africa statuses to our internal statuses
@@ -18,6 +18,48 @@ const statusMap: Record<string, string> = {
   'returned': 'returned',
 };
 
+// Verify Terminal Africa webhook signature using HMAC-SHA256
+async function verifyTerminalSignature(payload: string, signature: string | null, secret: string): Promise<boolean> {
+  if (!signature) {
+    console.error('No signature provided in webhook request');
+    return false;
+  }
+
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signatureBytes = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
+    const expectedSignature = Array.from(new Uint8Array(signatureBytes))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    // Compare signatures in constant time to prevent timing attacks
+    const sigA = signature.toLowerCase().replace('sha256=', '');
+    const sigB = expectedSignature.toLowerCase();
+    
+    if (sigA.length !== sigB.length) {
+      return false;
+    }
+    
+    let result = 0;
+    for (let i = 0; i < sigA.length; i++) {
+      result |= sigA.charCodeAt(i) ^ sigB.charCodeAt(i);
+    }
+    
+    return result === 0;
+  } catch (error) {
+    console.error('Error verifying signature:', error);
+    return false;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -26,9 +68,32 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const terminalApiKey = Deno.env.get('TERMINAL_AFRICA_API_KEY');
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const webhookData = await req.json();
+    // Get raw body for signature verification
+    const rawBody = await req.text();
+    
+    // Verify webhook signature
+    const signature = req.headers.get('x-terminal-signature') || 
+                      req.headers.get('x-webhook-signature') ||
+                      req.headers.get('x-signature');
+    
+    if (terminalApiKey) {
+      const isValid = await verifyTerminalSignature(rawBody, signature, terminalApiKey);
+      if (!isValid) {
+        console.error('Invalid webhook signature - potential spoofing attempt');
+        return new Response(
+          JSON.stringify({ error: 'Invalid signature' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      console.log('Webhook signature verified successfully');
+    } else {
+      console.warn('TERMINAL_AFRICA_API_KEY not configured - skipping signature verification');
+    }
+
+    const webhookData = JSON.parse(rawBody);
     console.log('Terminal Africa webhook received:', JSON.stringify(webhookData, null, 2));
 
     // Extract shipment information from webhook
