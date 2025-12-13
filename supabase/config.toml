@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.generate-payment-receipt]
 verify_jwt = true
+
+[functions.approve-repair-center-application]
+verify_jwt = true
