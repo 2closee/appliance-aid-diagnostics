@@ -7,26 +7,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Input validation schema
+// Input validation schema - relaxed for Nigerian formats
 const applicationSchema = z.object({
-  businessName: z.string().trim().min(2, "Business name required").max(200),
-  address: z.string().trim().min(5, "Address required").max(300),
-  city: z.string().trim().min(2, "City required").max(100),
-  state: z.string().trim().min(2, "State required").max(100),
-  zipCode: z.string().trim().regex(/^[0-9A-Za-z\s-]{3,10}$/, "Invalid zip code"),
-  phone: z.string().trim().regex(/^[\d\s()+.-]{7,20}$/, "Invalid phone number"),
-  email: z.string().trim().email("Invalid email").max(255),
-  operatingHours: z.string().trim().min(3, "Operating hours required").max(200),
-  specialties: z.string().trim().min(2, "Specialties required").max(500),
-  numberOfStaff: z.string().regex(/^\d+$/, "Must be a number"),
-  yearsInBusiness: z.string().regex(/^\d+$/, "Must be a number"),
-  cacName: z.string().trim().min(2, "CAC name required").max(200),
-  cacNumber: z.string().trim().min(2, "CAC number required").max(50),
-  taxId: z.string().trim().max(50).optional(),
-  website: z.string().trim().url("Invalid URL").max(255).optional().or(z.literal("")),
-  certifications: z.string().trim().max(1000).optional(),
-  description: z.string().trim().max(2000).optional(),
-  fullName: z.string().trim().min(2, "Full name required").max(200)
+  businessName: z.string().trim().min(2, "Business name must be at least 2 characters").max(200, "Business name too long"),
+  address: z.string().trim().min(5, "Address must be at least 5 characters").max(300, "Address too long"),
+  city: z.string().trim().min(2, "City must be at least 2 characters").max(100, "City name too long"),
+  state: z.string().trim().min(2, "State must be at least 2 characters").max(100, "State name too long"),
+  // Relaxed: Allow 3-15 characters, letters, numbers, spaces, hyphens (supports Nigerian postal codes)
+  zipCode: z.string().trim().min(3, "ZIP/Postal code must be at least 3 characters").max(15, "ZIP/Postal code too long"),
+  // Relaxed: Allow Nigerian formats like 08012345678, +2348012345678, or international formats
+  phone: z.string().trim().min(7, "Phone number must be at least 7 digits").max(25, "Phone number too long")
+    .refine((val) => /[\d]/.test(val), "Phone number must contain digits"),
+  email: z.string().trim().email("Please enter a valid email address").max(255, "Email too long"),
+  operatingHours: z.string().trim().min(3, "Operating hours required (e.g., Mon-Fri: 9AM-6PM)").max(200, "Operating hours too long"),
+  specialties: z.string().trim().min(2, "Please list at least one specialty").max(500, "Specialties list too long"),
+  numberOfStaff: z.string().refine((val) => /^\d+$/.test(val), "Number of staff must be a valid number"),
+  yearsInBusiness: z.string().refine((val) => /^\d+$/.test(val), "Years in business must be a valid number"),
+  cacName: z.string().trim().min(2, "CAC registered name must be at least 2 characters").max(200, "CAC name too long"),
+  cacNumber: z.string().trim().min(2, "CAC number must be at least 2 characters").max(50, "CAC number too long"),
+  taxId: z.string().trim().max(50, "Tax ID too long").optional().or(z.literal("")),
+  // Relaxed: Allow empty string or valid URL (optional field)
+  website: z.string().trim().max(255, "Website URL too long").optional()
+    .refine((val) => !val || val === "" || /^https?:\/\/.+/.test(val), "Website must start with http:// or https://")
+    .or(z.literal("")),
+  certifications: z.string().trim().max(1000, "Certifications text too long").optional().or(z.literal("")),
+  description: z.string().trim().max(2000, "Description too long").optional().or(z.literal("")),
+  fullName: z.string().trim().min(2, "Full name must be at least 2 characters").max(200, "Full name too long")
 });
 
 interface ApplicationData {

@@ -77,8 +77,16 @@ export default function RepairCenterApplication() {
         throw new Error(error.message || 'Failed to submit application');
       }
 
+      // Handle validation errors from edge function
       if (!data?.success) {
-        throw new Error(data?.error || 'Application submission failed');
+        // Check for field-level validation errors
+        if (data?.errors && Array.isArray(data.errors)) {
+          const errorMessages = data.errors.map((err: { field: string; message: string }) => 
+            `${err.field}: ${err.message}`
+          ).join('\n');
+          throw new Error(`Validation errors:\n${errorMessages}`);
+        }
+        throw new Error(data?.error || data?.message || 'Application submission failed');
       }
 
       console.log('Application submitted successfully:', data);
@@ -115,21 +123,36 @@ export default function RepairCenterApplication() {
     } catch (error: any) {
       console.error('Application submission error:', error);
       
-      // Enhanced error handling with specific duplicate email detection
+      // Enhanced error handling with specific error detection
       let errorMessage = "Application failed. Please try again.";
       let errorTitle = "Application Failed";
       
-      if (error.message?.toLowerCase().includes("email is already") || 
-          error.message?.toLowerCase().includes("duplicate email") ||
-          error.message?.toLowerCase().includes("already associated")) {
+      const errorMsg = error.message || '';
+      
+      if (errorMsg.toLowerCase().includes("email is already") || 
+          errorMsg.toLowerCase().includes("duplicate email") ||
+          errorMsg.toLowerCase().includes("already associated")) {
         errorTitle = "Email Already in Use";
-        errorMessage = error.message;
-      } else if (error.message?.includes("rate limit")) {
+        errorMessage = errorMsg;
+      } else if (errorMsg.includes("Validation errors")) {
+        errorTitle = "Please Fix These Fields";
+        // Show validation errors more clearly
+        errorMessage = errorMsg.replace("Validation errors:\n", "");
+      } else if (errorMsg.includes("rate limit")) {
         errorMessage = "Too many requests. Please wait a few minutes and try again.";
-      } else if (error.message?.includes("network")) {
+      } else if (errorMsg.includes("network") || errorMsg.includes("fetch")) {
         errorMessage = "Network error. Please check your connection and try again.";
-      } else if (error.message) {
-        errorMessage = error.message;
+      } else if (errorMsg.includes("phone")) {
+        errorTitle = "Invalid Phone Number";
+        errorMessage = "Please enter a valid phone number (e.g., 08012345678 or +2348012345678)";
+      } else if (errorMsg.includes("zipCode") || errorMsg.includes("ZIP")) {
+        errorTitle = "Invalid ZIP/Postal Code";
+        errorMessage = "Please enter a valid postal code";
+      } else if (errorMsg.includes("website") || errorMsg.includes("URL")) {
+        errorTitle = "Invalid Website URL";
+        errorMessage = "Website must start with http:// or https:// (or leave empty)";
+      } else if (errorMsg) {
+        errorMessage = errorMsg;
       }
       
       toast({
@@ -304,7 +327,7 @@ export default function RepairCenterApplication() {
                         value={application.phone}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
                         required
-                        placeholder="+1 (555) 123-4567"
+                        placeholder="08012345678 or +2348012345678"
                       />
                     </div>
                   </div>
