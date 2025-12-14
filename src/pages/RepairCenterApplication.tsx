@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Building, Users, Award, Phone, Mail, MapPin } from "lucide-react";
+import { CheckCircle, Building, Users, Award, Phone, Mail, MapPin, MessageCircle } from "lucide-react";
 
 export default function RepairCenterApplication() {
   const navigate = useNavigate();
@@ -536,18 +536,29 @@ export default function RepairCenterApplication() {
             <CardContent className="p-6 text-center">
               <h3 className="font-semibold mb-2">Questions about the application process?</h3>
               <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  <a href="mailto:partnerships@fixbudi.com" className="text-primary hover:underline">
-                    partnerships@fixbudi.com
-                  </a>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  <a href="tel:+2348145397946" className="text-primary hover:underline">
-                    +234 814 539 7946
-                  </a>
-                </div>
+                <a 
+                  href="mailto:partnerships@fixbudi.com" 
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors"
+                >
+                  <Mail className="h-4 w-4 text-primary" />
+                  <span>partnerships@fixbudi.com</span>
+                </a>
+                <a 
+                  href="tel:+2348145397946" 
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors"
+                >
+                  <Phone className="h-4 w-4 text-primary" />
+                  <span>+234 814 539 7946</span>
+                </a>
+                <a 
+                  href="https://wa.me/2348145397946?text=Hello%2C%20I%20have%20a%20question%20about%20the%20FixBudi%20repair%20center%20application%20process."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#25D366] text-white hover:bg-[#20BD5A] transition-colors"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  <span>WhatsApp</span>
+                </a>
               </div>
             </CardContent>
           </Card>
