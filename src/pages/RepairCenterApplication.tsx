@@ -544,8 +544,8 @@ export default function RepairCenterApplication() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
-                  <a href="tel:+2348123456789" className="text-primary hover:underline">
-                    +234 812 345 6789
+                  <a href="tel:08145397946" className="text-primary hover:underline">
+                    08145397946
                   </a>
                 </div>
               </div>
