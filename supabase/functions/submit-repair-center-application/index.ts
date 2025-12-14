@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { Resend } from "npm:resend@2.0.0";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -276,6 +279,88 @@ const handler = async (req: Request): Promise<Response> => {
       newApplication = selectData;
     }
 
+    // Send confirmation email to applicant
+    console.log('Sending confirmation email to:', applicationData.email);
+    try {
+      const emailResult = await resend.emails.send({
+        from: "Fixbudi <noreply@fixbudi.com>",
+        to: [applicationData.email],
+        subject: "We Received Your Repair Center Application!",
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Application Received</title>
+          </head>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
+              <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="color: #2563eb; margin: 0;">Application Received!</h1>
+              </div>
+              
+              <p style="font-size: 16px;">Dear <strong>${applicationData.fullName}</strong>,</p>
+              
+              <p style="font-size: 16px;">Thank you for applying to join the Fixbudi network! We've received your application for <strong>${applicationData.businessName}</strong>.</p>
+              
+              <div style="background-color: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
+                <h2 style="color: #1e40af; margin-top: 0; font-size: 18px;">Application Summary</h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; color: #6b7280;">Business Name:</td>
+                    <td style="padding: 8px 0; font-weight: bold;">${applicationData.businessName}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #6b7280;">Location:</td>
+                    <td style="padding: 8px 0;">${applicationData.city}, ${applicationData.state}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #6b7280;">Specialties:</td>
+                    <td style="padding: 8px 0;">${applicationData.specialties}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #6b7280;">CAC Number:</td>
+                    <td style="padding: 8px 0;">${applicationData.cacNumber}</td>
+                  </tr>
+                </table>
+              </div>
+              
+              <div style="background-color: #dbeafe; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3b82f6;">
+                <h3 style="color: #1e40af; margin-top: 0; font-size: 16px;">What Happens Next?</h3>
+                <ol style="margin: 0; padding-left: 20px; color: #1e40af;">
+                  <li style="margin: 8px 0;">Our team will review your application within 24-48 hours</li>
+                  <li style="margin: 8px 0;">We may contact you if we need additional information</li>
+                  <li style="margin: 8px 0;">Once approved, you'll receive your login credentials via email</li>
+                  <li style="margin: 8px 0;">You can then start receiving repair requests through Fixbudi!</li>
+                </ol>
+              </div>
+              
+              <p style="font-size: 14px; color: #6b7280;">
+                If you have any questions, please don't hesitate to reach out to our support team.
+              </p>
+              
+              <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; margin: 0;">
+                  Thank you for choosing Fixbudi!<br>
+                  <strong style="color: #2563eb;">The Fixbudi Team</strong>
+                </p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+      });
+      
+      console.log('Confirmation email sent successfully:', emailResult);
+      
+      if (emailResult.error) {
+        console.error('Resend API returned error:', emailResult.error);
+      }
+    } catch (emailError: any) {
+      // Log email error but don't fail the application submission
+      console.error('Failed to send confirmation email:', emailError);
+    }
 
     // Return success
     return new Response(
