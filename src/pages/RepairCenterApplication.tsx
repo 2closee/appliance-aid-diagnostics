@@ -7,13 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Building, Users, Award, Phone, Mail, MapPin, MessageCircle } from "lucide-react";
+import { CheckCircle, Building, Users, Award, Phone, Mail, MapPin, MessageCircle, AlertTriangle, RefreshCw } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function RepairCenterApplication() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [emailWarning, setEmailWarning] = useState<string | null>(null);
+  const [submittedEmail, setSubmittedEmail] = useState<string>("");
+  const [isResendingEmail, setIsResendingEmail] = useState(false);
   const [application, setApplication] = useState({
     // Business Information
     businessName: "",
@@ -91,11 +95,19 @@ export default function RepairCenterApplication() {
 
       console.log('Application submitted successfully:', data);
       
+      // Check email status
+      if (data.emailWarning || data.emailSent === false) {
+        setEmailWarning(data.emailWarning || "Confirmation email may be delayed. Please check your spam folder.");
+      }
+      
       toast({
         title: "Application Submitted!",
         description: data.message || "Your application has been submitted successfully. Our team will review it shortly.",
       });
 
+      // Store email for potential resend
+      setSubmittedEmail(application.email);
+      
       // Reset form and show success state
       setApplication({
         businessName: '',
@@ -180,6 +192,38 @@ export default function RepairCenterApplication() {
     }
   };
 
+  const handleResendEmail = async () => {
+    if (!submittedEmail) return;
+    
+    setIsResendingEmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('resend-verification-email', {
+        body: { email: submittedEmail }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast({
+          title: "Email Sent!",
+          description: "Please check your inbox and spam folder.",
+        });
+        setEmailWarning(null);
+      } else {
+        throw new Error(data?.message || 'Failed to resend email');
+      }
+    } catch (err: any) {
+      console.error('Resend email error:', err);
+      toast({
+        title: "Couldn't Send Email",
+        description: "Please contact support@fixbudi.com for assistance.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResendingEmail(false);
+    }
+  };
+
   if (isSubmitted) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -192,6 +236,36 @@ export default function RepairCenterApplication() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {emailWarning && (
+              <Alert variant="default" className="border-amber-500 bg-amber-50 dark:bg-amber-950">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-800 dark:text-amber-200">
+                  <div className="flex flex-col gap-2">
+                    <span>{emailWarning}</span>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleResendEmail}
+                      disabled={isResendingEmail}
+                      className="w-fit"
+                    >
+                      {isResendingEmail ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Resend Confirmation Email
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <div className="text-center space-y-4">
               <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
                 <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">

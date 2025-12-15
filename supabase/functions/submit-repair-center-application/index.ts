@@ -281,6 +281,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send confirmation email to applicant
     console.log('Sending confirmation email to:', applicationData.email);
+    let emailSent = false;
+    let emailError: string | null = null;
+    let resendId: string | null = null;
+    
     try {
       const emailResult = await resend.emails.send({
         from: "Fixbudi <noreply@fixbudi.com>",
@@ -352,22 +356,56 @@ const handler = async (req: Request): Promise<Response> => {
         `,
       });
       
-      console.log('Confirmation email sent successfully:', emailResult);
+      console.log('Email API response:', JSON.stringify(emailResult));
       
       if (emailResult.error) {
         console.error('Resend API returned error:', emailResult.error);
+        emailError = emailResult.error.message || 'Unknown Resend error';
+        emailSent = false;
+      } else if (emailResult.data?.id) {
+        emailSent = true;
+        resendId = emailResult.data.id;
+        console.log('Confirmation email sent successfully, Resend ID:', resendId);
       }
-    } catch (emailError: any) {
-      // Log email error but don't fail the application submission
-      console.error('Failed to send confirmation email:', emailError);
+    } catch (err: any) {
+      console.error('Failed to send confirmation email:', err);
+      emailError = err.message || 'Email sending failed';
+      emailSent = false;
     }
 
-    // Return success
+    // Log email attempt to email_logs table
+    try {
+      const { error: logError } = await supabase
+        .from('email_logs')
+        .insert({
+          email_type: 'repair_center_application_confirmation',
+          recipient_email: applicationData.email,
+          recipient_name: applicationData.fullName,
+          subject: 'We Received Your Repair Center Application!',
+          status: emailSent ? 'sent' : 'failed',
+          resend_id: resendId,
+          error_message: emailError,
+          metadata: {
+            application_id: newApplication?.id,
+            business_name: applicationData.businessName
+          }
+        });
+      
+      if (logError) {
+        console.error('Failed to log email attempt:', logError);
+      }
+    } catch (logErr) {
+      console.error('Error logging email attempt:', logErr);
+    }
+
+    // Return success with email status
     return new Response(
       JSON.stringify({
         success: true,
         message: "Application submitted successfully! Our team will review your application within 24-48 hours.",
-        applicationId: newApplication?.id || 'pending'
+        applicationId: newApplication?.id || 'pending',
+        emailSent,
+        emailWarning: !emailSent ? "We couldn't send a confirmation email. Please check your spam folder or contact support if you don't hear from us." : null
       }),
       {
         status: 200,
