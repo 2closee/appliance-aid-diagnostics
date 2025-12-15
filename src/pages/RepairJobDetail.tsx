@@ -15,6 +15,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { CostBreakdownCard } from "@/components/CostBreakdownCard";
+import { WarrantyCard } from "@/components/WarrantyCard";
+import { WarrantyBadge } from "@/components/WarrantyBadge";
+import { PaymentProtectionBanner } from "@/components/PaymentProtectionBanner";
+import { WhyFixBudiSection } from "@/components/WhyFixBudiSection";
 
 interface RepairJob {
   id: string;
@@ -120,6 +124,22 @@ const RepairJobDetail = () => {
       return data;
     },
     enabled: !!user?.id && !!id,
+  });
+
+  // Fetch warranty for this job
+  const { data: warranty, refetch: refetchWarranty } = useQuery({
+    queryKey: ["job-warranty", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("repair_warranties")
+        .select("*")
+        .eq("repair_job_id", id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
   });
 
   useEffect(() => {
@@ -426,9 +446,18 @@ const RepairJobDetail = () => {
                       {job.appliance_brand} {job.appliance_model}
                     </p>
                   </div>
-                  <Badge className={statusColors[job.job_status as keyof typeof statusColors]}>
-                    {job.job_status.replace('_', ' ').toUpperCase()}
-                  </Badge>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className={statusColors[job.job_status as keyof typeof statusColors]}>
+                      {job.job_status.replace('_', ' ').toUpperCase()}
+                    </Badge>
+                    {warranty && (
+                      <WarrantyBadge 
+                        warrantyEndDate={warranty.warranty_end_date} 
+                        warrantyType={warranty.warranty_type as "standard" | "extended" | "premium"}
+                        size="sm"
+                      />
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -592,6 +621,17 @@ const RepairJobDetail = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Warranty Card - Show if warranty exists */}
+            {warranty && (
+              <WarrantyCard 
+                warranty={warranty as any}
+                onClaimSubmitted={() => refetchWarranty()}
+              />
+            )}
+
+            {/* Payment Protection Banner */}
+            <PaymentProtectionBanner variant="checkout" />
 
             {/* Payment Required Alert - Urgent Display */}
             {job.job_status === 'repair_completed' && job.final_cost && !job.customer_confirmed && (
