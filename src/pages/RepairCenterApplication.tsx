@@ -72,7 +72,7 @@ export default function RepairCenterApplication() {
           website: application.website,
           certifications: application.certifications,
           description: application.description,
-          fullName: application.fullName || application.ownerName
+          fullName: (application.fullName || application.ownerName || '').trim()
         }
       });
 
@@ -163,6 +163,9 @@ export default function RepairCenterApplication() {
       } else if (errorMsg.includes("website") || errorMsg.includes("URL")) {
         errorTitle = "Invalid Website URL";
         errorMessage = "Website must start with http:// or https:// (or leave empty)";
+      } else if (errorMsg.toLowerCase().includes('fullname') || errorMsg.toLowerCase().includes('full name')) {
+        errorTitle = "Invalid Owner Name";
+        errorMessage = "Owner Full Name must be at least 2 characters";
       } else if (errorMsg) {
         errorMessage = errorMsg;
       }
@@ -178,18 +181,14 @@ export default function RepairCenterApplication() {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setApplication(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    
-    // Auto-populate fullName if not manually set
-    if (field === 'ownerName' && !application.fullName) {
-      setApplication(prev => ({
-        ...prev,
-        fullName: value
-      }));
-    }
+    setApplication(prev => {
+      const updated = { ...prev, [field]: value };
+      // Auto-populate fullName from ownerName if fullName is empty
+      if (field === 'ownerName' && !prev.fullName) {
+        updated.fullName = value;
+      }
+      return updated;
+    });
   };
 
   const handleResendEmail = async () => {
@@ -376,6 +375,7 @@ export default function RepairCenterApplication() {
                         value={application.ownerName}
                         onChange={(e) => handleInputChange('ownerName', e.target.value)}
                         required
+                        minLength={2}
                         placeholder="Your full name"
                       />
                     </div>
