@@ -18,6 +18,7 @@ export default function RepairCenterApplication() {
   const [emailWarning, setEmailWarning] = useState<string | null>(null);
   const [submittedEmail, setSubmittedEmail] = useState<string>("");
   const [isResendingEmail, setIsResendingEmail] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [application, setApplication] = useState({
     // Business Information
     businessName: "",
@@ -192,7 +193,7 @@ export default function RepairCenterApplication() {
   };
 
   const handleResendEmail = async () => {
-    if (!submittedEmail) return;
+    if (!submittedEmail || resendCooldown > 0) return;
     
     setIsResendingEmail(true);
     try {
@@ -205,17 +206,63 @@ export default function RepairCenterApplication() {
       if (data?.success) {
         toast({
           title: "Email Sent!",
-          description: "Please check your inbox and spam folder.",
+          description: data.message || "Please check your inbox and spam folder.",
         });
         setEmailWarning(null);
+        // Start 60-second cooldown
+        setResendCooldown(60);
+        const interval = setInterval(() => {
+          setResendCooldown(prev => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       } else {
-        throw new Error(data?.message || 'Failed to resend email');
+        // Handle specific error codes
+        const errorCode = data?.code;
+        let errorTitle = "Couldn't Send Email";
+        let errorDescription = "Please try again later.";
+        
+        switch (errorCode) {
+          case "APPLICATION_NOT_FOUND":
+            errorTitle = "No Application Found";
+            errorDescription = "We couldn't find an application with this email. Please submit a new application.";
+            break;
+          case "ALREADY_APPROVED":
+            errorTitle = "Application Approved";
+            errorDescription = data.error || "Check your email for login credentials.";
+            break;
+          case "APPLICATION_REJECTED":
+            errorTitle = "Application Status";
+            errorDescription = data.error || "Please contact support for more information.";
+            break;
+          case "RATE_LIMITED":
+            errorTitle = "Too Many Attempts";
+            errorDescription = data.error || "Please wait an hour before trying again.";
+            break;
+          case "EMAIL_SERVICE_ERROR":
+          case "EMAIL_SEND_FAILED":
+            errorTitle = "Email Service Unavailable";
+            errorDescription = "Our email service is temporarily unavailable. Please try again in a few minutes.";
+            break;
+          default:
+            errorDescription = data?.error || "Please contact support@fixbudi.com for assistance.";
+        }
+        
+        toast({
+          title: errorTitle,
+          description: errorDescription,
+          variant: errorCode === "ALREADY_APPROVED" ? "default" : "destructive",
+        });
       }
     } catch (err: any) {
       console.error('Resend email error:', err);
       toast({
-        title: "Couldn't Send Email",
-        description: "Please contact support@fixbudi.com for assistance.",
+        title: "Connection Error",
+        description: "Unable to reach our servers. Please check your internet connection and try again.",
         variant: "destructive",
       });
     } finally {
@@ -245,13 +292,18 @@ export default function RepairCenterApplication() {
                       variant="outline" 
                       size="sm" 
                       onClick={handleResendEmail}
-                      disabled={isResendingEmail}
+                      disabled={isResendingEmail || resendCooldown > 0}
                       className="w-fit"
                     >
                       {isResendingEmail ? (
                         <>
                           <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                           Sending...
+                        </>
+                      ) : resendCooldown > 0 ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Wait {resendCooldown}s
                         </>
                       ) : (
                         <>
