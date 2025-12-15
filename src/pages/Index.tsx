@@ -29,6 +29,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import Navigation from "@/components/Navigation";
 import { InstallPromptBanner } from "@/components/InstallPromptBanner";
+import { WhyFixBudiSection } from "@/components/WhyFixBudiSection";
 import fixbudiHeroLight from "@/assets/fixbudi-hero-light.webp";
 import fixbudiHeroDark from "@/assets/fixbudi-hero-dark.webp";
 
@@ -508,6 +509,9 @@ const Index = () => {
         )}
 
       </div>
+
+      {/* Why FixBudi Section - Platform Stickiness */}
+      <WhyFixBudiSection variant="homepage" />
 
       {/* Footer */}
       <footer className="bg-muted/30 mt-16 py-8 border-t">

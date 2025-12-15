@@ -1410,6 +1410,62 @@ export type Database = {
           },
         ]
       }
+      repair_warranties: {
+        Row: {
+          claim_count: number
+          covered_issues: string[] | null
+          created_at: string
+          id: string
+          is_active: boolean
+          max_claims: number
+          repair_job_id: string
+          terms_text: string | null
+          updated_at: string
+          warranty_end_date: string
+          warranty_period_days: number
+          warranty_start_date: string
+          warranty_type: Database["public"]["Enums"]["warranty_type"]
+        }
+        Insert: {
+          claim_count?: number
+          covered_issues?: string[] | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_claims?: number
+          repair_job_id: string
+          terms_text?: string | null
+          updated_at?: string
+          warranty_end_date: string
+          warranty_period_days?: number
+          warranty_start_date: string
+          warranty_type?: Database["public"]["Enums"]["warranty_type"]
+        }
+        Update: {
+          claim_count?: number
+          covered_issues?: string[] | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_claims?: number
+          repair_job_id?: string
+          terms_text?: string | null
+          updated_at?: string
+          warranty_end_date?: string
+          warranty_period_days?: number
+          warranty_start_date?: string
+          warranty_type?: Database["public"]["Enums"]["warranty_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repair_warranties_repair_job_id_fkey"
+            columns: ["repair_job_id"]
+            isOneToOne: true
+            referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_addresses: {
         Row: {
           address_line: string
@@ -1565,6 +1621,63 @@ export type Database = {
         }
         Relationships: []
       }
+      warranty_claims: {
+        Row: {
+          claim_description: string | null
+          claim_reason: string
+          claim_status: string
+          created_at: string
+          id: string
+          repair_job_id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          updated_at: string
+          warranty_id: string
+        }
+        Insert: {
+          claim_description?: string | null
+          claim_reason: string
+          claim_status?: string
+          created_at?: string
+          id?: string
+          repair_job_id: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          updated_at?: string
+          warranty_id: string
+        }
+        Update: {
+          claim_description?: string | null
+          claim_reason?: string
+          claim_status?: string
+          created_at?: string
+          id?: string
+          repair_job_id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          updated_at?: string
+          warranty_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_claims_repair_job_id_fkey"
+            columns: ["repair_job_id"]
+            isOneToOne: false
+            referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_claims_warranty_id_fkey"
+            columns: ["warranty_id"]
+            isOneToOne: false
+            referencedRelation: "repair_warranties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1653,6 +1766,7 @@ export type Database = {
       payment_type: "repair_service" | "app_commission"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "open" | "in_progress" | "resolved" | "closed"
+      warranty_type: "standard" | "extended" | "premium"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1810,6 +1924,7 @@ export const Constants = {
       payment_type: ["repair_service", "app_commission"],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: ["open", "in_progress", "resolved", "closed"],
+      warranty_type: ["standard", "extended", "premium"],
     },
   },
 } as const
