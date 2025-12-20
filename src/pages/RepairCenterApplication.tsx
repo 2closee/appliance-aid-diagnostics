@@ -23,7 +23,6 @@ export default function RepairCenterApplication() {
     // Business Information
     businessName: "",
     ownerName: "",
-    fullName: "",
     email: "",
     phone: "",
     website: "",
@@ -51,7 +50,19 @@ export default function RepairCenterApplication() {
     setIsSubmitting(true);
 
     try {
-      console.log('Starting repair center application submission...');
+      // Pre-submit validation - single source of truth for fullName
+      const trimmedOwnerName = application.ownerName.trim();
+      if (trimmedOwnerName.length < 2) {
+        toast({
+          title: "Invalid Owner Name",
+          description: "Owner Full Name must be at least 2 characters",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log('Starting repair center application submission with fullName:', trimmedOwnerName);
       
       // Submit application using edge function
       const { data, error } = await supabase.functions.invoke('submit-repair-center-application', {
@@ -73,7 +84,7 @@ export default function RepairCenterApplication() {
           website: application.website,
           certifications: application.certifications,
           description: application.description,
-          fullName: (application.fullName || application.ownerName || '').trim()
+          fullName: trimmedOwnerName
         }
       });
 
@@ -113,7 +124,6 @@ export default function RepairCenterApplication() {
       setApplication({
         businessName: '',
         ownerName: '',
-        fullName: '',
         email: '',
         phone: '',
         website: '',
@@ -182,14 +192,7 @@ export default function RepairCenterApplication() {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setApplication(prev => {
-      const updated = { ...prev, [field]: value };
-      // Auto-populate fullName from ownerName if fullName is empty
-      if (field === 'ownerName' && !prev.fullName) {
-        updated.fullName = value;
-      }
-      return updated;
-    });
+    setApplication(prev => ({ ...prev, [field]: value }));
   };
 
   const handleResendEmail = async () => {
