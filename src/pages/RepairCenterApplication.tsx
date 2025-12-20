@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,68 @@ import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, Building, Users, Award, Phone, Mail, MapPin, MessageCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+// Validation rules
+const validateField = (field: string, value: string): string | null => {
+  const trimmed = value.trim();
+  
+  switch (field) {
+    case 'businessName':
+      if (!trimmed) return "Business name is required";
+      if (trimmed.length < 2) return "Business name must be at least 2 characters";
+      return null;
+    case 'ownerName':
+      if (!trimmed) return "Owner name is required";
+      if (trimmed.length < 2) return "Owner name must be at least 2 characters";
+      return null;
+    case 'email':
+      if (!trimmed) return "Email is required";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return "Please enter a valid email address";
+      return null;
+    case 'phone':
+      if (!trimmed) return "Phone number is required";
+      if (!/^(\+?234|0)?[789][01]\d{8}$/.test(trimmed.replace(/\s/g, ''))) return "Please enter a valid Nigerian phone number";
+      return null;
+    case 'website':
+      if (trimmed && !/^https?:\/\/.+/.test(trimmed)) return "Website must start with http:// or https://";
+      return null;
+    case 'address':
+      if (!trimmed) return "Address is required";
+      if (trimmed.length < 5) return "Please enter a complete address";
+      return null;
+    case 'city':
+      if (!trimmed) return "City is required";
+      return null;
+    case 'state':
+      if (!trimmed) return "State is required";
+      return null;
+    case 'zipCode':
+      if (!trimmed) return "ZIP code is required";
+      return null;
+    case 'operatingHours':
+      if (!trimmed) return "Operating hours are required";
+      return null;
+    case 'specialties':
+      if (!trimmed) return "Specialties are required";
+      return null;
+    case 'yearsInBusiness':
+      if (!trimmed) return "Years in business is required";
+      if (isNaN(Number(trimmed)) || Number(trimmed) < 0) return "Please enter a valid number";
+      return null;
+    case 'numberOfStaff':
+      if (!trimmed) return "Number of staff is required";
+      if (isNaN(Number(trimmed)) || Number(trimmed) < 1) return "Please enter at least 1";
+      return null;
+    case 'cacName':
+      if (!trimmed) return "CAC registered name is required";
+      return null;
+    case 'cacNumber':
+      if (!trimmed) return "CAC number is required";
+      return null;
+    default:
+      return null;
+  }
+};
+
 export default function RepairCenterApplication() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -19,6 +81,7 @@ export default function RepairCenterApplication() {
   const [submittedEmail, setSubmittedEmail] = useState<string>("");
   const [isResendingEmail, setIsResendingEmail] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [application, setApplication] = useState({
     // Business Information
     businessName: "",
@@ -44,6 +107,25 @@ export default function RepairCenterApplication() {
     yearsInBusiness: "",
     numberOfStaff: ""
   });
+
+  // Calculate validation errors for all fields
+  const fieldErrors = useMemo(() => {
+    const errors: Record<string, string | null> = {};
+    Object.keys(application).forEach(field => {
+      errors[field] = validateField(field, application[field as keyof typeof application]);
+    });
+    return errors;
+  }, [application]);
+
+  // Check if form is valid
+  const isFormValid = useMemo(() => {
+    const requiredFields = [
+      'businessName', 'ownerName', 'email', 'phone', 'address', 'city', 
+      'state', 'zipCode', 'operatingHours', 'specialties', 'yearsInBusiness', 
+      'numberOfStaff', 'cacName', 'cacNumber'
+    ];
+    return requiredFields.every(field => !fieldErrors[field]);
+  }, [fieldErrors]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,6 +275,15 @@ export default function RepairCenterApplication() {
 
   const handleInputChange = (field: string, value: string) => {
     setApplication(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleBlur = (field: string) => {
+    setTouchedFields(prev => ({ ...prev, [field]: true }));
+  };
+
+  // Helper to show error only if field was touched
+  const getFieldError = (field: string) => {
+    return touchedFields[field] ? fieldErrors[field] : null;
   };
 
   const handleResendEmail = async () => {
@@ -413,63 +504,88 @@ export default function RepairCenterApplication() {
                   </div>
                   
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div>
+                    <div className="space-y-1">
                       <Label htmlFor="businessName">Business Name *</Label>
                       <Input
                         id="businessName"
                         value={application.businessName}
                         onChange={(e) => handleInputChange('businessName', e.target.value)}
+                        onBlur={() => handleBlur('businessName')}
                         required
                         placeholder="Your repair center name"
+                        className={getFieldError('businessName') ? 'border-destructive' : ''}
                       />
+                      {getFieldError('businessName') && (
+                        <p className="text-xs text-destructive">{getFieldError('businessName')}</p>
+                      )}
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label htmlFor="ownerName">Owner Full Name *</Label>
                       <Input
                         id="ownerName"
                         value={application.ownerName}
                         onChange={(e) => handleInputChange('ownerName', e.target.value)}
+                        onBlur={() => handleBlur('ownerName')}
                         required
                         minLength={2}
                         placeholder="Your full name"
+                        className={getFieldError('ownerName') ? 'border-destructive' : ''}
                       />
+                      {getFieldError('ownerName') && (
+                        <p className="text-xs text-destructive">{getFieldError('ownerName')}</p>
+                      )}
                     </div>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div>
+                    <div className="space-y-1">
                       <Label htmlFor="email">Business Email *</Label>
                       <Input
                         id="email"
                         type="email"
                         value={application.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
+                        onBlur={() => handleBlur('email')}
                         required
                         placeholder="business@example.com"
+                        className={getFieldError('email') ? 'border-destructive' : ''}
                       />
+                      {getFieldError('email') && (
+                        <p className="text-xs text-destructive">{getFieldError('email')}</p>
+                      )}
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label htmlFor="phone">Business Phone *</Label>
                       <Input
                         id="phone"
                         type="tel"
                         value={application.phone}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
+                        onBlur={() => handleBlur('phone')}
                         required
                         placeholder="08012345678 or +2348012345678"
+                        className={getFieldError('phone') ? 'border-destructive' : ''}
                       />
+                      {getFieldError('phone') && (
+                        <p className="text-xs text-destructive">{getFieldError('phone')}</p>
+                      )}
                     </div>
                   </div>
 
-                  <div>
+                  <div className="space-y-1">
                     <Label htmlFor="website">Website (Optional)</Label>
                     <Input
                       id="website"
                       type="url"
                       value={application.website}
                       onChange={(e) => handleInputChange('website', e.target.value)}
+                      onBlur={() => handleBlur('website')}
                       placeholder="https://yourwebsite.com"
+                      className={getFieldError('website') ? 'border-destructive' : ''}
                     />
+                    {getFieldError('website') && (
+                      <p className="text-xs text-destructive">{getFieldError('website')}</p>
+                    )}
                   </div>
                 </div>
 
@@ -480,47 +596,67 @@ export default function RepairCenterApplication() {
                     <h3 className="text-lg font-semibold">Location Information</h3>
                   </div>
                   
-                  <div>
+                  <div className="space-y-1">
                     <Label htmlFor="address">Street Address *</Label>
                     <Input
                       id="address"
                       value={application.address}
                       onChange={(e) => handleInputChange('address', e.target.value)}
+                      onBlur={() => handleBlur('address')}
                       required
                       placeholder="123 Main Street"
+                      className={getFieldError('address') ? 'border-destructive' : ''}
                     />
+                    {getFieldError('address') && (
+                      <p className="text-xs text-destructive">{getFieldError('address')}</p>
+                    )}
                   </div>
 
                   <div className="grid md:grid-cols-3 gap-4">
-                    <div>
+                    <div className="space-y-1">
                       <Label htmlFor="city">City *</Label>
                       <Input
                         id="city"
                         value={application.city}
                         onChange={(e) => handleInputChange('city', e.target.value)}
+                        onBlur={() => handleBlur('city')}
                         required
                         placeholder="City name"
+                        className={getFieldError('city') ? 'border-destructive' : ''}
                       />
+                      {getFieldError('city') && (
+                        <p className="text-xs text-destructive">{getFieldError('city')}</p>
+                      )}
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label htmlFor="state">State *</Label>
                       <Input
                         id="state"
                         value={application.state}
                         onChange={(e) => handleInputChange('state', e.target.value)}
+                        onBlur={() => handleBlur('state')}
                         required
                         placeholder="State"
+                        className={getFieldError('state') ? 'border-destructive' : ''}
                       />
+                      {getFieldError('state') && (
+                        <p className="text-xs text-destructive">{getFieldError('state')}</p>
+                      )}
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label htmlFor="zipCode">ZIP Code *</Label>
                       <Input
                         id="zipCode"
                         value={application.zipCode}
                         onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                        onBlur={() => handleBlur('zipCode')}
                         required
                         placeholder="12345"
+                        className={getFieldError('zipCode') ? 'border-destructive' : ''}
                       />
+                      {getFieldError('zipCode') && (
+                        <p className="text-xs text-destructive">{getFieldError('zipCode')}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -532,30 +668,40 @@ export default function RepairCenterApplication() {
                     <h3 className="text-lg font-semibold">Business Details</h3>
                   </div>
                   
-                  <div>
+                  <div className="space-y-1">
                     <Label htmlFor="operatingHours">Operating Hours *</Label>
                     <Input
                       id="operatingHours"
                       value={application.operatingHours}
                       onChange={(e) => handleInputChange('operatingHours', e.target.value)}
+                      onBlur={() => handleBlur('operatingHours')}
                       required
                       placeholder="Mon-Fri: 9AM-6PM, Sat: 9AM-4PM"
+                      className={getFieldError('operatingHours') ? 'border-destructive' : ''}
                     />
+                    {getFieldError('operatingHours') && (
+                      <p className="text-xs text-destructive">{getFieldError('operatingHours')}</p>
+                    )}
                   </div>
 
-                  <div>
+                  <div className="space-y-1">
                     <Label htmlFor="specialties">Specialties *</Label>
                     <Input
                       id="specialties"
                       value={application.specialties}
                       onChange={(e) => handleInputChange('specialties', e.target.value)}
+                      onBlur={() => handleBlur('specialties')}
                       required
                       placeholder="e.g., Refrigerators, Washing Machines, Air Conditioners"
+                      className={getFieldError('specialties') ? 'border-destructive' : ''}
                     />
+                    {getFieldError('specialties') && (
+                      <p className="text-xs text-destructive">{getFieldError('specialties')}</p>
+                    )}
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div>
+                    <div className="space-y-1">
                       <Label htmlFor="yearsInBusiness">Years in Business *</Label>
                       <Input
                         id="yearsInBusiness"
@@ -563,11 +709,16 @@ export default function RepairCenterApplication() {
                         min="0"
                         value={application.yearsInBusiness}
                         onChange={(e) => handleInputChange('yearsInBusiness', e.target.value)}
+                        onBlur={() => handleBlur('yearsInBusiness')}
                         required
                         placeholder="5"
+                        className={getFieldError('yearsInBusiness') ? 'border-destructive' : ''}
                       />
+                      {getFieldError('yearsInBusiness') && (
+                        <p className="text-xs text-destructive">{getFieldError('yearsInBusiness')}</p>
+                      )}
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label htmlFor="numberOfStaff">Number of Staff *</Label>
                       <Input
                         id="numberOfStaff"
@@ -575,9 +726,14 @@ export default function RepairCenterApplication() {
                         min="1"
                         value={application.numberOfStaff}
                         onChange={(e) => handleInputChange('numberOfStaff', e.target.value)}
+                        onBlur={() => handleBlur('numberOfStaff')}
                         required
                         placeholder="3"
+                        className={getFieldError('numberOfStaff') ? 'border-destructive' : ''}
                       />
+                      {getFieldError('numberOfStaff') && (
+                        <p className="text-xs text-destructive">{getFieldError('numberOfStaff')}</p>
+                      )}
                     </div>
                   </div>
 
@@ -609,25 +765,35 @@ export default function RepairCenterApplication() {
                   <h3 className="text-lg font-semibold">Registration Details</h3>
                   
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div>
+                    <div className="space-y-1">
                       <Label htmlFor="cacName">CAC Registered Name *</Label>
                       <Input
                         id="cacName"
                         value={application.cacName}
                         onChange={(e) => handleInputChange('cacName', e.target.value)}
+                        onBlur={() => handleBlur('cacName')}
                         required
                         placeholder="As registered with CAC"
+                        className={getFieldError('cacName') ? 'border-destructive' : ''}
                       />
+                      {getFieldError('cacName') && (
+                        <p className="text-xs text-destructive">{getFieldError('cacName')}</p>
+                      )}
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label htmlFor="cacNumber">CAC Number *</Label>
                       <Input
                         id="cacNumber"
                         value={application.cacNumber}
                         onChange={(e) => handleInputChange('cacNumber', e.target.value)}
+                        onBlur={() => handleBlur('cacNumber')}
                         required
                         placeholder="RC1234567"
+                        className={getFieldError('cacNumber') ? 'border-destructive' : ''}
                       />
+                      {getFieldError('cacNumber') && (
+                        <p className="text-xs text-destructive">{getFieldError('cacNumber')}</p>
+                      )}
                     </div>
                   </div>
 
@@ -646,12 +812,17 @@ export default function RepairCenterApplication() {
                 <div className="pt-6 border-t">
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !isFormValid}
                     className="w-full"
                     size="lg"
                   >
                     {isSubmitting ? "Submitting Application..." : "Submit Application"}
                   </Button>
+                  {!isFormValid && Object.keys(touchedFields).length > 0 && (
+                    <p className="text-sm text-destructive mt-2 text-center">
+                      Please fix the errors above before submitting.
+                    </p>
+                  )}
                   <p className="text-sm text-muted-foreground mt-2 text-center">
                     By submitting this application, you agree to our terms of service and privacy policy.
                   </p>
