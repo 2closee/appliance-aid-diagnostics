@@ -1,12 +1,15 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
-import { Users, Building2, TrendingUp, MapPin, Activity, Target } from "lucide-react";
+import { Users, TrendingUp, MapPin, Activity, Target, Download, FileText, FileSpreadsheet } from "lucide-react";
+import { useStrategicExport } from "@/hooks/useStrategicExport";
+import { toast } from "sonner";
 import StrategicMap from "@/components/analytics/StrategicMap";
 import SignupTrendsChart from "@/components/analytics/SignupTrendsChart";
 import GeographicDistribution from "@/components/analytics/GeographicDistribution";
@@ -17,6 +20,26 @@ import RecentSignupsTable from "@/components/analytics/RecentSignupsTable";
 const StrategicAnalytics = () => {
   const { user, isAdmin, isLoading } = useAuth();
   const [dateRange, setDateRange] = useState<string>("30");
+  const [isExporting, setIsExporting] = useState(false);
+  const { exportToCSV, exportToPDF } = useStrategicExport();
+
+  const handleExport = async (type: 'csv' | 'pdf') => {
+    setIsExporting(true);
+    try {
+      if (type === 'csv') {
+        await exportToCSV(parseInt(dateRange));
+        toast.success("CSV report downloaded successfully");
+      } else {
+        await exportToPDF(parseInt(dateRange));
+        toast.success("PDF report opened for printing");
+      }
+    } catch (error) {
+      toast.error("Failed to export report");
+      console.error(error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -54,17 +77,38 @@ const StrategicAnalytics = () => {
               Comprehensive analytics for user growth, repair center coverage, and market opportunities
             </p>
           </div>
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Last 7 days</SelectItem>
-              <SelectItem value="30">Last 30 days</SelectItem>
-              <SelectItem value="90">Last 90 days</SelectItem>
-              <SelectItem value="365">Last 12 months</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">Last 7 days</SelectItem>
+                <SelectItem value="30">Last 30 days</SelectItem>
+                <SelectItem value="90">Last 90 days</SelectItem>
+                <SelectItem value="365">Last 12 months</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={isExporting}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {isExporting ? "Exporting..." : "Export"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport('csv')}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Download CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export as PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {/* Overview Cards */}
