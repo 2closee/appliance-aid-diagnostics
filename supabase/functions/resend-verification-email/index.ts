@@ -1,6 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.0";
 import { Resend } from "npm:resend@2.0.0";
+import { 
+  wrapEmailTemplate, 
+  createBox, 
+  createDetailsTable,
+  createBadge,
+  EMAIL_STYLES,
+  BRAND_COLORS 
+} from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -112,88 +120,42 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Build the email HTML using the shared template
+    const emailHtml = wrapEmailTemplate(`
+      <h2 style="${EMAIL_STYLES.h1}">Application Received!</h2>
+      <p style="${EMAIL_STYLES.paragraph}">Thank you for applying to join the FixBudi Repair Center Network.</p>
+      
+      ${createBox(`
+        <h3 style="margin: 0 0 15px 0; color: ${BRAND_COLORS.primary};">Application Details</h3>
+        ${createDetailsTable([
+          { label: 'Business Name', value: application.business_name },
+          { label: 'Contact Person', value: application.full_name },
+          { label: 'Email', value: application.email },
+          { label: 'Phone', value: application.phone },
+          { label: 'Location', value: `${application.city}, ${application.state}` },
+          { label: 'Specialties', value: application.specialties },
+          { label: 'Status', value: createBadge('Under Review', 'pending') },
+        ])}
+      `, 'info')}
+      
+      ${createBox(`
+        <h4 style="margin: 0 0 12px 0; color: #166534;">What Happens Next?</h4>
+        <ol style="margin: 0; padding-left: 20px; color: #047857;">
+          <li style="margin-bottom: 8px;">Our team will review your application within 2-3 business days</li>
+          <li style="margin-bottom: 8px;">We may contact you for additional information or verification</li>
+          <li style="margin-bottom: 8px;">Once approved, you'll receive login credentials via email</li>
+          <li>You can then set up your repair center profile and start receiving repair requests</li>
+        </ol>
+      `, 'success')}
+      
+      <p style="${EMAIL_STYLES.paragraph}">If you have any questions, please don't hesitate to contact our support team.</p>
+    `);
+
     // Send confirmation email using Resend
     const resend = new Resend(resendApiKey);
     
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Application Received - FixBudi</title>
-      </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #10b981; margin: 0;">FixBudi</h1>
-          <p style="color: #666; margin: 5px 0;">Repair Center Network</p>
-        </div>
-        
-        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
-          <h2 style="margin: 0 0 10px 0; font-size: 24px;">Application Received!</h2>
-          <p style="margin: 0; opacity: 0.9;">Thank you for applying to join the FixBudi network</p>
-        </div>
-        
-        <div style="background: #f8fafc; padding: 25px; border-radius: 12px; margin-bottom: 25px;">
-          <h3 style="color: #10b981; margin: 0 0 15px 0;">Application Details</h3>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px 0; color: #666; width: 40%;">Business Name:</td>
-              <td style="padding: 8px 0; font-weight: 500;">${application.business_name}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; color: #666;">Contact Person:</td>
-              <td style="padding: 8px 0; font-weight: 500;">${application.full_name}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; color: #666;">Email:</td>
-              <td style="padding: 8px 0; font-weight: 500;">${application.email}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; color: #666;">Phone:</td>
-              <td style="padding: 8px 0; font-weight: 500;">${application.phone}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; color: #666;">Location:</td>
-              <td style="padding: 8px 0; font-weight: 500;">${application.city}, ${application.state}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; color: #666;">Specialties:</td>
-              <td style="padding: 8px 0; font-weight: 500;">${application.specialties}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; color: #666;">Status:</td>
-              <td style="padding: 8px 0;"><span style="background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 500;">Under Review</span></td>
-            </tr>
-          </table>
-        </div>
-        
-        <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 20px; border-radius: 0 8px 8px 0; margin-bottom: 25px;">
-          <h4 style="color: #065f46; margin: 0 0 10px 0;">What Happens Next?</h4>
-          <ol style="margin: 0; padding-left: 20px; color: #047857;">
-            <li style="margin-bottom: 8px;">Our team will review your application within 2-3 business days</li>
-            <li style="margin-bottom: 8px;">We may contact you for additional information or verification</li>
-            <li style="margin-bottom: 8px;">Once approved, you'll receive login credentials via email</li>
-            <li>You can then set up your repair center profile and start receiving repair requests</li>
-          </ol>
-        </div>
-        
-        <div style="text-align: center; padding: 20px; border-top: 1px solid #e5e7eb; margin-top: 30px;">
-          <p style="color: #666; margin: 0 0 10px 0;">Questions? Contact us at</p>
-          <a href="mailto:support@fixbudi.com" style="color: #10b981; text-decoration: none; font-weight: 500;">support@fixbudi.com</a>
-        </div>
-        
-        <div style="text-align: center; margin-top: 20px;">
-          <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-            © ${new Date().getFullYear()} FixBudi. All rights reserved.
-          </p>
-        </div>
-      </body>
-      </html>
-    `;
-
     const { data: emailResult, error: emailError } = await resend.emails.send({
-      from: "FixBudi <onboarding@resend.dev>",
+      from: "FixBudi <noreply@fixbudi.com>",
       to: [email],
       subject: "Application Received - FixBudi Repair Center Network",
       html: emailHtml,

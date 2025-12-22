@@ -1,4 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { 
+  wrapEmailTemplate, 
+  createButton, 
+  createBox, 
+  createDetailsTable,
+  EMAIL_STYLES,
+  BRAND_COLORS 
+} from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,8 +30,128 @@ interface ConfirmationEmailRequest {
   };
 }
 
+function getEmailContent(type: string, name: string, centerName?: string, customMessage?: string): { subject: string; html: string } {
+  switch (type) {
+    case "support":
+      return {
+        subject: "Support Request Received",
+        html: wrapEmailTemplate(`
+          <h2 style="${EMAIL_STYLES.h1}">Thank You for Contacting Us</h2>
+          <p style="${EMAIL_STYLES.paragraph}">Dear ${name},</p>
+          <p style="${EMAIL_STYLES.paragraph}">We have received your support request and our team will review it shortly.</p>
+          
+          ${createBox(`
+            <h3 style="margin: 0 0 12px 0; color: ${BRAND_COLORS.primary};">Your Message:</h3>
+            <p style="color: ${BRAND_COLORS.textLight}; white-space: pre-wrap; margin: 0;">${customMessage || 'No message provided'}</p>
+          `, 'info')}
+          
+          <p style="${EMAIL_STYLES.paragraph}">We aim to respond to all inquiries within 24-48 hours. If your issue is urgent, please don't hesitate to reach out directly.</p>
+          
+          <p style="${EMAIL_STYLES.paragraph}">Best regards,<br><strong>The FixBudi Support Team</strong></p>
+        `)
+      };
+
+    case "custom":
+      return {
+        subject: "Message from FixBudi Admin",
+        html: wrapEmailTemplate(`
+          <h2 style="${EMAIL_STYLES.h1}">Message from FixBudi Admin</h2>
+          <p style="${EMAIL_STYLES.paragraph}">Dear ${name},</p>
+          
+          ${createBox(`
+            <p style="color: ${BRAND_COLORS.text}; margin: 0; line-height: 1.6;">${customMessage ? customMessage.replace(/\n/g, '<br>') : 'You have received a message from the FixBudi Admin team.'}</p>
+          `, 'highlight')}
+          
+          <p style="${EMAIL_STYLES.paragraph}">If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+          
+          <p style="${EMAIL_STYLES.paragraph}">Best regards,<br><strong>The FixBudi Admin Team</strong></p>
+        `)
+      };
+
+    case "application":
+      return {
+        subject: "Repair Center Application Received",
+        html: wrapEmailTemplate(`
+          <h2 style="${EMAIL_STYLES.h1}">Application Received</h2>
+          <p style="${EMAIL_STYLES.paragraph}">Dear ${name},</p>
+          <p style="${EMAIL_STYLES.paragraph}">Thank you for applying to join our repair center network with <strong>${centerName}</strong>.</p>
+          <p style="${EMAIL_STYLES.paragraph}">Your application has been received and is currently under review. Our team will carefully evaluate your submission and get back to you within 3-5 business days.</p>
+          
+          ${createBox(`
+            <h3 style="margin: 0 0 12px 0; color: ${BRAND_COLORS.primary};">What happens next?</h3>
+            <ul style="${EMAIL_STYLES.list}">
+              <li style="${EMAIL_STYLES.listItem}">Our team will review your application and verify your credentials</li>
+              <li style="${EMAIL_STYLES.listItem}">We may contact you for additional information if needed</li>
+              <li style="${EMAIL_STYLES.listItem}">You'll receive an email notification once a decision is made</li>
+              <li style="${EMAIL_STYLES.listItem}">If approved, you'll gain access to our repair center portal</li>
+            </ul>
+          `, 'info')}
+          
+          <p style="${EMAIL_STYLES.paragraph}">If you have any questions, please don't hesitate to contact our support team.</p>
+          
+          <p style="${EMAIL_STYLES.paragraph}">Best regards,<br><strong>The FixBudi Team</strong></p>
+        `)
+      };
+
+    case "approval":
+      return {
+        subject: "Repair Center Application Approved!",
+        html: wrapEmailTemplate(`
+          <h2 style="${EMAIL_STYLES.h1}">🎉 Application Approved!</h2>
+          <p style="${EMAIL_STYLES.paragraph}">Dear ${name},</p>
+          <p style="${EMAIL_STYLES.paragraph}">Congratulations! Your repair center application for <strong>${centerName}</strong> has been approved.</p>
+          <p style="${EMAIL_STYLES.paragraph}">You can now access your repair center dashboard and start receiving repair requests from customers.</p>
+          
+          ${createBox(`
+            <h3 style="margin: 0 0 12px 0; color: #166534;">Getting Started</h3>
+            <ul style="margin: 0; padding-left: 20px; color: #166534;">
+              <li style="${EMAIL_STYLES.listItem}">Log in to your repair center portal</li>
+              <li style="${EMAIL_STYLES.listItem}">Complete your center profile with operating hours and specialties</li>
+              <li style="${EMAIL_STYLES.listItem}">Start receiving and managing repair requests</li>
+              <li style="${EMAIL_STYLES.listItem}">Track your earnings and performance</li>
+            </ul>
+          `, 'success')}
+          
+          <div style="text-align: center; margin: 30px 0;">
+            ${createButton('Access Your Dashboard', 'https://fixbudi.com/repair-center-admin')}
+          </div>
+          
+          <p style="${EMAIL_STYLES.paragraph}">Welcome to the FixBudi repair center network!</p>
+          
+          <p style="${EMAIL_STYLES.paragraph}">Best regards,<br><strong>The FixBudi Team</strong></p>
+        `)
+      };
+
+    case "rejection":
+      return {
+        subject: "Repair Center Application Update",
+        html: wrapEmailTemplate(`
+          <h2 style="${EMAIL_STYLES.h1}">Application Update</h2>
+          <p style="${EMAIL_STYLES.paragraph}">Dear ${name},</p>
+          <p style="${EMAIL_STYLES.paragraph}">Thank you for your interest in joining our repair center network with <strong>${centerName}</strong>.</p>
+          <p style="${EMAIL_STYLES.paragraph}">After careful review, we are unable to approve your application at this time. This decision may be based on various factors including location coverage, capacity, or specific requirements not being met.</p>
+          
+          ${createBox(`
+            <h3 style="margin: 0 0 12px 0; color: #991b1b;">What you can do</h3>
+            <ul style="margin: 0; padding-left: 20px; color: #991b1b;">
+              <li style="${EMAIL_STYLES.listItem}">You may reapply in the future when circumstances change</li>
+              <li style="${EMAIL_STYLES.listItem}">Contact our support team for specific feedback on your application</li>
+              <li style="${EMAIL_STYLES.listItem}">Consider expanding your services or coverage area</li>
+            </ul>
+          `, 'error')}
+          
+          <p style="${EMAIL_STYLES.paragraph}">We appreciate your interest and encourage you to apply again in the future.</p>
+          
+          <p style="${EMAIL_STYLES.paragraph}">Best regards,<br><strong>The FixBudi Team</strong></p>
+        `)
+      };
+
+    default:
+      throw new Error("Invalid email type");
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -45,114 +173,8 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log(`Processing ${type} email for ${email}`);
 
-    let subject: string;
-    let html: string;
-
-    switch (type) {
-      case "support":
-        subject = customSubject || "Support Request Received";
-        html = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #2563eb;">Thank You for Contacting FixBudi Support</h1>
-            <p>Dear ${name},</p>
-            <p>We have received your support request and our team will review it shortly.</p>
-            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="margin-top: 0; color: #374151;">Your Message:</h3>
-              <p style="color: #6b7280; white-space: pre-wrap;">${customMessage || 'No message provided'}</p>
-            </div>
-            <p>We aim to respond to all inquiries within 24-48 hours. If your issue is urgent, please don't hesitate to call us directly.</p>
-            <p>Best regards,<br>The FixBudi Support Team</p>
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-              <p style="font-size: 12px; color: #9ca3af;">
-                Contact: support@fixbudi.com<br>
-                Port Harcourt, Rivers State, Nigeria
-              </p>
-            </div>
-          </div>
-        `;
-        break;
-      case "custom":
-        subject = customSubject || "Message from FixBudi Admin";
-        html = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #2563eb;">Message from FixBudi Admin</h1>
-            <p>Dear ${name},</p>
-            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              ${customMessage ? customMessage.replace(/\n/g, '<br>') : 'You have received a message from the FixBudi Admin team.'}
-            </div>
-            <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
-            <p>Best regards,<br>The FixBudi Admin Team</p>
-          </div>
-        `;
-        break;
-      case "application":
-        subject = "Repair Center Application Received";
-        html = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #2563eb;">Application Received</h1>
-            <p>Dear ${name},</p>
-            <p>Thank you for applying to join our repair center network with <strong>${centerName}</strong>.</p>
-            <p>Your application has been received and is currently under review. Our team will carefully evaluate your submission and get back to you within 3-5 business days.</p>
-            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="margin-top: 0; color: #374151;">What happens next?</h3>
-              <ul style="color: #6b7280;">
-                <li>Our team will review your application and verify your credentials</li>
-                <li>We may contact you for additional information if needed</li>
-                <li>You'll receive an email notification once a decision is made</li>
-                <li>If approved, you'll gain access to our repair center portal</li>
-              </ul>
-            </div>
-            <p>If you have any questions, please don't hesitate to contact our support team.</p>
-            <p>Best regards,<br>The FixBudi Team</p>
-          </div>
-        `;
-        break;
-      case "approval":
-        subject = "Repair Center Application Approved";
-        html = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #059669;">Application Approved!</h1>
-            <p>Dear ${name},</p>
-            <p>Congratulations! Your repair center application for <strong>${centerName}</strong> has been approved.</p>
-            <p>You can now access your repair center dashboard and start receiving repair requests from customers.</p>
-            <div style="background-color: #ecfdf5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #059669;">
-              <h3 style="margin-top: 0; color: #047857;">Getting Started</h3>
-              <ul style="color: #065f46;">
-                <li>Log in to your repair center portal</li>
-                <li>Complete your center profile with operating hours and specialties</li>
-                <li>Start receiving and managing repair requests</li>
-                <li>Track your earnings and performance</li>
-              </ul>
-            </div>
-            <p>Welcome to the FixBudi repair center network!</p>
-            <p>Best regards,<br>The FixBudi Team</p>
-          </div>
-        `;
-        break;
-      case "rejection":
-        subject = "Repair Center Application Update";
-        html = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #dc2626;">Application Update</h1>
-            <p>Dear ${name},</p>
-            <p>Thank you for your interest in joining our repair center network with <strong>${centerName}</strong>.</p>
-            <p>After careful review, we are unable to approve your application at this time. This decision may be based on various factors including location coverage, capacity, or specific requirements not being met.</p>
-            <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc2626;">
-              <h3 style="margin-top: 0; color: #991b1b;">What you can do</h3>
-              <ul style="color: #7f1d1d;">
-                <li>You may reapply in the future when circumstances change</li>
-                <li>Contact our support team for specific feedback on your application</li>
-                <li>Consider expanding your services or coverage area</li>
-              </ul>
-            </div>
-            <p>We appreciate your interest and encourage you to apply again in the future.</p>
-            <p>Best regards,<br>The FixBudi Team</p>
-          </div>
-        `;
-        break;
-      default:
-        throw new Error("Invalid email type");
-    }
+    const { subject: defaultSubject, html } = getEmailContent(type, name, centerName, customMessage);
+    const subject = customSubject || defaultSubject;
 
     // Use Resend API directly
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
@@ -258,7 +280,6 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Error logging failed email:", logError);
     }
     
-    // Provide specific error details for debugging
     const errorDetails = {
       message: error.message,
       code: error.code || 'UNKNOWN_ERROR',

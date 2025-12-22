@@ -1,6 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "npm:resend@2.0.0";
+import { 
+  wrapEmailTemplate, 
+  createBox, 
+  createDetailsTable,
+  EMAIL_STYLES,
+  BRAND_COLORS 
+} from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -91,42 +98,36 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Notifying ${uniqueEmails.length} recipients about address change`);
 
+    // Build the email HTML using the shared template
+    const emailHtml = wrapEmailTemplate(`
+      <h2 style="${EMAIL_STYLES.h1}">Address Update Notification</h2>
+      <p style="${EMAIL_STYLES.paragraph}">The address for <strong>${center.name}</strong> has been updated.</p>
+      
+      ${createBox(`
+        ${createDetailsTable([
+          { label: 'Old Address', value: `<span style="color: ${BRAND_COLORS.textLight};">${old_address}</span>` },
+          { label: 'New Address', value: `<strong style="color: ${BRAND_COLORS.primary};">${new_address}</strong>` },
+        ])}
+      `, 'info')}
+      
+      ${createBox(`
+        <p style="margin: 0; color: ${BRAND_COLORS.text};">
+          ${changed_by_admin 
+            ? "This change was made by a system administrator." 
+            : "This change was made by a repair center staff member."}
+        </p>
+      `, changed_by_admin ? 'warning' : 'highlight')}
+      
+      <p style="${EMAIL_STYLES.paragraph}">If you have any questions about this change, please contact support.</p>
+    `);
+
     // Send email to all recipients
     const emailPromises = uniqueEmails.map(email => 
       resend.emails.send({
-        from: "FixBudi <notifications@resend.dev>",
+        from: "FixBudi <noreply@fixbudi.com>",
         to: [email],
         subject: `${center.name} - Address Updated`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">Address Update Notification</h2>
-            <p>The address for <strong>${center.name}</strong> has been updated.</p>
-            
-            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <p style="margin: 5px 0;"><strong>Old Address:</strong></p>
-              <p style="margin: 5px 0; color: #666;">${old_address}</p>
-              
-              <p style="margin: 15px 0 5px 0;"><strong>New Address:</strong></p>
-              <p style="margin: 5px 0; color: #2563eb; font-weight: 500;">${new_address}</p>
-            </div>
-
-            <p style="color: #666; font-size: 14px;">
-              ${changed_by_admin 
-                ? "This change was made by a system administrator." 
-                : "This change was made by a repair center staff member."}
-            </p>
-            
-            <p style="color: #666; font-size: 14px; margin-top: 30px;">
-              If you have any questions about this change, please contact support.
-            </p>
-            
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            
-            <p style="color: #999; font-size: 12px; text-align: center;">
-              This is an automated notification from FixBudi.
-            </p>
-          </div>
-        `,
+        html: emailHtml,
       })
     );
 
