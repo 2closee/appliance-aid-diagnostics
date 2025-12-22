@@ -2,7 +2,8 @@
 // Consistent styling across all email communications
 
 // Logo URL - hosted in Supabase storage (repair-center-branding bucket)
-export const LOGO_URL = 'https://esbqtuljvejvrzawsqgk.supabase.co/storage/v1/object/public/repair-center-branding/fixbudi-logo.svg';
+// IMPORTANT: Most email clients reliably display PNG/JPG. SVG is often blocked.
+export const LOGO_URL = 'https://esbqtuljvejvrzawsqgk.supabase.co/storage/v1/object/public/repair-center-branding/fixbudi-logo.png';
 
 export const BRAND_COLORS = {
   primary: '#1a1a1a',           // Dark/black (main brand color)
@@ -87,7 +88,7 @@ export function wrapEmailTemplate(content: string, options?: { showFooter?: bool
       <div style="${EMAIL_STYLES.wrapper}">
         <!-- Header -->
         <div style="${EMAIL_STYLES.header}">
-          <img src="${LOGO_URL}" alt="FixBudi Logo" style="height: 60px; width: auto; margin-bottom: 10px;" onerror="this.style.display='none'">
+          <img src="${LOGO_URL}" alt="FixBudi logo" style="display:block; max-width: 220px; height: auto; margin: 0 auto 10px auto;" />
           <h1 style="${EMAIL_STYLES.headerLogo}">FixBudi</h1>
           <p style="${EMAIL_STYLES.headerTagline}">Appliance Repair Network</p>
         </div>

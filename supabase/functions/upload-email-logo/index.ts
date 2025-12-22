@@ -6,21 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Simple FixBudi logo - black text on white background (SVG converted to PNG-like format)
-// Creating a simple branded image programmatically
-function createSimpleLogo(): Uint8Array {
-  // This is a minimal valid PNG with FixBudi branding colors
-  // We'll use a pre-made small logo that works for email
-  const svgContent = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="200" height="80" viewBox="0 0 200 80">
-      <rect width="200" height="80" fill="#ffffff"/>
-      <rect x="10" y="10" width="60" height="60" rx="10" fill="#1a1a1a"/>
-      <text x="45" y="48" font-family="Arial, sans-serif" font-size="24" fill="#ffffff" text-anchor="middle" font-weight="bold">FB</text>
-      <text x="140" y="50" font-family="Arial, sans-serif" font-size="24" fill="#1a1a1a" text-anchor="middle" font-weight="bold">FixBudi</text>
-    </svg>
-  `;
-  return new TextEncoder().encode(svgContent);
-}
+// Upload a logo image to Supabase Storage so emails can load it.
+// Usage (POST JSON): { "sourceUrl": "https://.../logo.png" }
+// Uploads to: repair-center-branding/fixbudi-logo.png
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -29,44 +17,54 @@ serve(async (req) => {
   }
 
   try {
-    console.log("Starting logo upload process...");
+    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+    const sourceUrl = body?.sourceUrl as string | undefined;
+
+    if (!sourceUrl) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Missing sourceUrl. Provide a public PNG/JPG URL, e.g. { \"sourceUrl\": \"https://example.com/logo.png\" }",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log("Fetching logo from:", sourceUrl);
+
+    const fetchRes = await fetch(sourceUrl);
+    if (!fetchRes.ok) {
+      throw new Error(`Failed to fetch sourceUrl (${fetchRes.status})`);
+    }
+
+    const contentType = fetchRes.headers.get("content-type") || "image/png";
+    const arrayBuf = await fetchRes.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuf);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Create SVG logo
-    const logoBytes = createSimpleLogo();
+    console.log("Uploading logo to storage as fixbudi-logo.png (contentType:", contentType, ")");
 
-    console.log("Uploading logo to storage bucket...");
-
-    // Upload to storage bucket as SVG
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from("repair-center-branding")
-      .upload("fixbudi-logo.svg", logoBytes, {
-        contentType: "image/svg+xml",
+      .upload("fixbudi-logo.png", bytes, {
+        contentType,
         upsert: true,
       });
 
-    if (error) {
-      console.error("Upload error:", error);
-      throw error;
-    }
+    if (error) throw error;
 
-    // Get public URL
     const { data: urlData } = supabase.storage
       .from("repair-center-branding")
-      .getPublicUrl("fixbudi-logo.svg");
-
-    console.log("Logo uploaded successfully:", urlData.publicUrl);
+      .getPublicUrl("fixbudi-logo.png");
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Logo uploaded successfully",
-        url: urlData.publicUrl,
-      }),
+      JSON.stringify({ success: true, url: urlData.publicUrl }),
       {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -74,12 +72,9 @@ serve(async (req) => {
     );
   } catch (error: any) {
     console.error("Error uploading logo:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   }
 });
