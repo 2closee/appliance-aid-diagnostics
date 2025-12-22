@@ -21,11 +21,11 @@ export const BRAND_COLORS = {
 };
 
 export const EMAIL_STYLES = {
-  container: `font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: ${BRAND_COLORS.text}; max-width: 600px; margin: 0 auto; padding: 0; background-color: ${BRAND_COLORS.muted};`,
-  wrapper: `background-color: ${BRAND_COLORS.background}; border-radius: 12px; overflow: hidden; margin: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);`,
-  header: `background: linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, #2d2d2d 100%); padding: 35px 30px; text-align: center;`,
-  headerLogo: `color: #ffffff; margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;`,
-  headerTagline: `color: ${BRAND_COLORS.primaryLight}; margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;`,
+  container: `font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: ${BRAND_COLORS.primary}; max-width: 600px; margin: 0 auto; padding: 0; background-color: #f5f5f5;`,
+  wrapper: `background-color: ${BRAND_COLORS.background}; border: 1px solid ${BRAND_COLORS.primary}; border-radius: 0; overflow: hidden; margin: 20px;`,
+  header: `background-color: ${BRAND_COLORS.background}; padding: 35px 30px; text-align: center; border-bottom: 1px solid ${BRAND_COLORS.primary};`,
+  headerLogo: `color: ${BRAND_COLORS.primary}; margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;`,
+  headerTagline: `color: ${BRAND_COLORS.primary}; margin: 8px 0 0 0; font-size: 14px;`,
   content: `padding: 35px 30px;`,
   footer: `background-color: ${BRAND_COLORS.muted}; padding: 25px 30px; text-align: center; border-top: 1px solid ${BRAND_COLORS.border};`,
   footerText: `color: ${BRAND_COLORS.textLight}; margin: 0 0 8px 0; font-size: 14px;`,
