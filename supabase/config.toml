@@ -71,3 +71,6 @@ verify_jwt = true
 
 [functions.approve-repair-center-application]
 verify_jwt = true
+
+[functions.upload-email-logo]
+verify_jwt = false

@@ -2,7 +2,7 @@
 // Consistent styling across all email communications
 
 // Logo URL - hosted in Supabase storage (repair-center-branding bucket)
-export const LOGO_URL = 'https://esbqtuljvejvrzawsqgk.supabase.co/storage/v1/object/public/repair-center-branding/fixbudi-logo.png';
+export const LOGO_URL = 'https://esbqtuljvejvrzawsqgk.supabase.co/storage/v1/object/public/repair-center-branding/fixbudi-logo.svg';
 
 export const BRAND_COLORS = {
   primary: '#1a1a1a',           // Dark/black (main brand color)
