@@ -1,6 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import { Resend } from "npm:resend@2.0.0";
+import { 
+  wrapEmailTemplate, 
+  createButton, 
+  createBox, 
+  EMAIL_STYLES,
+  BRAND_COLORS 
+} from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -67,44 +74,30 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Password reset link generated successfully');
 
+    // Build the email HTML using the shared template
+    const emailHtml = wrapEmailTemplate(`
+      <h2 style="${EMAIL_STYLES.h1}">Reset Your Password</h2>
+      <p style="${EMAIL_STYLES.paragraph}">We received a request to reset your password for your FixBudi repair center account.</p>
+      
+      <div style="text-align: center; margin: 35px 0;">
+        ${createButton('Reset Password', resetData.properties.action_link)}
+      </div>
+      
+      ${createBox(`
+        <p style="margin: 0;"><strong>🔒 Security Note:</strong> This link will expire in 1 hour. If you didn't request this password reset, you can safely ignore this email.</p>
+      `, 'warning')}
+      
+      <p style="${EMAIL_STYLES.paragraph}; text-align: center; margin-top: 30px;">
+        <strong>The FixBudi Team</strong>
+      </p>
+    `);
+
     // Send email using Resend
     const emailResult = await resend.emails.send({
       from: "FixBudi <noreply@fixbudi.com>",
       to: [email],
       subject: "Reset Your FixBudi Password",
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Reset Your Password</title>
-        </head>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
-            <h1 style="color: #2563eb; margin-top: 0;">Reset Your Password</h1>
-            <p style="font-size: 16px;">We received a request to reset your password for your Fixbudi repair center account.</p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetData.properties.action_link}" 
-                 style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                Reset Password
-              </a>
-            </div>
-            
-            <div style="background-color: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <p style="margin: 0; color: #6b7280; font-size: 14px;">
-                <strong>Security Note:</strong> This link will expire in 1 hour. If you didn't request this password reset, you can safely ignore this email.
-              </p>
-            </div>
-            
-            <p style="text-align: center; color: #6b7280; margin-top: 30px;">
-              <strong>The Fixbudi Team</strong>
-            </p>
-          </div>
-        </body>
-        </html>
-      `,
+      html: emailHtml,
     });
 
     console.log('Password reset email sent successfully:', emailResult.id);
