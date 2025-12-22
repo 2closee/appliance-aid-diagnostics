@@ -38,6 +38,7 @@ import EmailTest from "./pages/EmailTest";
 import EmailVerification from "./pages/EmailVerification";
 import Install from "./pages/Install";
 import PaymentHistory from "./pages/PaymentHistory";
+import StrategicAnalytics from "./pages/StrategicAnalytics";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -115,6 +116,7 @@ const App = () => (
             <Route path="/support-tickets" element={<SupportTickets />} />
             <Route path="/support-tickets/:id" element={<SupportTicketDetail />} />
             <Route path="/admin/support-tickets" element={<AdminSupportTickets />} />
+            <Route path="/strategic-analytics" element={<StrategicAnalytics />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="*" element={<NotFound />} />
               </Routes>
