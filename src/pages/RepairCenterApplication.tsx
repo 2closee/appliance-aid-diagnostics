@@ -74,6 +74,8 @@ const validateField = (field: string, value: string): string | null => {
 
 export default function RepairCenterApplication() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get("ref") || "";
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
