@@ -118,6 +118,7 @@ const App = () => (
             <Route path="/support-tickets/:id" element={<SupportTicketDetail />} />
             <Route path="/admin/support-tickets" element={<AdminSupportTickets />} />
             <Route path="/strategic-analytics" element={<StrategicAnalytics />} />
+            <Route path="/super-admin" element={<SuperAdmin />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="*" element={<NotFound />} />
               </Routes>

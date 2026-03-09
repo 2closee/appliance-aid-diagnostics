@@ -50,7 +50,7 @@ const Navigation = () => {
     ] : []),
     // Super Admin specific navigation
     ...(userRole === 'admin' ? [
-      { path: "/admin", label: "Super Admin Panel", icon: Settings },
+      { path: "/super-admin", label: "Super Admin", icon: Settings },
       { path: "/strategic-analytics", label: "Strategic Planning", icon: Target },
       { path: "/payout-management", label: "Payout Management", icon: CreditCard },
     ] : []),
