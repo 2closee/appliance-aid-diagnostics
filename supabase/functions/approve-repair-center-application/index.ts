@@ -193,6 +193,42 @@ const handler = async (req: Request): Promise<Response> => {
       .update({ status: 'approved' })
       .eq("id", applicationId);
 
+    // Handle referral tracking
+    if (application.referral_code) {
+      console.log('Processing referral code:', application.referral_code);
+      const { data: referral } = await supabaseAdmin
+        .from("center_referrals")
+        .select("*")
+        .eq("referral_code", application.referral_code)
+        .eq("status", "pending")
+        .maybeSingle();
+
+      if (referral) {
+        // Update referral status to active and link the referred center
+        await supabaseAdmin
+          .from("center_referrals")
+          .update({
+            status: "active",
+            referred_center_id: centerData.id,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", referral.id);
+
+        // Create a reward record
+        await supabaseAdmin
+          .from("center_referral_rewards")
+          .insert({
+            referral_id: referral.id,
+            center_id: referral.referring_center_id,
+            reward_type: referral.reward_type || "commission_bonus",
+            amount: referral.reward_amount || 5000, // Default ₦5,000 reward
+            status: "pending"
+          });
+
+        console.log('Referral processed successfully for center:', referral.referring_center_id);
+      }
+    }
+
     // Send approval email
     console.log('Sending approval email...');
     
