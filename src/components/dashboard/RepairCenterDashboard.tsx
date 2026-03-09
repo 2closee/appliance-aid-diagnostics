@@ -399,7 +399,7 @@ const RepairCenterDashboard = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="hover:shadow-medium transition-all cursor-pointer bg-gradient-to-br from-card to-secondary/30 border-primary/10" onClick={() => setShowBankAccount(true)}>
             <CardContent className="flex items-center justify-between p-6">
               <div>
@@ -422,6 +422,11 @@ const RepairCenterDashboard = () => {
             </Card>
           </Link>
         </div>
+
+        {/* Referral Card */}
+        {repairCenterId && (
+          <RepairCenterReferralCard repairCenterId={repairCenterId} />
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
