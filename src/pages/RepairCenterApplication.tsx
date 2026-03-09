@@ -168,7 +168,8 @@ export default function RepairCenterApplication() {
           website: application.website,
           certifications: application.certifications,
           description: application.description,
-          fullName: trimmedOwnerName
+          fullName: trimmedOwnerName,
+          referralCode: referralCode || undefined
         }
       });
 
