@@ -219,7 +219,8 @@ const handler = async (req: Request): Promise<Response> => {
         website: applicationData.website || null,
         certifications: applicationData.certifications || null,
         description: applicationData.description || null,
-        status: 'pending'
+        status: 'pending',
+        referral_code: applicationData.referralCode || null
       });
 
     console.log('Insert result - data:', insertData);
