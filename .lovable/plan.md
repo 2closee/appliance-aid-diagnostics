@@ -1,23 +1,19 @@
 
 
-## Already Implemented
+## Root Cause
 
-Both the **Email Service** and **Repair Center Referral System** were fully built in the previous conversation turn. Here's what exists:
+The `send-confirmation-email` edge function returns **404 Not Found** when called. The function code exists locally but is not deployed to the Supabase project.
 
-### Email Service (Super Admin Panel)
-- **"Email Centers" tab** on `/super-admin` with a table of all repair centers
-- Multi-select checkboxes + "Select All" for bulk email
-- Per-center email button for individual messages
-- `EmailComposerDialog` supports multiple recipients with sending progress bar
-- Uses existing `send-confirmation-email` edge function with `type: 'custom'`
+## Fix
 
-### Repair Center Referral System
-- **Database tables**: `center_referrals` and `center_referral_rewards` (with RLS policies)
-- **Super Admin**: "Referral System" tab with `ReferralManagement` component showing all referrals, stats, and "Mark as Paid" actions
-- **Repair Center Dashboard**: `RepairCenterReferralCard` for generating referral codes (FBR-XXXXX) and copying referral links
-- **Application flow**: `RepairCenterApplication.tsx` captures `?ref=CODE` URL parameter
-- **Backend**: `approve-repair-center-application` creates a ₦5,000 reward when a referred center is activated
+Deploy the `send-confirmation-email` edge function. No code changes are needed — just a deployment.
 
-### No Changes Needed
-Everything is in place. Log in at `/auth` and navigate to `/super-admin` to access both features.
+### Steps
+1. Deploy `send-confirmation-email` edge function using the deploy tool
+2. Verify it responds correctly after deployment
+
+### Additional Notes
+- The function uses `RESEND_API_KEY` which is already configured in secrets
+- The `from` address is `noreply@fixbudi.com` — this requires the `fixbudi.com` domain to be verified in Resend. If emails still fail after deployment, the domain verification in Resend should be checked.
+- `verify_jwt = false` is already set in config.toml, so no auth issues expected
 
