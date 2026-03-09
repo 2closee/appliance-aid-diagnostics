@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import Navigation from "@/components/Navigation";
 import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Clock, CheckCircle, AlertCircle, DollarSign, Users, MessageCircle, Settings as SettingsIcon, CreditCard } from "lucide-react";
+import { Wrench, Clock, CheckCircle, AlertCircle, DollarSign, Users, MessageCircle, Settings as SettingsIcon, CreditCard, Gift } from "lucide-react";
+import RepairCenterReferralCard from "@/components/RepairCenterReferralCard";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -398,7 +399,7 @@ const RepairCenterDashboard = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="hover:shadow-medium transition-all cursor-pointer bg-gradient-to-br from-card to-secondary/30 border-primary/10" onClick={() => setShowBankAccount(true)}>
             <CardContent className="flex items-center justify-between p-6">
               <div>
@@ -421,6 +422,11 @@ const RepairCenterDashboard = () => {
             </Card>
           </Link>
         </div>
+
+        {/* Referral Card */}
+        {repairCenterId && (
+          <RepairCenterReferralCard repairCenterId={repairCenterId} />
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">

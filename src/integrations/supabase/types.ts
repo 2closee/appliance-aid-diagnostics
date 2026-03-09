@@ -65,6 +65,114 @@ export type Database = {
           },
         ]
       }
+      center_referral_rewards: {
+        Row: {
+          amount: number
+          center_id: number
+          created_at: string
+          id: string
+          paid_at: string | null
+          referral_id: string
+          reward_type: string
+          status: string
+        }
+        Insert: {
+          amount?: number
+          center_id: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          referral_id: string
+          reward_type?: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          center_id?: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          referral_id?: string
+          reward_type?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_referral_rewards_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "Repair Center"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "center_referral_rewards_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "center_referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      center_referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code: string
+          referred_business_name: string
+          referred_center_id: number | null
+          referred_email: string
+          referring_center_id: number
+          reward_amount: number | null
+          reward_paid_at: string | null
+          reward_type: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_business_name: string
+          referred_center_id?: number | null
+          referred_email: string
+          referring_center_id: number
+          reward_amount?: number | null
+          reward_paid_at?: string | null
+          reward_type?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_business_name?: string
+          referred_center_id?: number | null
+          referred_email?: string
+          referring_center_id?: number
+          reward_amount?: number | null
+          reward_paid_at?: string | null
+          reward_type?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_referrals_referred_center_id_fkey"
+            columns: ["referred_center_id"]
+            isOneToOne: false
+            referencedRelation: "Repair Center"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "center_referrals_referring_center_id_fkey"
+            columns: ["referring_center_id"]
+            isOneToOne: false
+            referencedRelation: "Repair Center"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       certification_courses: {
         Row: {
           certification_id: string
@@ -1442,6 +1550,7 @@ export type Database = {
           number_of_staff: number
           operating_hours: string
           phone: string
+          referral_code: string | null
           specialties: string
           state: string
           status: string
@@ -1466,6 +1575,7 @@ export type Database = {
           number_of_staff?: number
           operating_hours: string
           phone: string
+          referral_code?: string | null
           specialties: string
           state: string
           status?: string
@@ -1490,6 +1600,7 @@ export type Database = {
           number_of_staff?: number
           operating_hours?: string
           phone?: string
+          referral_code?: string | null
           specialties?: string
           state?: string
           status?: string

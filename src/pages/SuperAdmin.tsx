@@ -3,12 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
+import EmailComposerDialog from "@/components/EmailComposerDialog";
+import ReferralManagement from "@/components/ReferralManagement";
 import {
   Shield,
   Users,
@@ -27,6 +30,8 @@ import {
   Wrench,
   TrendingUp,
   FileText,
+  Send,
+  Gift,
 } from "lucide-react";
 
 const SuperAdmin = () => {
@@ -34,6 +39,9 @@ const SuperAdmin = () => {
   const { user, userRole, isLoading } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"overview" | "email" | "referrals">("overview");
+  const [selectedCenters, setSelectedCenters] = useState<number[]>([]);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading) {
@@ -52,7 +60,6 @@ const SuperAdmin = () => {
     }
   }, [user, userRole, isLoading, navigate, toast]);
 
-  // Fetch platform stats
   const { data: stats } = useQuery({
     queryKey: ["super-admin-stats"],
     queryFn: async () => {
@@ -83,7 +90,6 @@ const SuperAdmin = () => {
     enabled: userRole === "admin",
   });
 
-  // Fetch users list
   const { data: users, refetch: refetchUsers } = useQuery({
     queryKey: ["super-admin-users", searchQuery],
     queryFn: async () => {
@@ -92,11 +98,9 @@ const SuperAdmin = () => {
         .select("id, full_name, email, is_suspended, created_at")
         .order("created_at", { ascending: false })
         .limit(50);
-
       if (searchQuery) {
         query = query.or(`full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
       }
-
       const { data, error } = await query;
       if (error) throw error;
       return data || [];
@@ -104,13 +108,25 @@ const SuperAdmin = () => {
     enabled: userRole === "admin",
   });
 
-  // Fetch user roles
   const { data: userRoles } = useQuery({
     queryKey: ["super-admin-user-roles"],
     queryFn: async () => {
+      const { data, error } = await supabase.from("user_roles").select("user_id, role");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: userRole === "admin",
+  });
+
+  // Fetch repair centers for email feature
+  const { data: repairCenters } = useQuery({
+    queryKey: ["super-admin-repair-centers"],
+    queryFn: async () => {
       const { data, error } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
+        .from("Repair Center")
+        .select("id, name, email, status")
+        .is("deleted_at", null)
+        .order("name");
       if (error) throw error;
       return data || [];
     },
@@ -131,18 +147,34 @@ const SuperAdmin = () => {
       if (error) throw error;
       toast({
         title: currentlySuspended ? "User Unsuspended" : "User Suspended",
-        description: currentlySuspended
-          ? "User account has been reactivated."
-          : "User account has been suspended.",
+        description: currentlySuspended ? "User account has been reactivated." : "User account has been suspended.",
       });
       refetchUsers();
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update user status.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     }
+  };
+
+  const toggleCenterSelection = (centerId: number) => {
+    setSelectedCenters((prev) =>
+      prev.includes(centerId) ? prev.filter((id) => id !== centerId) : [...prev, centerId]
+    );
+  };
+
+  const selectAllCenters = () => {
+    if (!repairCenters) return;
+    if (selectedCenters.length === repairCenters.length) {
+      setSelectedCenters([]);
+    } else {
+      setSelectedCenters(repairCenters.map((c) => c.id));
+    }
+  };
+
+  const getSelectedRecipients = () => {
+    if (!repairCenters) return [];
+    return repairCenters
+      .filter((c) => selectedCenters.includes(c.id))
+      .map((c) => ({ name: c.name || "Unknown", email: c.email || "", id: c.id }));
   };
 
   if (isLoading) {
@@ -181,13 +213,23 @@ const SuperAdmin = () => {
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case "super_admin": return "destructive";
-      case "admin": return "destructive";
-      case "repair_center": return "default";
-      case "teacher": return "secondary";
-      default: return "outline";
+      case "super_admin":
+      case "admin":
+        return "destructive" as const;
+      case "repair_center":
+        return "default" as const;
+      case "teacher":
+        return "secondary" as const;
+      default:
+        return "outline" as const;
     }
   };
+
+  const tabs = [
+    { key: "overview" as const, label: "Overview", icon: Activity },
+    { key: "email" as const, label: "Email Centers", icon: Mail },
+    { key: "referrals" as const, label: "Referral System", icon: Gift },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -217,124 +259,247 @@ const SuperAdmin = () => {
           ))}
         </div>
 
-        {/* Quick Links */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Quick Access
-            </CardTitle>
-            <CardDescription>Navigate to all management tools</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {quickLinks.map((link) => (
-                <Button
-                  key={link.path}
-                  variant="outline"
-                  className="h-auto py-4 flex flex-col items-start gap-1 text-left"
-                  onClick={() => navigate(link.path)}
-                >
-                  <div className="flex items-center gap-2">
-                    <link.icon className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{link.label}</span>
+        {/* Tab Navigation */}
+        <div className="flex gap-2 border-b pb-2">
+          {tabs.map((tab) => (
+            <Button
+              key={tab.key}
+              variant={activeTab === tab.key ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setActiveTab(tab.key)}
+              className="gap-2"
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </Button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === "overview" && (
+          <>
+            {/* Quick Links */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Quick Access
+                </CardTitle>
+                <CardDescription>Navigate to all management tools</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {quickLinks.map((link) => (
+                    <Button
+                      key={link.path}
+                      variant="outline"
+                      className="h-auto py-4 flex flex-col items-start gap-1 text-left"
+                      onClick={() => navigate(link.path)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <link.icon className="h-4 w-4 text-primary" />
+                        <span className="font-medium">{link.label}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{link.desc}</span>
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* User Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCog className="h-5 w-5" />
+                  User Management
+                </CardTitle>
+                <CardDescription>Search, view roles, and suspend/unsuspend users</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search users by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="rounded-lg border overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50 border-b">
+                          <th className="text-left p-3 font-medium">User</th>
+                          <th className="text-left p-3 font-medium">Role</th>
+                          <th className="text-left p-3 font-medium">Status</th>
+                          <th className="text-left p-3 font-medium">Joined</th>
+                          <th className="text-right p-3 font-medium">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {users?.map((u) => {
+                          const role = getUserRole(u.id);
+                          return (
+                            <tr key={u.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                              <td className="p-3">
+                                <div>
+                                  <p className="font-medium">{u.full_name || "No name"}</p>
+                                  <p className="text-xs text-muted-foreground">{u.email}</p>
+                                </div>
+                              </td>
+                              <td className="p-3">
+                                <Badge variant={getRoleBadgeVariant(role)}>{role}</Badge>
+                              </td>
+                              <td className="p-3">
+                                {u.is_suspended ? (
+                                  <Badge variant="destructive" className="gap-1">
+                                    <Ban className="h-3 w-3" /> Suspended
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30">
+                                    <CheckCircle className="h-3 w-3" /> Active
+                                  </Badge>
+                                )}
+                              </td>
+                              <td className="p-3 text-muted-foreground">
+                                {u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}
+                              </td>
+                              <td className="p-3 text-right">
+                                {role !== "super_admin" && (
+                                  <Button
+                                    size="sm"
+                                    variant={u.is_suspended ? "outline" : "destructive"}
+                                    onClick={() => handleToggleSuspend(u.id, u.is_suspended)}
+                                  >
+                                    {u.is_suspended ? "Unsuspend" : "Suspend"}
+                                  </Button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {(!users || users.length === 0) && (
+                          <tr>
+                            <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                              No users found.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
-                  <span className="text-xs text-muted-foreground">{link.desc}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {activeTab === "email" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                Email Repair Centers
+              </CardTitle>
+              <CardDescription>
+                Select repair centers and send them custom emails about features, updates, or notifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={repairCenters ? selectedCenters.length === repairCenters.length && repairCenters.length > 0 : false}
+                    onCheckedChange={selectAllCenters}
+                  />
+                  <span className="text-sm font-medium">
+                    Select All ({repairCenters?.length || 0})
+                  </span>
+                </div>
+                <Button
+                  onClick={() => setEmailDialogOpen(true)}
+                  disabled={selectedCenters.length === 0}
+                  className="gap-2"
+                >
+                  <Send className="h-4 w-4" />
+                  Email Selected ({selectedCenters.length})
                 </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
 
-        {/* User Management */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserCog className="h-5 w-5" />
-              User Management
-            </CardTitle>
-            <CardDescription>Search, view roles, and suspend/unsuspend users</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search users by name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            <div className="rounded-lg border overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-muted/50 border-b">
-                      <th className="text-left p-3 font-medium">User</th>
-                      <th className="text-left p-3 font-medium">Role</th>
-                      <th className="text-left p-3 font-medium">Status</th>
-                      <th className="text-left p-3 font-medium">Joined</th>
-                      <th className="text-right p-3 font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users?.map((u) => {
-                      const role = getUserRole(u.id);
-                      return (
-                        <tr key={u.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+              <div className="rounded-lg border overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-muted/50 border-b">
+                        <th className="p-3 w-10"></th>
+                        <th className="text-left p-3 font-medium">Center Name</th>
+                        <th className="text-left p-3 font-medium">Email</th>
+                        <th className="text-left p-3 font-medium">Status</th>
+                        <th className="text-right p-3 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {repairCenters?.map((center) => (
+                        <tr key={center.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                           <td className="p-3">
-                            <div>
-                              <p className="font-medium">{u.full_name || "No name"}</p>
-                              <p className="text-xs text-muted-foreground">{u.email}</p>
-                            </div>
+                            <Checkbox
+                              checked={selectedCenters.includes(center.id)}
+                              onCheckedChange={() => toggleCenterSelection(center.id)}
+                            />
                           </td>
+                          <td className="p-3 font-medium">{center.name || "Unnamed"}</td>
+                          <td className="p-3 text-muted-foreground">{center.email}</td>
                           <td className="p-3">
-                            <Badge variant={getRoleBadgeVariant(role)}>{role}</Badge>
-                          </td>
-                          <td className="p-3">
-                            {u.is_suspended ? (
-                              <Badge variant="destructive" className="gap-1">
-                                <Ban className="h-3 w-3" /> Suspended
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30">
-                                <CheckCircle className="h-3 w-3" /> Active
-                              </Badge>
-                            )}
-                          </td>
-                          <td className="p-3 text-muted-foreground">
-                            {u.created_at
-                              ? new Date(u.created_at).toLocaleDateString()
-                              : "—"}
+                            <Badge variant={center.status === "active" ? "outline" : "secondary"}>
+                              {center.status}
+                            </Badge>
                           </td>
                           <td className="p-3 text-right">
-                            {role !== "super_admin" && (
-                              <Button
-                                size="sm"
-                                variant={u.is_suspended ? "outline" : "destructive"}
-                                onClick={() => handleToggleSuspend(u.id, u.is_suspended)}
-                              >
-                                {u.is_suspended ? "Unsuspend" : "Suspend"}
-                              </Button>
-                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedCenters([center.id]);
+                                setEmailDialogOpen(true);
+                              }}
+                            >
+                              <Mail className="h-4 w-4" />
+                            </Button>
                           </td>
                         </tr>
-                      );
-                    })}
-                    {(!users || users.length === 0) && (
-                      <tr>
-                        <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                          No users found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                      ))}
+                      {(!repairCenters || repairCenters.length === 0) && (
+                        <tr>
+                          <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                            No repair centers found.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
+
+              <EmailComposerDialog
+                open={emailDialogOpen}
+                onOpenChange={setEmailDialogOpen}
+                recipients={getSelectedRecipients()}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === "referrals" && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-semibold">Referral System Management</h2>
             </div>
-          </CardContent>
-        </Card>
+            <ReferralManagement />
+          </div>
+        )}
       </div>
     </div>
   );

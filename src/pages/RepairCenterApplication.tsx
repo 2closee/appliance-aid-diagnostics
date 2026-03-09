@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,6 +74,8 @@ const validateField = (field: string, value: string): string | null => {
 
 export default function RepairCenterApplication() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get("ref") || "";
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -166,7 +168,8 @@ export default function RepairCenterApplication() {
           website: application.website,
           certifications: application.certifications,
           description: application.description,
-          fullName: trimmedOwnerName
+          fullName: trimmedOwnerName,
+          referralCode: referralCode || undefined
         }
       });
 
