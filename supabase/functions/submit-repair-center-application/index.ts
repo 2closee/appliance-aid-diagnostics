@@ -35,7 +35,8 @@ const applicationSchema = z.object({
     .or(z.literal("")),
   certifications: z.string().trim().max(1000, "Certifications text too long").optional().or(z.literal("")),
   description: z.string().trim().max(2000, "Description too long").optional().or(z.literal("")),
-  fullName: z.string().trim().min(2, "Full name must be at least 2 characters").max(200, "Full name too long")
+  fullName: z.string().trim().min(2, "Full name must be at least 2 characters").max(200, "Full name too long"),
+  referralCode: z.string().trim().max(20).optional().or(z.literal(""))
 });
 
 interface ApplicationData {
