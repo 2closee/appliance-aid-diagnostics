@@ -39,6 +39,7 @@ import EmailVerification from "./pages/EmailVerification";
 import Install from "./pages/Install";
 import PaymentHistory from "./pages/PaymentHistory";
 import StrategicAnalytics from "./pages/StrategicAnalytics";
+import SuperAdmin from "./pages/SuperAdmin";
 
 const queryClient = new QueryClient({
   defaultOptions: {
