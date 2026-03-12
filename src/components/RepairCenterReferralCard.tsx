@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Gift, Copy, Check, Users } from "lucide-react";
+import { Gift, Copy, Check, Users, Share2 } from "lucide-react";
 
 interface Props {
   repairCenterId: number;
