@@ -86,12 +86,34 @@ const RepairCenterReferralCard = ({ repairCenterId }: Props) => {
     }
   };
 
+  const getReferralLink = (code: string) =>
+    `${window.location.origin}/repair-center-application?ref=${code}`;
+
   const copyReferralLink = (code: string) => {
-    const link = `${window.location.origin}/repair-center-application?ref=${code}`;
-    navigator.clipboard.writeText(link);
+    navigator.clipboard.writeText(getReferralLink(code));
     setCopied(true);
     toast({ title: "Copied!", description: "Referral link copied to clipboard" });
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareOnWhatsApp = (code: string) => {
+    const link = getReferralLink(code);
+    const text = `Join FixBudi and grow your repair business! Apply here: ${link}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  const shareOnFacebook = (code: string) => {
+    const link = getReferralLink(code);
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`, "_blank");
+  };
+
+  const shareOnInstagram = (code: string) => {
+    // Instagram doesn't support direct URL sharing — copy link and prompt user
+    navigator.clipboard.writeText(getReferralLink(code));
+    toast({
+      title: "Link copied!",
+      description: "Paste it in your Instagram bio or story. Instagram doesn't support direct link sharing.",
+    });
   };
 
   const totalEarned = rewards?.filter(r => r.status === "paid").reduce((s, r) => s + Number(r.amount), 0) || 0;
