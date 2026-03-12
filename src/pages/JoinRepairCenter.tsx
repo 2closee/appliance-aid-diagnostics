@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -106,6 +107,20 @@ const testimonials = [
 export default function JoinRepairCenter() {
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Join FixBudi — Grow Your Repair Business | Free Partner Program</title>
+        <meta name="description" content="Join Nigeria's trusted repair network. Get guaranteed payments, steady customers, and business tools — all for free. Apply in under 5 minutes." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://fixbudi.lovable.app/join" />
+        <meta property="og:title" content="Join FixBudi — Grow Your Repair Business" />
+        <meta property="og:description" content="Get guaranteed payments, steady customers, and the tools to scale your repair business. Join Nigeria's trusted repair network for free." />
+        <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/nQ32GhjeJ4RT5MLgw27qGc1KHGR2/social-images/social-1764094751908-FIXBUDI_NEW_LOGO-removebg-preview.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Join FixBudi — Grow Your Repair Business" />
+        <meta name="twitter:description" content="Get guaranteed payments, steady customers, and the tools to scale your repair business. Join Nigeria's trusted repair network for free." />
+        <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/nQ32GhjeJ4RT5MLgw27qGc1KHGR2/social-images/social-1764094751908-FIXBUDI_NEW_LOGO-removebg-preview.png" />
+        <link rel="canonical" href="https://fixbudi.lovable.app/join" />
+      </Helmet>
       <Navigation />
 
       {/* Hero Section */}
