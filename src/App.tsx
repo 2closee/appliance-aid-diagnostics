@@ -121,6 +121,7 @@ const App = () => (
             <Route path="/strategic-analytics" element={<StrategicAnalytics />} />
             <Route path="/super-admin" element={<SuperAdmin />} />
             <Route path="/faq" element={<FAQ />} />
+            <Route path="/join" element={<JoinRepairCenter />} />
             <Route path="*" element={<NotFound />} />
               </Routes>
             </RouteHandler>
