@@ -16,7 +16,8 @@ import {
   Settings,
   MessageCircle,
   CreditCard,
-  Target
+  Target,
+  Stethoscope
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,6 +42,7 @@ const Navigation = () => {
     // Only show customer features for actual customers and logged-out users (not repair center staff)
     ...(userRole === 'customer' || (!user && !isRepairCenterStaff) ? [
       { path: "/diagnostic", label: "AI Diagnostic", icon: Bot },
+      { path: "/self-test", label: "Self-Test", icon: Stethoscope },
       { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
       { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },
     ] : []),
