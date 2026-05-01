@@ -518,7 +518,7 @@ const Index = () => {
         <div className="container mx-auto max-w-6xl px-4">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground text-center sm:text-left">
-              © 2025 Fixbudi. All rights reserved.
+              © {new Date().getFullYear()} Fixbudi. All rights reserved.
             </p>
             <div className="flex flex-wrap gap-2 sm:gap-4 justify-center">
               <Button 
