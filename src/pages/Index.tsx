@@ -25,6 +25,7 @@ import {
   Shield
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import Navigation from "@/components/Navigation";
@@ -35,6 +36,7 @@ import fixbudiHeroDark from "@/assets/fixbudi-hero-dark.webp";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, isAdmin, signOut, userRole } = useAuth();
   const { theme } = useTheme();
 
@@ -518,7 +520,7 @@ const Index = () => {
         <div className="container mx-auto max-w-6xl px-4">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground text-center sm:text-left">
-              © {new Date().getFullYear()} Fixbudi. All rights reserved.
+              {t("footer.rights", { year: new Date().getFullYear() })}
             </p>
             <div className="flex flex-wrap gap-2 sm:gap-4 justify-center">
               <Button 
