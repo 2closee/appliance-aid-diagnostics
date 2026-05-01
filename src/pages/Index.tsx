@@ -71,9 +71,6 @@ const Index = () => {
                     Start Diagnosis
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
-                  <Button variant="secondary" size="lg" onClick={() => navigate('/self-test')}>
-                    Run Free Phone Self-Test
-                  </Button>
                   <Button variant="outline" size="lg" onClick={() => user ? navigate('/repair-centers') : navigate('/auth')}>
                     Find Repair Centers
                     <MapPin className="ml-2 h-5 w-5" />
