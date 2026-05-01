@@ -106,6 +106,7 @@ const testimonials = [
 ];
 
 export default function JoinRepairCenter() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
