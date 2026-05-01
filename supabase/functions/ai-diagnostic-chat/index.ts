@@ -100,9 +100,22 @@ async function callLovableAI(params: {
     ? `\n\nDevice Details: ${applianceBrand} ${applianceModel}. Use manufacturer-specific knowledge when available.`
     : '';
 
+  // Detect self-test handoff with inconclusive/failed results so the model
+  // prioritizes hardware-vs-software disambiguation via follow-up questions.
+  const isSelfTestHandoff = /FixBudi self-diagnostic/i.test(initialDiagnosis);
+  const hasInconclusiveSignals = /inconclusive|failed tests:|skipped\/unsupported|could not run/i.test(initialDiagnosis);
+  const inconclusiveGuidance = (isSelfTestHandoff && hasInconclusiveSignals)
+    ? `\n\nIMPORTANT: The initial diagnosis is from an on-device self-test that produced inconclusive, failed, or skipped results. Before giving a verdict:
+- Ask the user the follow-up questions listed in the initial diagnosis ONE AT A TIME, waiting for each answer.
+- If the user already answered some, do not repeat those questions.
+- After each answer, briefly note whether it points more toward hardware or software.
+- Once you have enough signal (typically 2-4 answers), give a clear hardware-vs-software verdict, the most likely root cause, a confidence percentage, and whether professional repair is recommended.
+- Do NOT guess prematurely. If confidence stays below ~70%, ask one more targeted question instead of concluding.`
+    : '';
+
   const systemPrompt = `You are an expert diagnostic AI assistant for electronic devices. You are helping diagnose issues with a ${appliance}.${brandModelContext}
 
-Initial diagnosis was: "${initialDiagnosis}"
+Initial diagnosis was: "${initialDiagnosis}"${inconclusiveGuidance}
 
 Your role:
 1. Ask follow-up questions to better understand the specific issues
