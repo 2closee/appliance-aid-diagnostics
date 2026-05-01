@@ -41,6 +41,7 @@ import PaymentHistory from "./pages/PaymentHistory";
 import StrategicAnalytics from "./pages/StrategicAnalytics";
 import SuperAdmin from "./pages/SuperAdmin";
 import JoinRepairCenter from "./pages/JoinRepairCenter";
+import SelfTest from "./pages/SelfTest";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -122,6 +123,7 @@ const App = () => (
             <Route path="/super-admin" element={<SuperAdmin />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/join" element={<JoinRepairCenter />} />
+            <Route path="/self-test" element={<SelfTest />} />
             <Route path="*" element={<NotFound />} />
               </Routes>
             </RouteHandler>
