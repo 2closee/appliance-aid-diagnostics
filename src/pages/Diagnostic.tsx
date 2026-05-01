@@ -494,7 +494,10 @@ const Diagnostic = () => {
               
               <AIChatInterface
                 appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
-                initialDiagnosis={diagnosis.message || 'Initial diagnostic questions completed'}
+                initialDiagnosis={[
+                  typeof window !== 'undefined' ? sessionStorage.getItem('fixbudi_selftest_summary') : null,
+                  diagnosis.message || 'Initial diagnostic questions completed'
+                ].filter(Boolean).join('\n\n')}
                 onDiagnosisUpdate={(newDiag, report) => {
                   handleDiagnosisUpdate(newDiag, report);
                   if (report) {
