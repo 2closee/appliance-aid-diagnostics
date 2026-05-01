@@ -214,6 +214,23 @@ const Diagnostic = () => {
           </header>
 
           {!selectedAppliance && (
+            <Card className="mb-6 border-primary/30 bg-primary/5">
+              <CardContent className="p-4 lg:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                <Smartphone className="h-8 w-8 text-primary shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium">Got a phone? Run a 3-min device self-test first.</p>
+                  <p className="text-sm text-muted-foreground">
+                    We'll check your battery, screen, touch, cameras, mic, speakers and vibration in your browser, then feed the results into this chat.
+                  </p>
+                </div>
+                <Button onClick={() => navigate('/self-test')} className="shrink-0">
+                  Run self-test
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {!selectedAppliance && (
             <Card className="shadow-medium">
               <CardHeader className="text-center lg:text-left">
                 <CardTitle className="text-xl lg:text-2xl">Select Your Appliance</CardTitle>
