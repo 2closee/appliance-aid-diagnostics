@@ -78,6 +78,10 @@ const RouteHandler = ({ children }: { children: React.ReactNode }) => {
     }
   }, [navigate, location.pathname]);
 
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location.pathname, location.search]);
+
   return <>{children}</>;
 };
 
