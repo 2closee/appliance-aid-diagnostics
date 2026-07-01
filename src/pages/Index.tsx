@@ -33,6 +33,7 @@ import { InstallPromptBanner } from "@/components/InstallPromptBanner";
 import { WhyFixBudiSection } from "@/components/WhyFixBudiSection";
 import fixbudiHeroLight from "@/assets/fixbudi-hero-light.webp";
 import fixbudiHeroDark from "@/assets/fixbudi-hero-dark.webp";
+import { trackEvent } from "@/lib/analytics";
 
 const Index = () => {
   const navigate = useNavigate();
