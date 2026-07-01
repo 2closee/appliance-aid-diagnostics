@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, MinusCircle, ArrowRight, MapPin, RotateCcw, Bot } from "lucide-react";
 import { TestResult } from "@/lib/selftest/types";
 import { summarizeCounts } from "@/lib/selftest/handoff";
+import { useEffect } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 interface Props {
   results: TestResult[];
