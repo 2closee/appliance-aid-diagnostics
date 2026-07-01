@@ -42,6 +42,8 @@ import StrategicAnalytics from "./pages/StrategicAnalytics";
 import SuperAdmin from "./pages/SuperAdmin";
 import JoinRepairCenter from "./pages/JoinRepairCenter";
 import SelfTest from "./pages/SelfTest";
+import TrafficAnalytics from "./pages/TrafficAnalytics";
+import { trackPageView } from "./lib/analytics";
 
 const queryClient = new QueryClient({
   defaultOptions: {
