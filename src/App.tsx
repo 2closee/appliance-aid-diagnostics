@@ -42,6 +42,8 @@ import StrategicAnalytics from "./pages/StrategicAnalytics";
 import SuperAdmin from "./pages/SuperAdmin";
 import JoinRepairCenter from "./pages/JoinRepairCenter";
 import SelfTest from "./pages/SelfTest";
+import TrafficAnalytics from "./pages/TrafficAnalytics";
+import { trackPageView } from "./lib/analytics";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,6 +77,10 @@ const RouteHandler = ({ children }: { children: React.ReactNode }) => {
       navigate(initialPath, { replace: true });
     }
   }, [navigate, location.pathname]);
+
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location.pathname, location.search]);
 
   return <>{children}</>;
 };
@@ -124,6 +130,7 @@ const App = () => (
             <Route path="/faq" element={<FAQ />} />
             <Route path="/join" element={<JoinRepairCenter />} />
             <Route path="/self-test" element={<SelfTest />} />
+            <Route path="/admin/traffic-analytics" element={<TrafficAnalytics />} />
             <Route path="*" element={<NotFound />} />
               </Routes>
             </RouteHandler>

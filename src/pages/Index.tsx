@@ -33,6 +33,7 @@ import { InstallPromptBanner } from "@/components/InstallPromptBanner";
 import { WhyFixBudiSection } from "@/components/WhyFixBudiSection";
 import fixbudiHeroLight from "@/assets/fixbudi-hero-light.webp";
 import fixbudiHeroDark from "@/assets/fixbudi-hero-dark.webp";
+import { trackEvent } from "@/lib/analytics";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -69,7 +70,7 @@ const Index = () => {
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
               {(userRole === 'customer' || !user) && (
                 <>
-                  <Button size="lg" onClick={() => navigate('/diagnostic')} className="animate-float">
+                  <Button size="lg" onClick={() => { trackEvent('StartDiagnostic', { from: 'home_hero' }); navigate('/diagnostic'); }} className="animate-float">
                     Start Diagnosis
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
@@ -80,7 +81,7 @@ const Index = () => {
                 </>
               )}
               {!user && (
-                <Button variant="secondary" size="lg" onClick={() => navigate('/apply-repair-center')}>
+                <Button variant="secondary" size="lg" onClick={() => { trackEvent('ApplyRepairCenter', { from: 'home_hero' }); navigate('/apply-repair-center'); }}>
                   Join as Repair Center
                   <Settings className="ml-2 h-5 w-5" />
                 </Button>

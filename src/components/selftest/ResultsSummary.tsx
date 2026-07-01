@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, MinusCircle, ArrowRight, MapPin, RotateCcw, Bot } from "lucide-react";
 import { TestResult } from "@/lib/selftest/types";
 import { summarizeCounts } from "@/lib/selftest/handoff";
+import { useEffect } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 interface Props {
   results: TestResult[];
@@ -20,6 +22,10 @@ const statusIcon = (s: TestResult["status"]) => {
 
 export const ResultsSummary = ({ results, onTalkToAI, onFindCenter, onRestart }: Props) => {
   const counts = summarizeCounts(results);
+  useEffect(() => {
+    trackEvent('CompleteSelfTest', counts);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const hasFailures = counts.fail > 0;
 
   return (

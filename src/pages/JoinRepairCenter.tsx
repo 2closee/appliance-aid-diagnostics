@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
+import { trackEvent } from "@/lib/analytics";
 import {
   Shield,
   Users,
@@ -146,7 +147,7 @@ export default function JoinRepairCenter() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" variant="sparkly" asChild className="text-base px-8">
-              <Link to="/apply-repair-center">
+              <Link to="/apply-repair-center" onClick={() => trackEvent('ApplyRepairCenter', { from: 'join_hero' })}>
                 Apply Now <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -276,7 +277,7 @@ export default function JoinRepairCenter() {
             Join FixBudi today — it's completely free. Plus, earn ₦5,000 for every repair center you refer that gets approved.
           </p>
           <Button size="lg" variant="sparkly" asChild className="text-base px-10">
-            <Link to="/apply-repair-center">
+            <Link to="/apply-repair-center" onClick={() => trackEvent('ApplyRepairCenter', { from: 'join_footer_cta' })}>
               Apply Now — It's Free <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
