@@ -275,6 +275,9 @@ const Admin = () => {
               <Button onClick={() => navigate("/payout-management")} variant="outline" className="w-full">
                 Payout Management & Analytics
               </Button>
+              <Button onClick={() => navigate("/admin/traffic-analytics")} variant="outline" className="w-full">
+                Traffic Analytics (Visitors & Feature Usage)
+              </Button>
             </div>
           </CardContent>
         </Card>
