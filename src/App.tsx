@@ -130,6 +130,7 @@ const App = () => (
             <Route path="/faq" element={<FAQ />} />
             <Route path="/join" element={<JoinRepairCenter />} />
             <Route path="/self-test" element={<SelfTest />} />
+            <Route path="/admin/traffic-analytics" element={<TrafficAnalytics />} />
             <Route path="*" element={<NotFound />} />
               </Routes>
             </RouteHandler>
