@@ -147,7 +147,7 @@ export default function JoinRepairCenter() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" variant="sparkly" asChild className="text-base px-8">
-              <Link to="/apply-repair-center">
+              <Link to="/apply-repair-center" onClick={() => trackEvent('ApplyRepairCenter', { from: 'join_hero' })}>
                 Apply Now <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
