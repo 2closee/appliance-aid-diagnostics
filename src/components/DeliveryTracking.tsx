@@ -233,6 +233,25 @@ export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTracking
           />
         )}
 
+        {/* OTP Secure Handoff */}
+        {(deliveryRequest.delivery_type === "pickup" ? deliveryRequest.pickup_otp : deliveryRequest.return_otp) && (
+          <OTPHandoffCard
+            otp={deliveryRequest.delivery_type === "pickup" ? deliveryRequest.pickup_otp : deliveryRequest.return_otp}
+            phase={deliveryRequest.delivery_type === "pickup" ? "pickup" : "return"}
+            verifiedAt={deliveryRequest.delivery_type === "pickup" ? deliveryRequest.pickup_otp_verified_at : deliveryRequest.return_otp_verified_at}
+          />
+        )}
+
+        {/* Condition photos before handoff */}
+        {deliveryRequest.repair_job_id &&
+          ["pending", "assigned", "driver_on_way", "driver_arrived"].includes(deliveryRequest.delivery_status) && (
+            <ConditionPhotoUpload
+              deliveryRequestId={deliveryRequest.id}
+              repairJobId={deliveryRequest.repair_job_id}
+              phase={deliveryRequest.delivery_type === "pickup" ? "pre_pickup" : "pre_return"}
+            />
+          )}
+
         {/* Addresses */}
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
