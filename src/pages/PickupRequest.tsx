@@ -465,12 +465,13 @@ const PickupRequest = () => {
   };
 
   if (isSubmitted) {
+    const isBulkySubmitted = getLogisticsCategory(formData.applianceType) === "bulky";
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
         
         <div className="container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto space-y-6">
             <Card className="shadow-medium">
               <CardContent className="text-center py-12">
                 <CheckCircle className="h-16 w-16 text-success mx-auto mb-6" />
@@ -483,10 +484,20 @@ const PickupRequest = () => {
                 <div className="bg-gradient-card p-6 rounded-lg border mb-6">
                   <h3 className="font-semibold mb-2">What happens next?</h3>
                   <ul className="text-sm text-muted-foreground space-y-1 text-left">
-                    <li>• The repair center will review your diagnostic information</li>
-                    <li>• You'll receive a quote within 24 hours</li>
-                    <li>• Accept the quote to schedule pickup</li>
-                    <li>• Track your repair progress in real-time</li>
+                    {isBulkySubmitted ? (
+                      <>
+                        <li>• The repair center will contact you within 2 hours to arrange specialized pickup</li>
+                        <li>• Confirm the transport cost with them directly</li>
+                        <li>• Track your repair progress in real-time</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>• The repair center will review your diagnostic information</li>
+                        <li>• You'll receive a quote within 24 hours</li>
+                        <li>• Accept the quote to schedule pickup by a Fixbudi bike rider</li>
+                        <li>• Track your repair progress in real-time</li>
+                      </>
+                    )}
                   </ul>
                 </div>
                 <div className="flex gap-4 justify-center">
@@ -499,6 +510,9 @@ const PickupRequest = () => {
                 </div>
               </CardContent>
             </Card>
+            {isBulkySubmitted && (
+              <BulkyPickupNotice applianceType={formData.applianceType} />
+            )}
           </div>
         </div>
       </div>
