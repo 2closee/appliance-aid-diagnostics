@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Truck, MapPin, Phone, User, Package, Clock, ExternalLink, X, CheckCircle } from "lucide-react";
+import { Truck, MapPin, Phone, User, Package, Clock, ExternalLink, X, CheckCircle, Star } from "lucide-react";
 import { format } from "date-fns";
 import { useDeliveryActions } from "@/hooks/useDeliveryActions";
 import { formatCurrency } from "@/lib/currency";
@@ -10,9 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { DeliveryMapView } from "./DeliveryMapView";
+import { OTPHandoffCard } from "./OTPHandoffCard";
+import { ConditionPhotoUpload } from "./ConditionPhotoUpload";
+import { RiderRatingDialog } from "./RiderRatingDialog";
 
 interface DeliveryRequest {
   id: string;
+  repair_job_id?: string;
   delivery_type: string;
   delivery_status: string;
   pickup_address: string;
@@ -22,6 +26,14 @@ interface DeliveryRequest {
   driver_name?: string;
   driver_phone?: string;
   vehicle_details?: string;
+  rider_name?: string;
+  rider_phone?: string;
+  rider_vehicle?: string;
+  provider_name?: string;
+  pickup_otp?: string | null;
+  pickup_otp_verified_at?: string | null;
+  return_otp?: string | null;
+  return_otp_verified_at?: string | null;
   estimated_cost?: number;
   actual_cost?: number;
   app_delivery_commission?: number;
