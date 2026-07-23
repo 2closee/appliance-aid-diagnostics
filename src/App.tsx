@@ -43,6 +43,9 @@ import SuperAdmin from "./pages/SuperAdmin";
 import JoinRepairCenter from "./pages/JoinRepairCenter";
 import SelfTest from "./pages/SelfTest";
 import TrafficAnalytics from "./pages/TrafficAnalytics";
+import LogisticsZones from "./pages/admin/LogisticsZones";
+import LogisticsAnalytics from "./pages/admin/LogisticsAnalytics";
+import RepairCenterOnboarding from "./pages/RepairCenterOnboarding";
 import { trackPageView } from "./lib/analytics";
 
 const queryClient = new QueryClient({
@@ -131,6 +134,9 @@ const App = () => (
             <Route path="/join" element={<JoinRepairCenter />} />
             <Route path="/self-test" element={<SelfTest />} />
             <Route path="/admin/traffic-analytics" element={<TrafficAnalytics />} />
+            <Route path="/admin/logistics-zones" element={<LogisticsZones />} />
+            <Route path="/admin/logistics-analytics" element={<LogisticsAnalytics />} />
+            <Route path="/repair-center-onboarding" element={<RepairCenterOnboarding />} />
             <Route path="*" element={<NotFound />} />
               </Routes>
             </RouteHandler>
