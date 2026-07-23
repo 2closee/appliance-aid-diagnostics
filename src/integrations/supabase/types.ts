@@ -560,6 +560,51 @@ export type Database = {
           },
         ]
       }
+      delivery_condition_photos: {
+        Row: {
+          created_at: string
+          delivery_request_id: string
+          id: string
+          phase: string
+          photo_url: string
+          repair_job_id: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          delivery_request_id: string
+          id?: string
+          phase: string
+          photo_url: string
+          repair_job_id?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          delivery_request_id?: string
+          id?: string
+          phase?: string
+          photo_url?: string
+          repair_job_id?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_condition_photos_delivery_request_id_fkey"
+            columns: ["delivery_request_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_condition_photos_repair_job_id_fkey"
+            columns: ["repair_job_id"]
+            isOneToOne: false
+            referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_requests: {
         Row: {
           actual_cost: number | null
@@ -580,13 +625,22 @@ export type Database = {
           driver_phone: string | null
           estimated_cost: number
           estimated_delivery_time: string | null
+          failover_from: string | null
           id: string
           notes: string | null
           pickup_address: string
+          pickup_otp: string | null
+          pickup_otp_verified_at: string | null
           provider: string
+          provider_name: string | null
           provider_order_id: string | null
           provider_response: Json | null
           repair_job_id: string | null
+          return_otp: string | null
+          return_otp_verified_at: string | null
+          rider_name: string | null
+          rider_phone: string | null
+          rider_vehicle: string | null
           scheduled_pickup_time: string | null
           tracking_url: string | null
           updated_at: string | null
@@ -611,13 +665,22 @@ export type Database = {
           driver_phone?: string | null
           estimated_cost?: number
           estimated_delivery_time?: string | null
+          failover_from?: string | null
           id?: string
           notes?: string | null
           pickup_address: string
+          pickup_otp?: string | null
+          pickup_otp_verified_at?: string | null
           provider?: string
+          provider_name?: string | null
           provider_order_id?: string | null
           provider_response?: Json | null
           repair_job_id?: string | null
+          return_otp?: string | null
+          return_otp_verified_at?: string | null
+          rider_name?: string | null
+          rider_phone?: string | null
+          rider_vehicle?: string | null
           scheduled_pickup_time?: string | null
           tracking_url?: string | null
           updated_at?: string | null
@@ -642,13 +705,22 @@ export type Database = {
           driver_phone?: string | null
           estimated_cost?: number
           estimated_delivery_time?: string | null
+          failover_from?: string | null
           id?: string
           notes?: string | null
           pickup_address?: string
+          pickup_otp?: string | null
+          pickup_otp_verified_at?: string | null
           provider?: string
+          provider_name?: string | null
           provider_order_id?: string | null
           provider_response?: Json | null
           repair_job_id?: string | null
+          return_otp?: string | null
+          return_otp_verified_at?: string | null
+          rider_name?: string | null
+          rider_phone?: string | null
+          rider_vehicle?: string | null
           scheduled_pickup_time?: string | null
           tracking_url?: string | null
           updated_at?: string | null
@@ -1139,6 +1211,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      logistics_service_zones: {
+        Row: {
+          active: boolean
+          center_lat: number | null
+          center_lng: number | null
+          city: string
+          created_at: string
+          id: string
+          polygon_geojson: Json | null
+          provider_priority: string[]
+          radius_km: number | null
+          updated_at: string
+          zone_name: string
+        }
+        Insert: {
+          active?: boolean
+          center_lat?: number | null
+          center_lng?: number | null
+          city: string
+          created_at?: string
+          id?: string
+          polygon_geojson?: Json | null
+          provider_priority?: string[]
+          radius_km?: number | null
+          updated_at?: string
+          zone_name: string
+        }
+        Update: {
+          active?: boolean
+          center_lat?: number | null
+          center_lng?: number | null
+          city?: string
+          created_at?: string
+          id?: string
+          polygon_geojson?: Json | null
+          provider_priority?: string[]
+          radius_km?: number | null
+          updated_at?: string
+          zone_name?: string
+        }
+        Relationships: []
       }
       messages: {
         Row: {
@@ -2011,6 +2125,7 @@ export type Database = {
           id: string
           issue_description: string
           job_status: Database["public"]["Enums"]["job_status"]
+          logistics_category: string | null
           notes: string | null
           payment_deadline: string | null
           pickup_address: string
@@ -2057,6 +2172,7 @@ export type Database = {
           id?: string
           issue_description: string
           job_status?: Database["public"]["Enums"]["job_status"]
+          logistics_category?: string | null
           notes?: string | null
           payment_deadline?: string | null
           pickup_address: string
@@ -2103,6 +2219,7 @@ export type Database = {
           id?: string
           issue_description?: string
           job_status?: Database["public"]["Enums"]["job_status"]
+          logistics_category?: string | null
           notes?: string | null
           payment_deadline?: string | null
           pickup_address?: string
@@ -2189,6 +2306,60 @@ export type Database = {
             foreignKeyName: "repair_warranties_repair_job_id_fkey"
             columns: ["repair_job_id"]
             isOneToOne: true
+            referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rider_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          created_by: string
+          delivery_request_id: string
+          id: string
+          professionalism: number | null
+          provider_name: string | null
+          punctuality: number | null
+          rating: number
+          repair_job_id: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          created_by: string
+          delivery_request_id: string
+          id?: string
+          professionalism?: number | null
+          provider_name?: string | null
+          punctuality?: number | null
+          rating: number
+          repair_job_id?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string
+          delivery_request_id?: string
+          id?: string
+          professionalism?: number | null
+          provider_name?: string | null
+          punctuality?: number | null
+          rating?: number
+          repair_job_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rider_ratings_delivery_request_id_fkey"
+            columns: ["delivery_request_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rider_ratings_repair_job_id_fkey"
+            columns: ["repair_job_id"]
+            isOneToOne: false
             referencedRelation: "repair_jobs"
             referencedColumns: ["id"]
           },
