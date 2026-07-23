@@ -1,6 +1,6 @@
 import { CheckCircle2, XCircle, Truck, Smartphone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Navigation } from "@/components/Navigation";
+import Navigation from "@/components/Navigation";
 
 const Row = ({ ok, children }: { ok: boolean; children: React.ReactNode }) => (
   <li className="flex items-start gap-2">
