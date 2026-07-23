@@ -81,6 +81,19 @@ export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTracking
   const { toast } = useToast();
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | undefined>();
+  const [ratingOpen, setRatingOpen] = useState(false);
+  const [hasRated, setHasRated] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("rider_ratings")
+        .select("id")
+        .eq("delivery_request_id", deliveryRequest.id)
+        .maybeSingle();
+      setHasRated(!!data);
+    })();
+  }, [deliveryRequest.id]);
 
   // Fetch latest driver location from delivery history
   useEffect(() => {
