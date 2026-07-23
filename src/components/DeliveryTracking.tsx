@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Truck, MapPin, Phone, User, Package, Clock, ExternalLink, X, CheckCircle } from "lucide-react";
+import { Truck, MapPin, Phone, User, Package, Clock, ExternalLink, X, CheckCircle, Star } from "lucide-react";
 import { format } from "date-fns";
 import { useDeliveryActions } from "@/hooks/useDeliveryActions";
 import { formatCurrency } from "@/lib/currency";
@@ -10,9 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { DeliveryMapView } from "./DeliveryMapView";
+import { OTPHandoffCard } from "./OTPHandoffCard";
+import { ConditionPhotoUpload } from "./ConditionPhotoUpload";
+import { RiderRatingDialog } from "./RiderRatingDialog";
 
 interface DeliveryRequest {
   id: string;
+  repair_job_id?: string;
   delivery_type: string;
   delivery_status: string;
   pickup_address: string;
@@ -22,6 +26,14 @@ interface DeliveryRequest {
   driver_name?: string;
   driver_phone?: string;
   vehicle_details?: string;
+  rider_name?: string;
+  rider_phone?: string;
+  rider_vehicle?: string;
+  provider_name?: string;
+  pickup_otp?: string | null;
+  pickup_otp_verified_at?: string | null;
+  return_otp?: string | null;
+  return_otp_verified_at?: string | null;
   estimated_cost?: number;
   actual_cost?: number;
   app_delivery_commission?: number;
@@ -69,6 +81,19 @@ export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTracking
   const { toast } = useToast();
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | undefined>();
+  const [ratingOpen, setRatingOpen] = useState(false);
+  const [hasRated, setHasRated] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("rider_ratings")
+        .select("id")
+        .eq("delivery_request_id", deliveryRequest.id)
+        .maybeSingle();
+      setHasRated(!!data);
+    })();
+  }, [deliveryRequest.id]);
 
   // Fetch latest driver location from delivery history
   useEffect(() => {
@@ -208,6 +233,25 @@ export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTracking
           />
         )}
 
+        {/* OTP Secure Handoff */}
+        {(deliveryRequest.delivery_type === "pickup" ? deliveryRequest.pickup_otp : deliveryRequest.return_otp) && (
+          <OTPHandoffCard
+            otp={deliveryRequest.delivery_type === "pickup" ? deliveryRequest.pickup_otp : deliveryRequest.return_otp}
+            phase={deliveryRequest.delivery_type === "pickup" ? "pickup" : "return"}
+            verifiedAt={deliveryRequest.delivery_type === "pickup" ? deliveryRequest.pickup_otp_verified_at : deliveryRequest.return_otp_verified_at}
+          />
+        )}
+
+        {/* Condition photos before handoff */}
+        {deliveryRequest.repair_job_id &&
+          ["pending", "assigned", "driver_on_way", "driver_arrived"].includes(deliveryRequest.delivery_status) && (
+            <ConditionPhotoUpload
+              deliveryRequestId={deliveryRequest.id}
+              repairJobId={deliveryRequest.repair_job_id}
+              phase={deliveryRequest.delivery_type === "pickup" ? "pre_pickup" : "pre_return"}
+            />
+          )}
+
         {/* Addresses */}
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
@@ -231,9 +275,9 @@ export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTracking
         </div>
 
         {/* Driver Info */}
-        {deliveryRequest.driver_name && (
+        {(deliveryRequest.rider_name || deliveryRequest.driver_name) && (
           <div className="border-t pt-4">
-            <h4 className="text-sm font-medium mb-3">Driver Information</h4>
+            <h4 className="text-sm font-medium mb-3">Your Fixbudi Rider</h4>
             <div className="grid gap-3 md:grid-cols-2">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
@@ -357,7 +401,19 @@ export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTracking
               Cancel
             </Button>
           )}
+          {deliveryRequest.delivery_status === "delivered" && !hasRated && (
+            <Button variant="outline" size="sm" onClick={() => setRatingOpen(true)} className="flex-1">
+              <Star className="h-4 w-4 mr-2" />
+              Rate Rider
+            </Button>
+          )}
         </div>
+        <RiderRatingDialog
+          open={ratingOpen}
+          onOpenChange={setRatingOpen}
+          deliveryRequestId={deliveryRequest.id}
+          onRated={() => setHasRated(true)}
+        />
       </CardContent>
     </Card>
   );
