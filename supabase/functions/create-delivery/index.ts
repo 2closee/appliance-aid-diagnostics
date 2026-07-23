@@ -316,6 +316,9 @@ serve(async (req) => {
     const appCommission = estimatedCost * 0.05;
     const trackingUrl = arrangeData.data?.tracking_url || `https://terminal.africa/track/${shipmentId}`;
 
+    // Generate 4-digit OTP for secure handoff
+    const otp = String(Math.floor(1000 + Math.random() * 9000));
+
     // Save to database
     const { data: deliveryRequest, error: insertError } = await supabase
       .from('delivery_requests')
@@ -323,6 +326,7 @@ serve(async (req) => {
         repair_job_id,
         delivery_type,
         provider: 'terminal_africa',
+        provider_name: 'terminal_africa',
         provider_order_id: shipmentId,
         pickup_address: pickupAddress,
         delivery_address: deliveryAddress,
@@ -340,6 +344,8 @@ serve(async (req) => {
         provider_response: arrangeData,
         notes: notes || `${delivery_type} delivery for ${job.appliance_type}`,
         cash_payment_status: 'pending',
+        pickup_otp: delivery_type === 'pickup' ? otp : null,
+        return_otp: delivery_type === 'return' ? otp : null,
       })
       .select()
       .single();
