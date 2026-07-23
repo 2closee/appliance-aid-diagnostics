@@ -400,8 +400,19 @@ export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTracking
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
+          {deliveryRequest.delivery_status === "delivered" && !hasRated && (
+            <Button variant="outline" size="sm" onClick={() => setRatingOpen(true)} className="flex-1">
+              <Star className="h-4 w-4 mr-2" />
+              Rate Rider
+            </Button>
           )}
         </div>
+        <RiderRatingDialog
+          open={ratingOpen}
+          onOpenChange={setRatingOpen}
+          deliveryRequestId={deliveryRequest.id}
+          onRated={() => setHasRated(true)}
+        />
       </CardContent>
     </Card>
   );
