@@ -409,6 +409,9 @@ const PickupRequest = () => {
     setIsSubmitting(true);
 
     try {
+      // Determine logistics category — bulky items skip API dispatch
+      const logisticsCategory = getLogisticsCategory(formData.applianceType);
+
       // Create repair job
       const { data: jobData, error: jobError } = await supabase
         .from("repair_jobs")
@@ -425,6 +428,7 @@ const PickupRequest = () => {
           issue_description: formData.issueDescription,
           pickup_date: formData.preferredDate ? new Date(formData.preferredDate).toISOString() : null,
           job_status: "quote_requested",
+          logistics_category: logisticsCategory,
           diagnostic_conversation_id: diagnosticData?.conversationId,
           ai_diagnosis_summary: diagnosticData?.diagnosis,
           ai_confidence_score: diagnosticData?.confidenceScore,
