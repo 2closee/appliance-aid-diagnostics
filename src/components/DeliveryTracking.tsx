@@ -275,9 +275,9 @@ export const DeliveryTracking = ({ deliveryRequest, onCancel }: DeliveryTracking
         </div>
 
         {/* Driver Info */}
-        {deliveryRequest.driver_name && (
+        {(deliveryRequest.rider_name || deliveryRequest.driver_name) && (
           <div className="border-t pt-4">
-            <h4 className="text-sm font-medium mb-3">Driver Information</h4>
+            <h4 className="text-sm font-medium mb-3">Your Fixbudi Rider</h4>
             <div className="grid gap-3 md:grid-cols-2">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
