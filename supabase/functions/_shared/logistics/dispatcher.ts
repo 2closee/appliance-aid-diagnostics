@@ -8,13 +8,15 @@ import {
   LogisticsCreateRequest,
   LogisticsCreateResult,
 } from "./types.ts";
+import { fezProvider } from "./fez.ts";
 import { kwikProvider } from "./kwik.ts";
 import { boltProvider } from "./bolt.ts";
 
-// Sendstack / Terminal Africa continue to be handled inline in existing edge
-// functions. New Kwik/Bolt adapters land here inactive; when their API keys
-// arrive, they are auto-selected first.
+// Fez is priority #1 (primary gadget provider for Port Harcourt).
+// Kwik/Bolt remain as failover once their credentials are configured.
+// Terminal Africa is still handled inline as the final fallback.
 const REGISTRY: Record<string, LogisticsProvider> = {
+  fez: fezProvider,
   kwik: kwikProvider,
   bolt: boltProvider,
 };
@@ -32,7 +34,7 @@ export interface DispatchOutcome<T> {
   attempts: DispatchAttempt[];
 }
 
-const DEFAULT_PRIORITY = ["kwik", "bolt"];
+const DEFAULT_PRIORITY = ["fez", "kwik", "bolt"];
 
 function resolveOrder(priority?: string[]): LogisticsProvider[] {
   const order = (priority && priority.length ? priority : DEFAULT_PRIORITY)
