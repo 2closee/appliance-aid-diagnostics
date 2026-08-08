@@ -31,7 +31,7 @@ const Dashboard = () => {
   }, [user, userRole]);
 
 
-  if (isLoading) {
+  if (isLoading || isRider === null) {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="container mx-auto space-y-6">
@@ -50,6 +50,11 @@ const Dashboard = () => {
   if (!user) {
     return <Navigate to="/auth" />;
   }
+
+  if (isRider) {
+    return <Navigate to="/rider" replace />;
+  }
+
 
   const renderDashboard = () => {
     switch (userRole) {
