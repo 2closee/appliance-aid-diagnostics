@@ -102,6 +102,7 @@ const RepairJobDetail = () => {
   const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [isCenterStaff, setIsCenterStaff] = useState(false);
   const [deviceReturnConfirmed, setDeviceReturnConfirmed] = useState(false);
   const [satisfactionConfirmed, setSatisfactionConfirmed] = useState(false);
   const [showSatisfactionDialog, setShowSatisfactionDialog] = useState(false);
