@@ -85,24 +85,37 @@ serve(async (req) => {
       return jsonResponse({ error: "Both the customer address and the repair center address are required" }, 400);
     }
 
-    const pickupLat = body.pickup_lat ?? job.pickup_latitude ?? undefined;
-    const pickupLng = body.pickup_lng ?? job.pickup_longitude ?? undefined;
-    const dropLat = body.dropoff_lat ?? undefined;
-    const dropLng = body.dropoff_lng ?? undefined;
+    // Coordinates: use what the caller sent, otherwise geocode the addresses.
+    let pickupLat = body.pickup_lat;
+    let pickupLng = body.pickup_lng;
+    let dropLat = body.dropoff_lat;
+    let dropLng = body.dropoff_lng;
+
+    if (pickupLat == null || pickupLng == null) {
+      const geo = await geocodeAddress(pickupAddress);
+      if (geo) {
+        pickupLat = geo.lat;
+        pickupLng = geo.lng;
+      }
+    }
+    if (dropLat == null || dropLng == null) {
+      const geo = await geocodeAddress(dropoffAddress);
+      if (geo) {
+        dropLat = geo.lat;
+        dropLng = geo.lng;
+      }
+    }
 
     const pricing = await getPricing(supabase);
 
     let distanceKm = 0;
-    if (
-      pickupLat != null && pickupLng != null && dropLat != null && dropLng != null
-    ) {
+    if (pickupLat != null && pickupLng != null && dropLat != null && dropLng != null) {
       const d = await roadDistanceKm(Number(pickupLat), Number(pickupLng), Number(dropLat), Number(dropLng));
       distanceKm = d.distance_km;
-    } else {
-      // Without both coordinate pairs we bill the minimum fare distance and let
-      // the admin adjust; the rider still gets a valid, dispatchable trip.
-      distanceKm = 0;
     }
+    // With no usable coordinates the distance stays 0 and the minimum fare
+    // applies; an admin can adjust the fee afterwards.
+
 
     const isBulky = job.logistics_category === "bulky";
     const breakdown = calculateFee(pricing, distanceKm, { isBulky });
