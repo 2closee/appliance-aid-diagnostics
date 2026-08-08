@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import RequestOverpassRider from "@/components/overpass/RequestOverpassRider";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
