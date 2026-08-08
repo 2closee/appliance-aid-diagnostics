@@ -46,16 +46,20 @@ const OvapassRiderSignup = () => {
       return;
     }
     let active = true;
-    supabase
-      .from("riders")
-      .select("kyc_status")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!active) return;
-        setExistingStatus(data?.kyc_status ?? null);
-        setChecking(false);
-      });
+    Promise.all([
+      supabase.from("riders").select("kyc_status").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profiles").select("phone, phone_verified_at").eq("id", user.id).maybeSingle(),
+    ]).then(([riderRes, profileRes]) => {
+      if (!active) return;
+      setExistingStatus(riderRes.data?.kyc_status ?? null);
+      // A number already verified on the profile carries over to the application.
+      if (profileRes.data?.phone_verified_at && profileRes.data.phone) {
+        setForm((f) => ({ ...f, phone: profileRes.data!.phone as string }));
+        setPhoneVerified(true);
+      }
+      setChecking(false);
+    });
+
     return () => {
       active = false;
     };
