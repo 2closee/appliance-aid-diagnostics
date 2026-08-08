@@ -1,4 +1,4 @@
-// Shared geo + pricing helpers for Overpass (FixBudi's own rider fleet).
+// Shared geo + pricing helpers for Ovapass (FixBudi's own rider fleet).
 
 export interface PricingConfig {
   id: string;

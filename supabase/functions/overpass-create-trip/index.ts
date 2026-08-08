@@ -1,4 +1,4 @@
-// Creates an Overpass trip when a repair center approves a pickup (or a return),
+// Creates an Ovapass trip when a repair center approves a pickup (or a return),
 // prices it from the distance covered, and immediately offers it to the nearest rider.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -75,7 +75,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existing) {
-      return jsonResponse({ error: "A live Overpass trip already exists for this job", trip_id: existing.id }, 409);
+      return jsonResponse({ error: "A live Ovapass trip already exists for this job", trip_id: existing.id }, 409);
     }
 
     const center = job.center;
@@ -188,7 +188,7 @@ serve(async (req) => {
         cash_payment_status: "pending",
         pickup_otp: tripType === "pickup" ? trip.pickup_otp : null,
         return_otp: tripType === "return" ? trip.dropoff_otp : null,
-        notes: `Overpass ${tripType} for ${job.appliance_type ?? "device"}`,
+        notes: `Ovapass ${tripType} for ${job.appliance_type ?? "device"}`,
       })
       .select()
       .single();
