@@ -200,6 +200,13 @@ const Auth = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <GoogleSignInButton label="Sign up with Google" redirectPath={from} />
+                <div className="my-4 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">or use your email</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
