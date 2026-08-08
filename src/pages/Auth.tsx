@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
