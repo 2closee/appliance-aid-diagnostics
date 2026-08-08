@@ -107,7 +107,7 @@ const OvapassRiderSignup = () => {
       if (error) throw error;
 
       toast({ title: "Application submitted", description: "We'll review your details and get back to you shortly." });
-      navigate("/rider");
+      setSubmitted(true);
     } catch (e) {
       toast({ title: "Could not submit", description: (e as Error).message, variant: "destructive" });
     } finally {
@@ -115,7 +115,72 @@ const OvapassRiderSignup = () => {
     }
   };
 
+  if (authLoading || checking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <CheckCircle2 className="h-6 w-6" />
+            </div>
+            <CardTitle>Application received</CardTitle>
+            <CardDescription>
+              We review rider applications within 24 to 48 hours. You'll be able to go online as soon as
+              you're approved.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={() => navigate("/rider")}>
+              Go to rider dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (existingStatus) {
+    const approved = existingStatus === "approved";
+    const rejected = existingStatus === "rejected";
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <Badge variant={rejected ? "destructive" : approved ? "default" : "secondary"} className="mx-auto">
+              {approved ? "Approved" : rejected ? "Not approved" : "Under review"}
+            </Badge>
+            <CardTitle className="mt-2">You already applied</CardTitle>
+            <CardDescription>
+              {approved
+                ? "You're verified. Head to your rider dashboard to go online and take trips."
+                : rejected
+                ? "Your application wasn't approved. Contact support if you'd like us to take another look."
+                : "We're still reviewing your documents. We'll let you know as soon as you're verified."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button className="w-full" onClick={() => navigate("/rider")}>
+              Open rider dashboard
+            </Button>
+            <Button variant="ghost" className="w-full" asChild>
+              <Link to="/ovapass">Learn more about Ovapass</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
+
     <div className="min-h-screen bg-muted/30 px-4 py-8">
       <div className="mx-auto max-w-lg space-y-6">
         <div className="flex items-center gap-3">
