@@ -47,6 +47,7 @@ import LogisticsZones from "./pages/admin/LogisticsZones";
 import LogisticsAnalytics from "./pages/admin/LogisticsAnalytics";
 import OvapassAdmin from "./pages/admin/OvapassAdmin";
 import OvapassRiderHome from "./pages/rider/OvapassRiderHome";
+import Ovapass from "./pages/Ovapass";
 import OvapassRiderSignup from "./pages/rider/OvapassRiderSignup";
 import OvapassRiderEarnings from "./pages/rider/OvapassRiderEarnings";
 import RepairCenterOnboarding from "./pages/RepairCenterOnboarding";
