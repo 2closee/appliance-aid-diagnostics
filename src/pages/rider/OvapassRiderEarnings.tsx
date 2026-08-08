@@ -21,7 +21,7 @@ interface LedgerEntry {
 const money = (n: number, currency = "NGN") =>
   `${currency === "NGN" ? "₦" : `${currency} `}${Math.abs(Number(n)).toLocaleString()}`;
 
-const OverpassRiderEarnings = () => {
+const OvapassRiderEarnings = () => {
   const { rider } = useRider();
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,4 +117,4 @@ const OverpassRiderEarnings = () => {
   );
 };
 
-export default OverpassRiderEarnings;
+export default OvapassRiderEarnings;

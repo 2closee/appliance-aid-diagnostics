@@ -37,7 +37,7 @@ interface Trip {
 
 const money = (n: number | null) => `₦${Number(n ?? 0).toLocaleString()}`;
 
-const OverpassAdmin = () => {
+const OvapassAdmin = () => {
   const { toast } = useToast();
   const [riders, setRiders] = useState<Rider[]>([]);
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -92,7 +92,7 @@ const OverpassAdmin = () => {
             <Bike className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Overpass fleet</h1>
+            <h1 className="text-2xl font-bold">Ovapass fleet</h1>
             <p className="text-sm text-muted-foreground">Riders, live trips and dispatch health.</p>
           </div>
         </div>
@@ -241,7 +241,7 @@ const OverpassAdmin = () => {
                   {trips.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
-                        No Overpass trips yet.
+                        No Ovapass trips yet.
                       </TableCell>
                     </TableRow>
                   )}
@@ -255,4 +255,4 @@ const OverpassAdmin = () => {
   );
 };
 
-export default OverpassAdmin;
+export default OvapassAdmin;

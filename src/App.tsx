@@ -45,10 +45,10 @@ import SelfTest from "./pages/SelfTest";
 import TrafficAnalytics from "./pages/TrafficAnalytics";
 import LogisticsZones from "./pages/admin/LogisticsZones";
 import LogisticsAnalytics from "./pages/admin/LogisticsAnalytics";
-import OverpassAdmin from "./pages/admin/OverpassAdmin";
-import OverpassRiderHome from "./pages/rider/OverpassRiderHome";
-import OverpassRiderSignup from "./pages/rider/OverpassRiderSignup";
-import OverpassRiderEarnings from "./pages/rider/OverpassRiderEarnings";
+import OvapassAdmin from "./pages/admin/OvapassAdmin";
+import OvapassRiderHome from "./pages/rider/OvapassRiderHome";
+import OvapassRiderSignup from "./pages/rider/OvapassRiderSignup";
+import OvapassRiderEarnings from "./pages/rider/OvapassRiderEarnings";
 import RepairCenterOnboarding from "./pages/RepairCenterOnboarding";
 import { trackPageView } from "./lib/analytics";
 
@@ -106,10 +106,10 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/diagnostic" element={<Diagnostic />} />
             <Route path="/repair-centers" element={<RepairCenters />} />
-            <Route path="/rider" element={<OverpassRiderHome />} />
-            <Route path="/rider/signup" element={<OverpassRiderSignup />} />
-            <Route path="/rider/earnings" element={<OverpassRiderEarnings />} />
-            <Route path="/admin/overpass" element={<OverpassAdmin />} />
+            <Route path="/rider" element={<OvapassRiderHome />} />
+            <Route path="/rider/signup" element={<OvapassRiderSignup />} />
+            <Route path="/rider/earnings" element={<OvapassRiderEarnings />} />
+            <Route path="/admin/ovapass" element={<OvapassAdmin />} />
             <Route path="/pickup-selection" element={<PickupSelection />} />
 
             <Route path="/pickup-request" element={<PickupRequest />} />
