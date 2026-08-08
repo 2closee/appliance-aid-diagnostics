@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Bike, Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
+import PhoneVerificationField from "@/components/PhoneVerificationField";
 
 type FileField = "id_doc" | "bike_photo" | "selfie";
 
