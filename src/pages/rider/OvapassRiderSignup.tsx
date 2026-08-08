@@ -1,22 +1,26 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Bike, Loader2, ShieldCheck } from "lucide-react";
+import { Bike, Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 type FileField = "id_doc" | "bike_photo" | "selfie";
 
 const OvapassRiderSignup = () => {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [existingStatus, setExistingStatus] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
@@ -32,6 +36,29 @@ const OvapassRiderSignup = () => {
     selfie: null,
   });
 
+  // Send signed-out visitors to sign in, then bring them straight back here.
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      navigate(`/auth?redirect=${encodeURIComponent("/rider/signup")}`, { replace: true });
+      return;
+    }
+    let active = true;
+    supabase
+      .from("riders")
+      .select("kyc_status")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!active) return;
+        setExistingStatus(data?.kyc_status ?? null);
+        setChecking(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user, authLoading, navigate]);
+
   const set = (key: keyof typeof form) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
 
   const uploadFile = async (field: FileField, file: File | null) => {
@@ -42,6 +69,7 @@ const OvapassRiderSignup = () => {
     if (error) throw error;
     return path;
   };
+
 
   const handleSubmit = async () => {
     if (!user) {
