@@ -823,6 +823,15 @@ const RepairJobDetail = () => {
               </Card>
             )}
 
+            {/* Overpass rider dispatch (repair center staff only) */}
+            {isCenterStaff && !["completed", "cancelled"].includes(job.job_status) && (
+              <RequestOverpassRider
+                repairJobId={job.id}
+                tripType={["repair_completed", "ready_for_return", "returned"].includes(job.job_status) ? "return" : "pickup"}
+              />
+            )}
+
+
             {/* Actions */}
             <Card>
               <CardHeader>
