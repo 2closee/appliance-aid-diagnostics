@@ -10,6 +10,7 @@ import {
   calculateFee,
   generateOtp,
   haversineKm,
+  geocodeAddress,
 } from "../_shared/overpass/geo.ts";
 import { assignNextRider, getPricing } from "../_shared/overpass/assign.ts";
 
