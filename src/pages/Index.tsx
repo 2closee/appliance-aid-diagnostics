@@ -527,6 +527,14 @@ const Index = () => {
               <Button 
                 variant="ghost" 
                 size="sm"
+                onClick={() => navigate('/ovapass')}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Ride with Ovapass
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
                 onClick={() => navigate('/faq')}
                 className="text-muted-foreground hover:text-foreground"
               >

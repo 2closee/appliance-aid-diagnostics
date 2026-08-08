@@ -17,7 +17,8 @@ import {
   MessageCircle,
   CreditCard,
   Target,
-  Stethoscope
+  Stethoscope,
+  Bike
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,6 +46,7 @@ const Navigation = () => {
       { path: "/self-test", label: "Self-Test", icon: Stethoscope },
       { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
       { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },
+      { path: "/ovapass", label: "Ride with Ovapass", icon: Bike },
     ] : []),
     // Show payment history for customers
     ...(userRole === 'customer' ? [

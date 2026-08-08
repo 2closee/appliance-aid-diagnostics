@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import CustomerDashboard from "@/components/dashboard/CustomerDashboard";
 import RepairCenterDashboard from "@/components/dashboard/RepairCenterDashboard";
 import AdminDashboard from "@/components/dashboard/AdminDashboard";
@@ -7,8 +9,29 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const Dashboard = () => {
   const { user, userRole, isLoading } = useAuth();
+  const [isRider, setIsRider] = useState<boolean | null>(null);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!user || userRole === 'admin' || userRole === 'repair_center') {
+      setIsRider(false);
+      return;
+    }
+    let active = true;
+    supabase
+      .from("riders")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active) setIsRider(!!data);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user, userRole]);
+
+
+  if (isLoading || isRider === null) {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="container mx-auto space-y-6">
@@ -27,6 +50,11 @@ const Dashboard = () => {
   if (!user) {
     return <Navigate to="/auth" />;
   }
+
+  if (isRider) {
+    return <Navigate to="/rider" replace />;
+  }
+
 
   const renderDashboard = () => {
     switch (userRole) {

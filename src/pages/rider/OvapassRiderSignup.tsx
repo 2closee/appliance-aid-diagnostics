@@ -1,22 +1,26 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Bike, Loader2, ShieldCheck } from "lucide-react";
+import { Bike, Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 type FileField = "id_doc" | "bike_photo" | "selfie";
 
 const OvapassRiderSignup = () => {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [existingStatus, setExistingStatus] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
@@ -32,6 +36,29 @@ const OvapassRiderSignup = () => {
     selfie: null,
   });
 
+  // Send signed-out visitors to sign in, then bring them straight back here.
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      navigate("/auth", { replace: true, state: { from: { pathname: "/rider/signup" } } });
+      return;
+    }
+    let active = true;
+    supabase
+      .from("riders")
+      .select("kyc_status")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!active) return;
+        setExistingStatus(data?.kyc_status ?? null);
+        setChecking(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user, authLoading, navigate]);
+
   const set = (key: keyof typeof form) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
 
   const uploadFile = async (field: FileField, file: File | null) => {
@@ -42,6 +69,7 @@ const OvapassRiderSignup = () => {
     if (error) throw error;
     return path;
   };
+
 
   const handleSubmit = async () => {
     if (!user) {
@@ -79,7 +107,7 @@ const OvapassRiderSignup = () => {
       if (error) throw error;
 
       toast({ title: "Application submitted", description: "We'll review your details and get back to you shortly." });
-      navigate("/rider");
+      setSubmitted(true);
     } catch (e) {
       toast({ title: "Could not submit", description: (e as Error).message, variant: "destructive" });
     } finally {
@@ -87,7 +115,72 @@ const OvapassRiderSignup = () => {
     }
   };
 
+  if (authLoading || checking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <CheckCircle2 className="h-6 w-6" />
+            </div>
+            <CardTitle>Application received</CardTitle>
+            <CardDescription>
+              We review rider applications within 24 to 48 hours. You'll be able to go online as soon as
+              you're approved.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={() => navigate("/rider")}>
+              Go to rider dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (existingStatus) {
+    const approved = existingStatus === "approved";
+    const rejected = existingStatus === "rejected";
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <Badge variant={rejected ? "destructive" : approved ? "default" : "secondary"} className="mx-auto">
+              {approved ? "Approved" : rejected ? "Not approved" : "Under review"}
+            </Badge>
+            <CardTitle className="mt-2">You already applied</CardTitle>
+            <CardDescription>
+              {approved
+                ? "You're verified. Head to your rider dashboard to go online and take trips."
+                : rejected
+                ? "Your application wasn't approved. Contact support if you'd like us to take another look."
+                : "We're still reviewing your documents. We'll let you know as soon as you're verified."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button className="w-full" onClick={() => navigate("/rider")}>
+              Open rider dashboard
+            </Button>
+            <Button variant="ghost" className="w-full" asChild>
+              <Link to="/ovapass">Learn more about Ovapass</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
+
     <div className="min-h-screen bg-muted/30 px-4 py-8">
       <div className="mx-auto max-w-lg space-y-6">
         <div className="flex items-center gap-3">
@@ -121,8 +214,8 @@ const OvapassRiderSignup = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="partner">My own bike</SelectItem>
-                  <SelectItem value="company">A FixBudi electric bike</SelectItem>
+                  <SelectItem value="partner">Third-party rider — my own bike</SelectItem>
+                  <SelectItem value="company">FixBudi rider — a FixBudi electric bike</SelectItem>
                 </SelectContent>
               </Select>
             </div>
