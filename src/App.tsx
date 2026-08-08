@@ -45,6 +45,10 @@ import SelfTest from "./pages/SelfTest";
 import TrafficAnalytics from "./pages/TrafficAnalytics";
 import LogisticsZones from "./pages/admin/LogisticsZones";
 import LogisticsAnalytics from "./pages/admin/LogisticsAnalytics";
+import OverpassAdmin from "./pages/admin/OverpassAdmin";
+import OverpassRiderHome from "./pages/rider/OverpassRiderHome";
+import OverpassRiderSignup from "./pages/rider/OverpassRiderSignup";
+import OverpassRiderEarnings from "./pages/rider/OverpassRiderEarnings";
 import RepairCenterOnboarding from "./pages/RepairCenterOnboarding";
 import { trackPageView } from "./lib/analytics";
 
