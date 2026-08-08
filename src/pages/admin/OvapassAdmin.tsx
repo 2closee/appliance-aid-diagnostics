@@ -162,7 +162,11 @@ const OvapassAdmin = () => {
                             {r.kyc_status}
                           </Badge>
                           {r.is_online && <Badge variant="outline">online</Badge>}
+                          <Badge variant={r.phone_verified_at ? "outline" : "destructive"}>
+                            {r.phone_verified_at ? "phone verified" : "phone unverified"}
+                          </Badge>
                         </div>
+
                       </TableCell>
                       <TableCell>
                         {r.total_trips} · {Number(r.average_rating ?? 0).toFixed(1)}★
