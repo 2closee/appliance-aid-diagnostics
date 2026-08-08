@@ -14,6 +14,7 @@ interface Rider {
   phone: string;
   fleet_type: string;
   kyc_status: string;
+  phone_verified_at: string | null;
   is_online: boolean;
   is_available: boolean;
   plate_number: string | null;
