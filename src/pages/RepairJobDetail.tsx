@@ -173,6 +173,8 @@ const RepairJobDetail = () => {
         .eq("user_id", user?.id)
         .eq("is_active", true)
         .maybeSingle();
+      setIsCenterStaff(!!staffRecord);
+
 
       // Build query
       let query = supabase
