@@ -22,6 +22,7 @@ const OvapassRiderSignup = () => {
   const [checking, setChecking] = useState(true);
   const [existingStatus, setExistingStatus] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
