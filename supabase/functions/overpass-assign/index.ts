@@ -1,0 +1,66 @@
+// Re-runs nearest-rider assignment for a trip. Called by the rider app when an
+// offer times out, and by the admin dispatch board to retry a stuck trip.
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, jsonResponse } from "../_shared/overpass/geo.ts";
+import { assignNextRider, expireStaleOffers } from "../_shared/overpass/assign.ts";
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace("Bearer ", ""),
+    );
+    if (authError || !user) return jsonResponse({ error: "Unauthorized" }, 401);
+
+    const { trip_id, reset_attempts } = await req.json();
+    if (!trip_id) return jsonResponse({ error: "trip_id is required" }, 400);
+
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+
+    const { data: trip } = await supabase
+      .from("overpass_trips")
+      .select("id, status, repair_job_id, rider_id")
+      .eq("id", trip_id)
+      .maybeSingle();
+
+    if (!trip) return jsonResponse({ error: "Trip not found" }, 404);
+
+    if (!isAdmin) {
+      // Center staff for this job may also retry.
+      const { data: job } = await supabase
+        .from("repair_jobs")
+        .select("repair_center_id")
+        .eq("id", trip.repair_job_id)
+        .maybeSingle();
+      const { data: isStaff } = await supabase.rpc("is_staff_at_center", {
+        _user_id: user.id,
+        _center_id: job?.repair_center_id,
+      });
+      if (!isStaff) return jsonResponse({ error: "Not allowed to reassign this trip" }, 403);
+    }
+
+    await expireStaleOffers(supabase);
+
+    if (reset_attempts && isAdmin) {
+      await supabase
+        .from("overpass_trips")
+        .update({ assignment_attempts: 0, status: "pending" })
+        .eq("id", trip_id);
+    }
+
+    const result = await assignNextRider(supabase, trip_id);
+    return jsonResponse({ success: true, assignment: result });
+  } catch (error) {
+    console.error("[overpass-assign]", error);
+    return jsonResponse({ error: (error as Error).message }, 500);
+  }
+});
