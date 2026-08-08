@@ -40,7 +40,7 @@ const OvapassRiderSignup = () => {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      navigate(`/auth?redirect=${encodeURIComponent("/rider/signup")}`, { replace: true });
+      navigate("/auth", { replace: true, state: { from: { pathname: "/rider/signup" } } });
       return;
     }
     let active = true;
