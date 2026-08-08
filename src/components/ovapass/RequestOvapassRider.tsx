@@ -20,8 +20,8 @@ interface TripSummary {
   dropoff_otp: string | null;
 }
 
-/** Lets repair center staff dispatch an Overpass rider for a job. */
-const RequestOverpassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
+/** Lets repair center staff dispatch an Ovapass rider for a job. */
+const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
   const { toast } = useToast();
   const [trip, setTrip] = useState<TripSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,7 +72,7 @@ const RequestOverpassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Bike className="h-5 w-5 text-primary" /> Overpass rider
+          <Bike className="h-5 w-5 text-primary" /> Ovapass rider
         </CardTitle>
         <CardDescription>
           {trip
@@ -115,7 +115,7 @@ const RequestOverpassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
         ) : (
           <Button className="w-full" onClick={dispatchRider} disabled={busy}>
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bike className="mr-2 h-4 w-4" />}
-            Request an Overpass rider
+            Request an Ovapass rider
           </Button>
         )}
       </CardContent>
@@ -123,4 +123,4 @@ const RequestOverpassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
   );
 };
 
-export default RequestOverpassRider;
+export default RequestOvapassRider;

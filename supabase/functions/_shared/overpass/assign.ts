@@ -1,4 +1,4 @@
-// Nearest-rider auto-assignment for Overpass trips.
+// Nearest-rider auto-assignment for Ovapass trips.
 // Ranks online, approved, available riders by distance from the pickup point
 // and offers the trip to the closest one who has not already declined it.
 

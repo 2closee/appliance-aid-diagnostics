@@ -15,7 +15,7 @@ import { Bike, Clock, Loader2, MapPin, Navigation, Phone, Wallet } from "lucide-
 const formatMoney = (amount: number | null | undefined, currency = "NGN") =>
   `${currency === "NGN" ? "₦" : `${currency} `}${Number(amount ?? 0).toLocaleString()}`;
 
-const OverpassRiderHome = () => {
+const OvapassRiderHome = () => {
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -94,7 +94,7 @@ const OverpassRiderHome = () => {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Bike className="h-6 w-6" />
             </div>
-            <CardTitle>Ride with Overpass</CardTitle>
+            <CardTitle>Ride with Ovapass</CardTitle>
             <CardDescription>
               Earn on every device you pick up for a FixBudi repair center. Bring your own bike or ride one of ours.
             </CardDescription>
@@ -140,7 +140,7 @@ const OverpassRiderHome = () => {
       <div className="mx-auto max-w-lg space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">Overpass rider</p>
+            <p className="text-sm text-muted-foreground">Ovapass rider</p>
             <h1 className="text-xl font-bold">{rider.full_name}</h1>
           </div>
           <Button variant="outline" size="sm" asChild>
@@ -330,4 +330,4 @@ const OverpassRiderHome = () => {
   );
 };
 
-export default OverpassRiderHome;
+export default OvapassRiderHome;

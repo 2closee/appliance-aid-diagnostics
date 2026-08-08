@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import RequestOverpassRider from "@/components/overpass/RequestOverpassRider";
+import RequestOvapassRider from "@/components/ovapass/RequestOvapassRider";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -824,9 +824,9 @@ const RepairJobDetail = () => {
               </Card>
             )}
 
-            {/* Overpass rider dispatch (repair center staff only) */}
+            {/* Ovapass rider dispatch (repair center staff only) */}
             {isCenterStaff && !["completed", "cancelled"].includes(job.job_status) && (
-              <RequestOverpassRider
+              <RequestOvapassRider
                 repairJobId={job.id}
                 tripType={["repair_completed", "ready_for_return", "returned"].includes(job.job_status) ? "return" : "pickup"}
               />

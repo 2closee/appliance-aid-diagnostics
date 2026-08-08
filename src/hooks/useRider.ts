@@ -28,7 +28,7 @@ export interface TripOffer {
   distance_to_pickup_km: number | null;
 }
 
-export interface OverpassTrip {
+export interface OvapassTrip {
   id: string;
   repair_job_id: string;
   trip_type: string;
@@ -54,8 +54,8 @@ export function useRider() {
   const { user } = useAuth();
   const [rider, setRider] = useState<RiderProfile | null>(null);
   const [offer, setOffer] = useState<TripOffer | null>(null);
-  const [offerTrip, setOfferTrip] = useState<OverpassTrip | null>(null);
-  const [activeTrip, setActiveTrip] = useState<OverpassTrip | null>(null);
+  const [offerTrip, setOfferTrip] = useState<OvapassTrip | null>(null);
+  const [activeTrip, setActiveTrip] = useState<OvapassTrip | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const pingTimer = useRef<number | null>(null);
 
@@ -84,7 +84,7 @@ export function useRider() {
       .order("created_at", { ascending: false })
       .limit(1);
 
-    setActiveTrip((trips?.[0] as OverpassTrip) ?? null);
+    setActiveTrip((trips?.[0] as OvapassTrip) ?? null);
 
     const { data: offers } = await supabase
       .from("trip_offers")
@@ -104,7 +104,7 @@ export function useRider() {
         .select("*")
         .eq("id", current.trip_id)
         .maybeSingle();
-      setOfferTrip((trip as OverpassTrip) ?? null);
+      setOfferTrip((trip as OvapassTrip) ?? null);
     } else {
       setOfferTrip(null);
     }

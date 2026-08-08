@@ -12,7 +12,7 @@ import { Bike, Loader2, ShieldCheck } from "lucide-react";
 
 type FileField = "id_doc" | "bike_photo" | "selfie";
 
-const OverpassRiderSignup = () => {
+const OvapassRiderSignup = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -95,7 +95,7 @@ const OverpassRiderSignup = () => {
             <Bike className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Become an Overpass rider</h1>
+            <h1 className="text-2xl font-bold">Become an Ovapass rider</h1>
             <p className="text-sm text-muted-foreground">Pick up and deliver devices for FixBudi repair centers.</p>
           </div>
         </div>
@@ -184,4 +184,4 @@ const OverpassRiderSignup = () => {
   );
 };
 
-export default OverpassRiderSignup;
+export default OvapassRiderSignup;

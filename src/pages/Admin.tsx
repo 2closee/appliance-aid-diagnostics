@@ -284,8 +284,8 @@ const Admin = () => {
               <Button onClick={() => navigate("/admin/logistics-analytics")} variant="outline" className="w-full">
                 Logistics Analytics (Provider Performance)
               </Button>
-              <Button onClick={() => navigate("/admin/overpass")} variant="outline" className="w-full">
-                Overpass Fleet (Riders & Trips)
+              <Button onClick={() => navigate("/admin/ovapass")} variant="outline" className="w-full">
+                Ovapass Fleet (Riders & Trips)
               </Button>
             </div>
           </CardContent>
