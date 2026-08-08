@@ -108,6 +108,7 @@ const OvapassRiderSignup = () => {
         user_id: user.id,
         full_name: form.full_name,
         phone: form.phone,
+        phone_verified_at: new Date().toISOString(),
         email: user.email,
         fleet_type: form.fleet_type,
         bike_make: form.bike_make || null,
