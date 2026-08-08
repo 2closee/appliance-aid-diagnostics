@@ -214,8 +214,8 @@ const OvapassRiderSignup = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="partner">My own bike</SelectItem>
-                  <SelectItem value="company">A FixBudi electric bike</SelectItem>
+                  <SelectItem value="partner">Third-party rider — my own bike</SelectItem>
+                  <SelectItem value="company">FixBudi rider — a FixBudi electric bike</SelectItem>
                 </SelectContent>
               </Select>
             </div>
