@@ -45,6 +45,7 @@ const Navigation = () => {
       { path: "/self-test", label: "Self-Test", icon: Stethoscope },
       { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
       { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },
+      { path: "/ovapass", label: "Ride with Ovapass", icon: Bike },
     ] : []),
     // Show payment history for customers
     ...(userRole === 'customer' ? [
