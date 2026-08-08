@@ -19,6 +19,32 @@ export interface PricingConfig {
   active: boolean;
 }
 
+// Resolves a free-text Nigerian address to coordinates using Mapbox geocoding.
+export async function geocodeAddress(
+  address: string | null | undefined,
+): Promise<{ lat: number; lng: number } | null> {
+  const token = Deno.env.get("MAPBOX_PUBLIC_TOKEN");
+  if (!token || !address) return null;
+  try {
+    const url =
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json` +
+      `?access_token=${token}&country=NG&limit=1`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.warn(`[overpass] geocode ${res.status}: ${await res.text()}`);
+      return null;
+    }
+    const data = await res.json();
+    const c = data?.features?.[0]?.center;
+    if (!Array.isArray(c) || c.length < 2) return null;
+    return { lat: Number(c[1]), lng: Number(c[0]) };
+  } catch (e) {
+    console.warn(`[overpass] geocode failed: ${(e as Error).message}`);
+    return null;
+  }
+}
+
+
 export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371;
   const toRad = (v: number) => (v * Math.PI) / 180;
