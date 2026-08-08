@@ -1,68 +1,62 @@
-# Kwik Delivery API — Analysis & Next Steps
+# Overpass Riders inside FixBudi
 
-## What the API expects
+Build Overpass as a rider portal inside FixBudi (same app, same database, `/rider` routes, new `rider` role). This removes the dependency on Kwik/Bolt/Fez for Port Harcourt and lets your own e-bikes plus vetted third-party bike owners fulfil pickups and returns.
 
-The Kwik API is **vendor-authenticated**, not API-key based. Every request needs two values you can only obtain by registering a Kwik business (vendor) account:
+## Recommended commercial model
 
-- `access_token` — returned by `POST /vendor_login` with your Kwik email + password
-- `vendor_id` — your Kwik business account ID (also returned by login)
+Mixed fleet, one fee formula:
 
-Base URLs:
-- Staging: `https://staging-api-test.kwik.delivery/`
-- Production: `https://api.kwik.delivery/` (confirmed during onboarding)
+- **Fleet types:** `company` (your 4-5 e-bikes, rider gets a stipend/salary) and `partner` (an owner-rider on their own bike, earns per trip). Same app, same job flow — only the payout differs.
+- **Customer fee (standard, distance-based):**
+  `fee = base_fare + (per_km x distance_km)`, clamped to `min_fare`, plus optional `bulky_surcharge` and `after_hours_surcharge`. All values live in one editable `overpass_pricing` row per city so you tune without code changes.
+- **Commission:** FixBudi keeps a percentage of every trip fee (suggest 20% for partner riders, 100% for company bikes since the bike and rider are yours). Stored per trip so reporting is exact.
+- **Cash first, wallet second:** riders collect cash on delivery at launch. Each trip writes a `rider_ledger` entry (`+rider_earning`, `-commission_owed`). Riders settle commission weekly; the app shows "you owe FixBudi ₦X". Later this can flip to Paystack-collected fees with automated rider payouts.
+- **KYC gate:** a partner rider can only go online after admin approval (ID, bike photo/plate, guarantor, selfie). Unapproved riders see a "pending review" screen.
 
-Core endpoints we'll use for FixBudi:
-1. `POST /vendor_login` — obtain `access_token` + `vendor_id`
-2. `GET /getVehicle` — list vehicle types (we'll pick bike/scooter for gadgets)
-3. `POST /send_payment_for_task` (or `/getPricing`) — quote before dispatch
-4. `POST /v2/create_task_via_vendor` — create pickup + delivery task (supports `has_return_task` for two-leg gadget flow, `ref_images` for photo proof, `template_data` for OTP/instructions)
-5. `POST /cancel_vendor_task` — cancel
-6. Webhook — task status callbacks (UPCOMING → STARTED → ARRIVED → ENDED/FAILED)
+## Assignment: auto-assign nearest rider
 
-## What you need to do next (action required from you)
+1. Repair center approves pickup in the chat/job screen.
+2. A trip is created, the pickup point is matched to a service zone, and an OTP is generated (reuse the existing pickup/return OTP columns).
+3. The dispatcher ranks online, approved, idle riders in that zone by distance from the pickup point and offers the trip to the nearest one with a 60-second countdown.
+4. Decline or timeout -> offer moves to the next rider automatically, up to N attempts, then it surfaces in the admin dispatch board for manual assignment.
+5. Rider app shows the job, navigates, collects the device, enters the pickup OTP, uploads condition photos (this already exists), rides to the center, and the center enters the drop OTP.
+6. Trip completion writes the fee, commission and rider earning, and unlocks the existing rider rating flow.
 
-**1. Sign up for a Kwik business/vendor account** — Kwik does not self-serve API keys. You must register as a business and request API access.
+## Phases
 
-- Business signup: **https://kwik.delivery/business** (or "Business Signup" / "Kwik for Business" from https://kwik.delivery)
-- Nigeria business portal: **https://business.kwik.delivery/register**
-- After signup, email **support@kwik.delivery** (or your onboarding contact) and request:
-  - API access for production + staging
-  - Your `vendor_id`
-  - Confirmation of the production base URL
-  - Webhook registration for task status updates
-  - Coverage confirmation for **Port Harcourt** (Kwik's strong zones are Lagos/Abuja — PH coverage should be verified before we go live there)
+**Phase 1 - Foundation**
+Database: `riders` (profile, fleet_type, kyc_status, bike details, online flag, last known position), `rider_locations` (heartbeat history), `overpass_trips` (links to `repair_jobs` and `delivery_requests`, status, distance, fee, commission, rider earning, OTPs), `trip_offers` (offer, countdown, accept/decline), `rider_ledger`, `overpass_pricing`. Add `rider` to the `app_role` enum with RLS so a rider only ever sees their own rows and their offered/active trips.
 
-**2. Once approved, share these credentials via `add_secret`:**
-- `KWIK_VENDOR_EMAIL`
-- `KWIK_VENDOR_PASSWORD` (used only server-side to mint `access_token`)
-- `KWIK_VENDOR_ID`
-- `KWIK_API_BASE` (staging first, then swap to production)
+**Phase 2 - Rider app (`/rider`)**
+Mobile-first PWA screens: signup + KYC upload, pending-review state, online/offline toggle with background location heartbeat, incoming offer sheet with countdown, active trip screen (map, call customer, OTP entry, photo proof), trip history, earnings and "commission owed".
 
-I will not ask for them until you confirm the account is approved.
+**Phase 3 - Dispatch engine**
+Edge functions: `overpass-create-trip` (called when a center approves pickup), `overpass-assign` (nearest-rider ranking + offer rotation), `overpass-respond-offer`, `overpass-trip-status`, plus reuse of `verify-delivery-otp`. Supabase Realtime pushes offers and status changes to rider and customer instantly.
 
-## What I'll build once credentials arrive
+**Phase 4 - Customer and center experience**
+Customer tracking shows the assigned Overpass rider (name, photo, bike, ETA, live position on the existing Mapbox map) and the delivery fee breakdown before confirming. Repair center dashboard gets an "Overpass pickup" action alongside the existing bulky queue.
 
-Wire the existing `supabase/functions/_shared/logistics/kwik.ts` scaffold to real endpoints:
+**Phase 5 - Admin control room**
+`/admin/overpass`: live map of all bikes, active trips, KYC approval queue, pricing editor, per-rider performance (acceptance rate, on-time rate, rating), commission owed and settlement marking.
 
-1. **Token manager** — login on cold start, cache `access_token` in memory, refresh on 401.
-2. **`getQuote`** — call Kwik pricing with pickup/delivery lat-lng, `vehicle_id` for bike, return normalized `LogisticsQuote`.
-3. **`createDelivery`** — call `/v2/create_task_via_vendor` with:
-   - `has_return_task: 1` when `delivery_type === 'return'` is expected later
-   - `ref_images` populated from our `delivery-condition-photos` bucket
-   - `template_data` carrying our 4-digit `pickup_otp` / `return_otp` as a custom field the rider sees
-   - Handle-with-care flag in `delivery_instructions`
-4. **`cancelDelivery`** — call `/cancel_vendor_task`.
-5. **Webhook** — new edge function `kwik-webhook` (verify_jwt = false) that maps Kwik `job_status` (0/1/2/3/4/6/7/8) to our `delivery_status_history`.
-6. **Dispatcher** — Kwik becomes the primary provider for `logistics_category = 'gadget'` in Port Harcourt; Terminal Africa remains failover. Bulky items continue to skip API dispatch.
-7. **Config** — set `verify_jwt = false` for `kwik-webhook` in `supabase/config.toml`.
+**Phase 6 - Hardening**
+Fallback to the existing Fez/Bolt/Terminal dispatcher when no rider accepts, bulky items still routed to center logistics, offline-tolerant OTP entry, and rider fraud checks (photo proof required, GPS trace on every trip).
 
-## Technical notes
+## Practical notes for 4-5 bikes
 
-- Kwik tokens are long-lived per session; storing in module scope inside the edge function is enough (Deno isolates recycle, so we handle the 401 refresh path).
-- Kwik expects lat/lng — we already collect these via Mapbox in `verify-address`, so no new geocoding work.
-- Kwik's `ref_images` accepts public URLs — our condition photos live in a private bucket, so we'll generate signed URLs at dispatch time.
-- Two-leg gadget flow (pickup → repair center → return) is best modeled as **two separate Kwik tasks** rather than one task with `has_return_task`, because the return leg is scheduled days later after repair completes. Our existing `delivery_type` column already handles this.
+- Park one bike per active repair center and treat each center's radius as its service zone; zones already exist in `logistics_service_zones` and can be reused.
+- With this few bikes, geofencing matters more than clever routing: cap pickups to roughly 7 km from a center so a rider can do 6-8 trips a day.
+- Recruit partner riders from day one — company bikes cover the baseline, partners absorb peaks without extra capital.
+- Keep the Fez/Bolt scaffold in place as overflow; do not delete it.
 
-## Recommended immediate action
+## Technical details
 
-Register at **https://kwik.delivery/business** today, request API + Port Harcourt coverage, and reply here with the approval email. I'll then request the four secrets and ship the live wiring in one pass.
+- Distance: Mapbox Directions via a server-side edge function (the `MAPBOX_PUBLIC_TOKEN` secret already exists) with a haversine fallback, so fees are based on real road distance.
+- Live location: rider app posts a position every 15-20 seconds while online; customers read it through Realtime, not by polling.
+- Every new public table gets explicit GRANTs plus RLS scoped by `auth.uid()` and the `has_role` helper.
+- `overpass_trips` is the source of truth for a trip; `delivery_requests` keeps the existing customer-facing tracking record with `provider = 'overpass'`, so nothing already built breaks.
+- Money: no card flow in Phase 1-5 — cash on delivery plus ledger. Paystack-collected fees and automated rider payouts are a later, separate piece of work.
+
+## Out of scope for now
+
+Standalone Overpass mobile app in the stores, cars/vans, third-party fleet marketplaces, and automated rider payouts.
