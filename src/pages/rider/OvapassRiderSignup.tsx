@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Bike, Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
+import PhoneVerificationField from "@/components/PhoneVerificationField";
 
 type FileField = "id_doc" | "bike_photo" | "selfie";
 
@@ -21,6 +22,7 @@ const OvapassRiderSignup = () => {
   const [checking, setChecking] = useState(true);
   const [existingStatus, setExistingStatus] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
@@ -44,16 +46,20 @@ const OvapassRiderSignup = () => {
       return;
     }
     let active = true;
-    supabase
-      .from("riders")
-      .select("kyc_status")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!active) return;
-        setExistingStatus(data?.kyc_status ?? null);
-        setChecking(false);
-      });
+    Promise.all([
+      supabase.from("riders").select("kyc_status").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profiles").select("phone, phone_verified_at").eq("id", user.id).maybeSingle(),
+    ]).then(([riderRes, profileRes]) => {
+      if (!active) return;
+      setExistingStatus(riderRes.data?.kyc_status ?? null);
+      // A number already verified on the profile carries over to the application.
+      if (profileRes.data?.phone_verified_at && profileRes.data.phone) {
+        setForm((f) => ({ ...f, phone: profileRes.data!.phone as string }));
+        setPhoneVerified(true);
+      }
+      setChecking(false);
+    });
+
     return () => {
       active = false;
     };
@@ -80,6 +86,15 @@ const OvapassRiderSignup = () => {
       toast({ title: "Missing details", description: "Your name and phone number are required.", variant: "destructive" });
       return;
     }
+    if (!phoneVerified) {
+      toast({
+        title: "Verify your phone number",
+        description: "Send yourself a code and confirm it before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
 
     setSaving(true);
     try {
@@ -93,6 +108,7 @@ const OvapassRiderSignup = () => {
         user_id: user.id,
         full_name: form.full_name,
         phone: form.phone,
+        phone_verified_at: new Date().toISOString(),
         email: user.email,
         fleet_type: form.fleet_type,
         bike_make: form.bike_make || null,
@@ -203,10 +219,17 @@ const OvapassRiderSignup = () => {
               <Label htmlFor="full_name">Full name</Label>
               <Input id="full_name" value={form.full_name} onChange={(e) => set("full_name")(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone number</Label>
-              <Input id="phone" value={form.phone} onChange={(e) => set("phone")(e.target.value)} placeholder="0801 234 5678" />
-            </div>
+            <PhoneVerificationField
+              value={form.phone}
+              onChange={set("phone")}
+              verified={phoneVerified}
+              onVerified={(phone) => {
+                set("phone")(phone);
+                setPhoneVerified(true);
+              }}
+              description="Riders must verify their number — repair centers and customers call it during pickups."
+            />
+
             <div className="space-y-2">
               <Label>Whose bike will you ride?</Label>
               <Select value={form.fleet_type} onValueChange={set("fleet_type")}>
@@ -268,10 +291,15 @@ const OvapassRiderSignup = () => {
           </CardContent>
         </Card>
 
-        <Button className="w-full" size="lg" onClick={handleSubmit} disabled={saving}>
+        <Button className="w-full" size="lg" onClick={handleSubmit} disabled={saving || !phoneVerified}>
           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Submit application
         </Button>
+        {!phoneVerified && (
+          <p className="text-center text-xs text-muted-foreground">
+            Verify your phone number to enable submission.
+          </p>
+        )}
       </div>
     </div>
   );

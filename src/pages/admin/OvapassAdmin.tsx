@@ -14,6 +14,7 @@ interface Rider {
   phone: string;
   fleet_type: string;
   kyc_status: string;
+  phone_verified_at: string | null;
   is_online: boolean;
   is_available: boolean;
   plate_number: string | null;
@@ -161,7 +162,11 @@ const OvapassAdmin = () => {
                             {r.kyc_status}
                           </Badge>
                           {r.is_online && <Badge variant="outline">online</Badge>}
+                          <Badge variant={r.phone_verified_at ? "outline" : "destructive"}>
+                            {r.phone_verified_at ? "phone verified" : "phone unverified"}
+                          </Badge>
                         </div>
+
                       </TableCell>
                       <TableCell>
                         {r.total_trips} · {Number(r.average_rating ?? 0).toFixed(1)}★

@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -159,6 +160,13 @@ const Auth = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <GoogleSignInButton redirectPath={from} />
+                <div className="my-4 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">or use your email</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
@@ -199,6 +207,13 @@ const Auth = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <GoogleSignInButton label="Sign up with Google" redirectPath={from} />
+                <div className="my-4 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">or use your email</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>

@@ -1677,6 +1677,42 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_verifications: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1687,6 +1723,7 @@ export type Database = {
           id: string
           is_suspended: boolean
           phone: string | null
+          phone_verified_at: string | null
           specialization: string | null
           suspended_at: string | null
           suspended_by: string | null
@@ -1701,6 +1738,7 @@ export type Database = {
           id: string
           is_suspended?: boolean
           phone?: string | null
+          phone_verified_at?: string | null
           specialization?: string | null
           suspended_at?: string | null
           suspended_by?: string | null
@@ -1715,6 +1753,7 @@ export type Database = {
           id?: string
           is_suspended?: boolean
           phone?: string | null
+          phone_verified_at?: string | null
           specialization?: string | null
           suspended_at?: string | null
           suspended_by?: string | null
@@ -2693,6 +2732,7 @@ export type Database = {
           last_lng: number | null
           last_ping_at: string | null
           phone: string
+          phone_verified_at: string | null
           plate_number: string | null
           selfie_url: string | null
           total_trips: number
@@ -2722,6 +2762,7 @@ export type Database = {
           last_lng?: number | null
           last_ping_at?: string | null
           phone: string
+          phone_verified_at?: string | null
           plate_number?: string | null
           selfie_url?: string | null
           total_trips?: number
@@ -2751,6 +2792,7 @@ export type Database = {
           last_lng?: number | null
           last_ping_at?: string | null
           phone?: string
+          phone_verified_at?: string | null
           plate_number?: string | null
           selfie_url?: string | null
           total_trips?: number
