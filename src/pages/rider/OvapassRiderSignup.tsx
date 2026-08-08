@@ -291,10 +291,15 @@ const OvapassRiderSignup = () => {
           </CardContent>
         </Card>
 
-        <Button className="w-full" size="lg" onClick={handleSubmit} disabled={saving}>
+        <Button className="w-full" size="lg" onClick={handleSubmit} disabled={saving || !phoneVerified}>
           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Submit application
         </Button>
+        {!phoneVerified && (
+          <p className="text-center text-xs text-muted-foreground">
+            Verify your phone number to enable submission.
+          </p>
+        )}
       </div>
     </div>
   );
