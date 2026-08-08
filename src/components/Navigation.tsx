@@ -17,7 +17,8 @@ import {
   MessageCircle,
   CreditCard,
   Target,
-  Stethoscope
+  Stethoscope,
+  Bike
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
