@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import RequestOverpassRider from "@/components/overpass/RequestOverpassRider";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -102,6 +103,7 @@ const RepairJobDetail = () => {
   const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [isCenterStaff, setIsCenterStaff] = useState(false);
   const [deviceReturnConfirmed, setDeviceReturnConfirmed] = useState(false);
   const [satisfactionConfirmed, setSatisfactionConfirmed] = useState(false);
   const [showSatisfactionDialog, setShowSatisfactionDialog] = useState(false);
@@ -172,6 +174,8 @@ const RepairJobDetail = () => {
         .eq("user_id", user?.id)
         .eq("is_active", true)
         .maybeSingle();
+      setIsCenterStaff(!!staffRecord);
+
 
       // Build query
       let query = supabase
@@ -819,6 +823,15 @@ const RepairJobDetail = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Overpass rider dispatch (repair center staff only) */}
+            {isCenterStaff && !["completed", "cancelled"].includes(job.job_status) && (
+              <RequestOverpassRider
+                repairJobId={job.id}
+                tripType={["repair_completed", "ready_for_return", "returned"].includes(job.job_status) ? "return" : "pickup"}
+              />
+            )}
+
 
             {/* Actions */}
             <Card>

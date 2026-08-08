@@ -45,6 +45,10 @@ import SelfTest from "./pages/SelfTest";
 import TrafficAnalytics from "./pages/TrafficAnalytics";
 import LogisticsZones from "./pages/admin/LogisticsZones";
 import LogisticsAnalytics from "./pages/admin/LogisticsAnalytics";
+import OverpassAdmin from "./pages/admin/OverpassAdmin";
+import OverpassRiderHome from "./pages/rider/OverpassRiderHome";
+import OverpassRiderSignup from "./pages/rider/OverpassRiderSignup";
+import OverpassRiderEarnings from "./pages/rider/OverpassRiderEarnings";
 import RepairCenterOnboarding from "./pages/RepairCenterOnboarding";
 import { trackPageView } from "./lib/analytics";
 
@@ -102,7 +106,12 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/diagnostic" element={<Diagnostic />} />
             <Route path="/repair-centers" element={<RepairCenters />} />
+            <Route path="/rider" element={<OverpassRiderHome />} />
+            <Route path="/rider/signup" element={<OverpassRiderSignup />} />
+            <Route path="/rider/earnings" element={<OverpassRiderEarnings />} />
+            <Route path="/admin/overpass" element={<OverpassAdmin />} />
             <Route path="/pickup-selection" element={<PickupSelection />} />
+
             <Route path="/pickup-request" element={<PickupRequest />} />
             <Route path="/repair-jobs" element={<RepairJobs />} />
             <Route path="/repair-jobs/:id" element={<RepairJobDetail />} />
