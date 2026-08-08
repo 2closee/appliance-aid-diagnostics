@@ -86,6 +86,15 @@ const OvapassRiderSignup = () => {
       toast({ title: "Missing details", description: "Your name and phone number are required.", variant: "destructive" });
       return;
     }
+    if (!phoneVerified) {
+      toast({
+        title: "Verify your phone number",
+        description: "Send yourself a code and confirm it before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
 
     setSaving(true);
     try {
