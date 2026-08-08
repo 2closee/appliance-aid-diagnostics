@@ -1346,6 +1346,212 @@ export type Database = {
         }
         Relationships: []
       }
+      overpass_pricing: {
+        Row: {
+          active: boolean
+          after_hours_end: number
+          after_hours_start: number
+          after_hours_surcharge: number
+          base_fare: number
+          bulky_surcharge: number
+          city: string
+          commission_rate_company: number
+          commission_rate_partner: number
+          created_at: string
+          currency: string
+          id: string
+          max_assignment_attempts: number
+          max_radius_km: number
+          min_fare: number
+          offer_timeout_seconds: number
+          per_km: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          after_hours_end?: number
+          after_hours_start?: number
+          after_hours_surcharge?: number
+          base_fare?: number
+          bulky_surcharge?: number
+          city: string
+          commission_rate_company?: number
+          commission_rate_partner?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          max_assignment_attempts?: number
+          max_radius_km?: number
+          min_fare?: number
+          offer_timeout_seconds?: number
+          per_km?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          after_hours_end?: number
+          after_hours_start?: number
+          after_hours_surcharge?: number
+          base_fare?: number
+          bulky_surcharge?: number
+          city?: string
+          commission_rate_company?: number
+          commission_rate_partner?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          max_assignment_attempts?: number
+          max_radius_km?: number
+          min_fare?: number
+          offer_timeout_seconds?: number
+          per_km?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      overpass_trips: {
+        Row: {
+          accepted_at: string | null
+          assigned_at: string | null
+          assignment_attempts: number
+          cancel_reason: string | null
+          cancelled_at: string | null
+          commission_amount: number | null
+          commission_rate: number | null
+          completed_at: string | null
+          created_at: string
+          currency: string
+          customer_name: string | null
+          customer_phone: string | null
+          delivery_request_id: string | null
+          distance_km: number | null
+          dropoff_address: string
+          dropoff_lat: number | null
+          dropoff_lng: number | null
+          dropoff_otp: string | null
+          dropoff_otp_verified_at: string | null
+          fee: number | null
+          id: string
+          notes: string | null
+          picked_up_at: string | null
+          pickup_address: string
+          pickup_lat: number | null
+          pickup_lng: number | null
+          pickup_otp: string | null
+          pickup_otp_verified_at: string | null
+          repair_job_id: string
+          rider_earning: number | null
+          rider_id: string | null
+          status: string
+          trip_type: string
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          assigned_at?: string | null
+          assignment_attempts?: number
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          commission_amount?: number | null
+          commission_rate?: number | null
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery_request_id?: string | null
+          distance_km?: number | null
+          dropoff_address: string
+          dropoff_lat?: number | null
+          dropoff_lng?: number | null
+          dropoff_otp?: string | null
+          dropoff_otp_verified_at?: string | null
+          fee?: number | null
+          id?: string
+          notes?: string | null
+          picked_up_at?: string | null
+          pickup_address: string
+          pickup_lat?: number | null
+          pickup_lng?: number | null
+          pickup_otp?: string | null
+          pickup_otp_verified_at?: string | null
+          repair_job_id: string
+          rider_earning?: number | null
+          rider_id?: string | null
+          status?: string
+          trip_type?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          assigned_at?: string | null
+          assignment_attempts?: number
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          commission_amount?: number | null
+          commission_rate?: number | null
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery_request_id?: string | null
+          distance_km?: number | null
+          dropoff_address?: string
+          dropoff_lat?: number | null
+          dropoff_lng?: number | null
+          dropoff_otp?: string | null
+          dropoff_otp_verified_at?: string | null
+          fee?: number | null
+          id?: string
+          notes?: string | null
+          picked_up_at?: string | null
+          pickup_address?: string
+          pickup_lat?: number | null
+          pickup_lng?: number | null
+          pickup_otp?: string | null
+          pickup_otp_verified_at?: string | null
+          repair_job_id?: string
+          rider_earning?: number | null
+          rider_id?: string | null
+          status?: string
+          trip_type?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "overpass_trips_delivery_request_id_fkey"
+            columns: ["delivery_request_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "overpass_trips_repair_job_id_fkey"
+            columns: ["repair_job_id"]
+            isOneToOne: false
+            referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "overpass_trips_rider_id_fkey"
+            columns: ["rider_id"]
+            isOneToOne: false
+            referencedRelation: "riders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "overpass_trips_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_service_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       password_reset_tokens: {
         Row: {
           created_at: string
@@ -2311,6 +2517,104 @@ export type Database = {
           },
         ]
       }
+      rider_ledger: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          description: string | null
+          entry_type: string
+          id: string
+          rider_id: string
+          settled: boolean
+          settled_at: string | null
+          settled_by: string | null
+          trip_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          entry_type: string
+          id?: string
+          rider_id: string
+          settled?: boolean
+          settled_at?: string | null
+          settled_by?: string | null
+          trip_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          entry_type?: string
+          id?: string
+          rider_id?: string
+          settled?: boolean
+          settled_at?: string | null
+          settled_by?: string | null
+          trip_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rider_ledger_rider_id_fkey"
+            columns: ["rider_id"]
+            isOneToOne: false
+            referencedRelation: "riders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rider_ledger_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "overpass_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rider_locations: {
+        Row: {
+          accuracy_m: number | null
+          created_at: string
+          id: string
+          lat: number
+          lng: number
+          recorded_at: string
+          rider_id: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          created_at?: string
+          id?: string
+          lat: number
+          lng: number
+          recorded_at?: string
+          rider_id: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          created_at?: string
+          id?: string
+          lat?: number
+          lng?: number
+          recorded_at?: string
+          rider_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rider_locations_rider_id_fkey"
+            columns: ["rider_id"]
+            isOneToOne: false
+            referencedRelation: "riders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rider_ratings: {
         Row: {
           comment: string | null
@@ -2361,6 +2665,104 @@ export type Database = {
             columns: ["repair_job_id"]
             isOneToOne: false
             referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      riders: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          average_rating: number | null
+          bike_make: string | null
+          bike_photo_url: string | null
+          created_at: string
+          email: string | null
+          fleet_type: string
+          full_name: string
+          guarantor_name: string | null
+          guarantor_phone: string | null
+          home_zone_id: string | null
+          id: string
+          id_doc_url: string | null
+          is_available: boolean
+          is_online: boolean
+          kyc_notes: string | null
+          kyc_status: string
+          last_lat: number | null
+          last_lng: number | null
+          last_ping_at: string | null
+          phone: string
+          plate_number: string | null
+          selfie_url: string | null
+          total_trips: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          average_rating?: number | null
+          bike_make?: string | null
+          bike_photo_url?: string | null
+          created_at?: string
+          email?: string | null
+          fleet_type?: string
+          full_name: string
+          guarantor_name?: string | null
+          guarantor_phone?: string | null
+          home_zone_id?: string | null
+          id?: string
+          id_doc_url?: string | null
+          is_available?: boolean
+          is_online?: boolean
+          kyc_notes?: string | null
+          kyc_status?: string
+          last_lat?: number | null
+          last_lng?: number | null
+          last_ping_at?: string | null
+          phone: string
+          plate_number?: string | null
+          selfie_url?: string | null
+          total_trips?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          average_rating?: number | null
+          bike_make?: string | null
+          bike_photo_url?: string | null
+          created_at?: string
+          email?: string | null
+          fleet_type?: string
+          full_name?: string
+          guarantor_name?: string | null
+          guarantor_phone?: string | null
+          home_zone_id?: string | null
+          id?: string
+          id_doc_url?: string | null
+          is_available?: boolean
+          is_online?: boolean
+          kyc_notes?: string | null
+          kyc_status?: string
+          last_lat?: number | null
+          last_lng?: number | null
+          last_ping_at?: string | null
+          phone?: string
+          plate_number?: string | null
+          selfie_url?: string | null
+          total_trips?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "riders_home_zone_id_fkey"
+            columns: ["home_zone_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_service_zones"
             referencedColumns: ["id"]
           },
         ]
@@ -2939,6 +3341,63 @@ export type Database = {
           },
         ]
       }
+      trip_offers: {
+        Row: {
+          attempt_number: number
+          created_at: string
+          distance_to_pickup_km: number | null
+          expires_at: string
+          id: string
+          offered_at: string
+          responded_at: string | null
+          rider_id: string
+          status: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_number?: number
+          created_at?: string
+          distance_to_pickup_km?: number | null
+          expires_at?: string
+          id?: string
+          offered_at?: string
+          responded_at?: string | null
+          rider_id: string
+          status?: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          attempt_number?: number
+          created_at?: string
+          distance_to_pickup_km?: number | null
+          expires_at?: string
+          id?: string
+          offered_at?: string
+          responded_at?: string | null
+          rider_id?: string
+          status?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_offers_rider_id_fkey"
+            columns: ["rider_id"]
+            isOneToOne: false
+            referencedRelation: "riders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_offers_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "overpass_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -3056,6 +3515,7 @@ export type Database = {
           specialties: string
         }[]
       }
+      get_rider_id: { Args: { _user_id: string }; Returns: string }
       get_settlement_period: { Args: { date_input: string }; Returns: string }
       get_user_repair_center: { Args: { _user_id: string }; Returns: number }
       get_user_role: {
@@ -3100,6 +3560,7 @@ export type Database = {
         | "student"
         | "super_admin"
         | "accountant"
+        | "rider"
       dispute_status: "open" | "under_review" | "resolved" | "rejected"
       job_status:
         | "requested"
@@ -3263,6 +3724,7 @@ export const Constants = {
         "student",
         "super_admin",
         "accountant",
+        "rider",
       ],
       dispute_status: ["open", "under_review", "resolved", "rejected"],
       job_status: [
