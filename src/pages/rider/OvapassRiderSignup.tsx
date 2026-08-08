@@ -203,10 +203,17 @@ const OvapassRiderSignup = () => {
               <Label htmlFor="full_name">Full name</Label>
               <Input id="full_name" value={form.full_name} onChange={(e) => set("full_name")(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone number</Label>
-              <Input id="phone" value={form.phone} onChange={(e) => set("phone")(e.target.value)} placeholder="0801 234 5678" />
-            </div>
+            <PhoneVerificationField
+              value={form.phone}
+              onChange={set("phone")}
+              verified={phoneVerified}
+              onVerified={(phone) => {
+                set("phone")(phone);
+                setPhoneVerified(true);
+              }}
+              description="Riders must verify their number — repair centers and customers call it during pickups."
+            />
+
             <div className="space-y-2">
               <Label>Whose bike will you ride?</Label>
               <Select value={form.fleet_type} onValueChange={set("fleet_type")}>
