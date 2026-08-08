@@ -107,6 +107,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/diagnostic" element={<Diagnostic />} />
             <Route path="/repair-centers" element={<RepairCenters />} />
+            <Route path="/ovapass" element={<Ovapass />} />
             <Route path="/rider" element={<OvapassRiderHome />} />
             <Route path="/rider/signup" element={<OvapassRiderSignup />} />
             <Route path="/rider/earnings" element={<OvapassRiderEarnings />} />
