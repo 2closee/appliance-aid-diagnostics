@@ -122,16 +122,19 @@ serve(async (req) => {
       .update({ consumed_at: verifiedAt })
       .eq("id", record.id);
 
-    await supa
-      .from("profiles")
-      .update({ phone, phone_verified_at: verifiedAt })
-      .eq("id", userId);
+    if (userId) {
+      await supa
+        .from("profiles")
+        .update({ phone, phone_verified_at: verifiedAt })
+        .eq("id", userId);
 
-    // Keep an existing rider profile in sync so dispatch can trust the number.
-    await supa
-      .from("riders")
-      .update({ phone, phone_verified_at: verifiedAt })
-      .eq("user_id", userId);
+      // Keep an existing rider profile in sync so dispatch can trust the number.
+      await supa
+        .from("riders")
+        .update({ phone, phone_verified_at: verifiedAt })
+        .eq("user_id", userId);
+    }
+
 
     return json({ verified: true, phone, verified_at: verifiedAt });
   } catch (e) {
