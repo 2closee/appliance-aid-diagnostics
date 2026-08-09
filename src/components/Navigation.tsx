@@ -120,7 +120,10 @@ const Navigation = () => {
             {(overflowItems.length > 0 || primaryItems.length > 4) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-1 px-2.5 whitespace-nowrap">
+                  <Button
+                    variant="ghost"
+                    className={`flex items-center gap-1 px-2.5 whitespace-nowrap ${overflowItems.length === 0 ? "xl:hidden" : ""}`}
+                  >
                     <span>More</span>
                     <ChevronDown className="h-4 w-4" />
                   </Button>
