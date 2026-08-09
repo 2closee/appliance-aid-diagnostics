@@ -74,3 +74,12 @@ verify_jwt = true
 
 [functions.upload-email-logo]
 verify_jwt = false
+
+[functions.rider-signup]
+verify_jwt = false
+
+[functions.send-phone-otp]
+verify_jwt = false
+
+[functions.verify-phone-otp]
+verify_jwt = false

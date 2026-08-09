@@ -19,10 +19,12 @@ const OvapassRiderSignup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [checking, setChecking] = useState(true);
   const [existingStatus, setExistingStatus] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
+  const [account, setAccount] = useState({ email: "", password: "" });
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
@@ -38,17 +40,18 @@ const OvapassRiderSignup = () => {
     selfie: null,
   });
 
-  // Send signed-out visitors to sign in, then bring them straight back here.
+  // Riders are phone-first: signed-out visitors create their account right here,
+  // using the SMS code as proof of identity instead of an email confirmation link.
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      navigate("/auth", { replace: true, state: { from: { pathname: "/rider/signup" } } });
+      setChecking(false);
       return;
     }
     let active = true;
     Promise.all([
       supabase.from("riders").select("kyc_status").eq("user_id", user.id).maybeSingle(),
-      supabase.from("profiles").select("phone, phone_verified_at").eq("id", user.id).maybeSingle(),
+      supabase.from("profiles").select("full_name, phone, phone_verified_at").eq("id", user.id).maybeSingle(),
     ]).then(([riderRes, profileRes]) => {
       if (!active) return;
       setExistingStatus(riderRes.data?.kyc_status ?? null);
@@ -56,6 +59,9 @@ const OvapassRiderSignup = () => {
       if (profileRes.data?.phone_verified_at && profileRes.data.phone) {
         setForm((f) => ({ ...f, phone: profileRes.data!.phone as string }));
         setPhoneVerified(true);
+      }
+      if (profileRes.data?.full_name) {
+        setForm((f) => ({ ...f, full_name: f.full_name || (profileRes.data!.full_name as string) }));
       }
       setChecking(false);
     });
@@ -76,12 +82,65 @@ const OvapassRiderSignup = () => {
     return path;
   };
 
-
-  const handleSubmit = async () => {
-    if (!user) {
-      navigate("/auth");
+  const handleCreateAccount = async () => {
+    if (!phoneVerified) {
+      toast({
+        title: "Verify your phone first",
+        description: "Send yourself a code and confirm it to continue.",
+        variant: "destructive",
+      });
       return;
     }
+    if (!form.full_name || !account.email || account.password.length < 6) {
+      toast({
+        title: "Missing details",
+        description: "Enter your name, email, and a password of at least 6 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("rider-signup", {
+        body: {
+          phone: form.phone,
+          email: account.email,
+          password: account.password,
+          full_name: form.full_name,
+        },
+      });
+
+      let message: string | null = null;
+      if (error) {
+        const ctx = (error as { context?: { text?: () => Promise<string> } })?.context;
+        if (ctx?.text) {
+          try {
+            message = JSON.parse(await ctx.text()).error ?? null;
+          } catch {
+            /* fall through */
+          }
+        }
+        throw new Error(message ?? error.message);
+      }
+      if (data?.error) throw new Error(data.error);
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: account.email,
+        password: account.password,
+      });
+      if (signInError) throw signInError;
+
+      toast({ title: "Account ready", description: "Now finish your rider details below." });
+    } catch (e) {
+      toast({ title: "Could not create account", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!user) return;
     if (!form.full_name || !form.phone) {
       toast({ title: "Missing details", description: "Your name and phone number are required.", variant: "destructive" });
       return;
@@ -94,7 +153,6 @@ const OvapassRiderSignup = () => {
       });
       return;
     }
-
 
     setSaving(true);
     try {
@@ -195,19 +253,100 @@ const OvapassRiderSignup = () => {
     );
   }
 
-  return (
+  const header = (
+    <div className="flex items-center gap-3">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+        <Bike className="h-6 w-6" />
+      </div>
+      <div>
+        <h1 className="text-2xl font-bold">Become an Ovapass rider</h1>
+        <p className="text-sm text-muted-foreground">Pick up and deliver devices for FixBudi repair centers.</p>
+      </div>
+    </div>
+  );
 
+  // Step 1 — phone first, then account. No email confirmation link needed.
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-muted/30 px-4 py-8">
+        <div className="mx-auto max-w-lg space-y-6">
+          {header}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Step 1 of 2 — verify your phone</CardTitle>
+              <CardDescription>
+                We confirm riders by SMS, so there's no email link to wait for.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <PhoneVerificationField
+                value={form.phone}
+                onChange={set("phone")}
+                verified={phoneVerified}
+                onVerified={(phone) => {
+                  set("phone")(phone);
+                  setPhoneVerified(true);
+                }}
+                description="Repair centers and customers call this number during pickups."
+              />
+
+              {phoneVerified && (
+                <div className="space-y-4 border-t pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name">Full name</Label>
+                    <Input
+                      id="full_name"
+                      value={form.full_name}
+                      onChange={(e) => set("full_name")(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="rider_email">Email</Label>
+                    <Input
+                      id="rider_email"
+                      type="email"
+                      value={account.email}
+                      onChange={(e) => setAccount((a) => ({ ...a, email: e.target.value }))}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Used to sign back in. No confirmation email to click.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="rider_password">Password</Label>
+                    <Input
+                      id="rider_password"
+                      type="password"
+                      minLength={6}
+                      value={account.password}
+                      onChange={(e) => setAccount((a) => ({ ...a, password: e.target.value }))}
+                    />
+                  </div>
+                  <Button className="w-full" size="lg" onClick={handleCreateAccount} disabled={creating}>
+                    {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Create account and continue
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link to="/auth" className="font-medium text-primary underline-offset-4 hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
     <div className="min-h-screen bg-muted/30 px-4 py-8">
       <div className="mx-auto max-w-lg space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Bike className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">Become an Ovapass rider</h1>
-            <p className="text-sm text-muted-foreground">Pick up and deliver devices for FixBudi repair centers.</p>
-          </div>
-        </div>
+        {header}
 
         <Card>
           <CardHeader>
