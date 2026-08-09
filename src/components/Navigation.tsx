@@ -67,13 +67,17 @@ const Navigation = () => {
     ] : []),
   ];
 
+  const primaryPaths = ["/", "/dashboard", "/diagnostic", "/repair-centers", "/pickup-selection", "/ovapass"];
+  const primaryItems = navItems.filter((item) => primaryPaths.includes(item.path));
+  const overflowItems = navItems.filter((item) => !primaryPaths.includes(item.path));
+
   const isActive = (path: string) => location.pathname === path;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pt-safe">
       <div className="container mx-auto px-safe-x">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center space-x-2 group">
+        <div className="flex items-center justify-between h-16 gap-2">
+          <Link to="/" className="flex shrink-0 items-center space-x-2 group">
             <img 
               src={theme === 'dark' ? logoDark : logoLight}
               alt="Fixbudi" 
@@ -95,18 +99,53 @@ const Navigation = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1">
-            {navItems.map((item) => (
-              <Link key={item.path} to={item.path}>
+          <div className="hidden min-w-0 lg:flex items-center gap-0.5 xl:gap-1">
+            {primaryItems.map((item, index) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={index >= 4 ? "hidden xl:block" : undefined}
+              >
                 <Button
                   variant={isActive(item.path) ? "default" : "ghost"}
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-2.5 xl:px-3 whitespace-nowrap"
                 >
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className="h-4 w-4 shrink-0" />
                   <span>{item.label}</span>
                 </Button>
               </Link>
             ))}
+
+            {/* Overflow menu */}
+            {(overflowItems.length > 0 || primaryItems.length > 4) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-1 px-2.5 whitespace-nowrap">
+                    <span>More</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-popover">
+                  {primaryItems.slice(4).map((item) => (
+                    <DropdownMenuItem key={item.path} asChild className="xl:hidden">
+                      <Link to={item.path} className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                  {overflowItems.map((item) => (
+                    <DropdownMenuItem key={item.path} asChild>
+                      <Link to={item.path} className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             
             {/* Conversations Icon */}
             {user && (userRole === 'customer' || isRepairCenterStaff) && (
