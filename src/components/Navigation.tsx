@@ -172,10 +172,11 @@ const Navigation = () => {
             )}
             {/* Only show Repair Center Portal link to non-logged-in users */}
             {!user && (
-              <Link to="/repair-center-admin">
-                <Button variant="secondary" className="flex items-center space-x-2">
-                  <Settings className="h-4 w-4" />
-                  <span>Repair Center Portal</span>
+              <Link to="/repair-center-admin" className="shrink-0">
+                <Button variant="secondary" className="flex items-center gap-2 px-2.5 xl:px-3 whitespace-nowrap">
+                  <Settings className="h-4 w-4 shrink-0" />
+                  <span className="hidden xl:inline">Repair Center Portal</span>
+                  <span className="xl:hidden">Portal</span>
                 </Button>
               </Link>
             )}
@@ -183,14 +184,14 @@ const Navigation = () => {
               <Button
                 variant="ghost"
                 onClick={signOut}
-                className="flex items-center space-x-2"
+                className="flex shrink-0 items-center gap-2 px-2.5 whitespace-nowrap"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-4 w-4 shrink-0" />
                 <span>Sign Out</span>
               </Button>
             ) : (
-              <Link to="/auth">
-                <Button variant="outline">Sign In</Button>
+              <Link to="/auth" className="shrink-0">
+                <Button variant="outline" className="whitespace-nowrap">Sign In</Button>
               </Link>
             )}
           </div>
