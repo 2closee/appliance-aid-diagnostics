@@ -20,6 +20,13 @@ import {
   Stethoscope,
   Bike
 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
@@ -60,13 +67,17 @@ const Navigation = () => {
     ] : []),
   ];
 
+  const primaryPaths = ["/", "/dashboard", "/diagnostic", "/repair-centers", "/pickup-selection", "/ovapass"];
+  const primaryItems = navItems.filter((item) => primaryPaths.includes(item.path));
+  const overflowItems = navItems.filter((item) => !primaryPaths.includes(item.path));
+
   const isActive = (path: string) => location.pathname === path;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pt-safe">
       <div className="container mx-auto px-safe-x">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center space-x-2 group">
+        <div className="flex items-center justify-between h-16 gap-2">
+          <Link to="/" className="flex shrink-0 items-center space-x-2 group">
             <img 
               src={theme === 'dark' ? logoDark : logoLight}
               alt="Fixbudi" 
@@ -88,18 +99,56 @@ const Navigation = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1">
-            {navItems.map((item) => (
-              <Link key={item.path} to={item.path}>
+          <div className="hidden min-w-0 lg:flex items-center gap-0.5 xl:gap-1">
+            {primaryItems.map((item, index) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={index >= 4 ? "hidden xl:block" : undefined}
+              >
                 <Button
                   variant={isActive(item.path) ? "default" : "ghost"}
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 px-2.5 xl:px-3 whitespace-nowrap"
                 >
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className="h-4 w-4 shrink-0" />
                   <span>{item.label}</span>
                 </Button>
               </Link>
             ))}
+
+            {/* Overflow menu */}
+            {(overflowItems.length > 0 || primaryItems.length > 4) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className={`flex items-center gap-1 px-2.5 whitespace-nowrap ${overflowItems.length === 0 ? "xl:hidden" : ""}`}
+                  >
+                    <span>More</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-popover">
+                  {primaryItems.slice(4).map((item) => (
+                    <DropdownMenuItem key={item.path} asChild className="xl:hidden">
+                      <Link to={item.path} className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                  {overflowItems.map((item) => (
+                    <DropdownMenuItem key={item.path} asChild>
+                      <Link to={item.path} className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             
             {/* Conversations Icon */}
             {user && (userRole === 'customer' || isRepairCenterStaff) && (
@@ -123,10 +172,11 @@ const Navigation = () => {
             )}
             {/* Only show Repair Center Portal link to non-logged-in users */}
             {!user && (
-              <Link to="/repair-center-admin">
-                <Button variant="secondary" className="flex items-center space-x-2">
-                  <Settings className="h-4 w-4" />
-                  <span>Repair Center Portal</span>
+              <Link to="/repair-center-admin" className="shrink-0">
+                <Button variant="secondary" className="flex items-center gap-2 px-2.5 xl:px-3 whitespace-nowrap">
+                  <Settings className="h-4 w-4 shrink-0" />
+                  <span className="hidden xl:inline">Repair Center Portal</span>
+                  <span className="xl:hidden">Portal</span>
                 </Button>
               </Link>
             )}
@@ -134,14 +184,14 @@ const Navigation = () => {
               <Button
                 variant="ghost"
                 onClick={signOut}
-                className="flex items-center space-x-2"
+                className="flex shrink-0 items-center gap-2 px-2.5 whitespace-nowrap"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-4 w-4 shrink-0" />
                 <span>Sign Out</span>
               </Button>
             ) : (
-              <Link to="/auth">
-                <Button variant="outline">Sign In</Button>
+              <Link to="/auth" className="shrink-0">
+                <Button variant="outline" className="whitespace-nowrap">Sign In</Button>
               </Link>
             )}
           </div>
