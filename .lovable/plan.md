@@ -1,38 +1,47 @@
-# Why rider verification emails aren't arriving — and how to fix it
+# Phone-first rider signup — no email confirmation for riders
 
-## What I found
+Riders stop depending on email entirely. A rider proves who they are with the SMS code they already receive during the Ovapass application, and that verified phone number becomes the trust signal. Email confirmation stays required for customers, repair-center staff and admins.
 
-Rider signup goes through the normal account screen (`/auth`), which calls Supabase's built-in `signUp` with a redirect to `/verify-email`. That means the verification email is sent by **Supabase's own built-in email service**, not by any of the app's email functions.
+## New rider signup flow
 
-Two things confirmed:
+```text
+/rider/signup  ->  enter phone  ->  SMS code  ->  code verified
+               ->  enter name + email + password
+               ->  account created already-confirmed  ->  signed in
+               ->  continue with bike details + KYC documents  ->  submit
+```
 
-- This project has **no email sending domain configured**, so nothing in the app is set up to send branded/auth email itself.
-- The app's Resend key is only used by custom functions (repair-center applications, job notifications, password reset). Signup verification does **not** go through Resend at all — it goes through Supabase's default built-in sender.
+- The phone step comes **first**, before an account exists. No SMS is spent until the rider commits to the flow (existing rate limits and 60-second resend cooldown still apply).
+- Email and password are still collected — riders need a way to sign back in and we need a contact address on file — but the inbox is never on the critical path. No verification link, no "check your email", no dead end if the mail never lands.
+- The rider is signed in immediately after the account is created and lands straight in the rest of the application form.
+- A rider who already has an account just signs in as today and goes through the phone step inside the form (as it works now).
 
-Supabase's default built-in sender is meant for development only. It has a very low hourly cap for the whole project (a couple of emails per hour), no dedicated sending reputation, and messages routinely land in spam or are silently dropped. Once the cap is hit, further signups get a rate-limit error and no email is sent. That matches "riders sign up and nothing arrives."
+## What changes for other users
 
-The signup code itself and the `/verify-email` route are correct — this is a mail delivery/configuration problem, not a bug in the form.
+Nothing. Customers and repair-center staff keep the current email-confirmation signup at `/auth`. This change is scoped to the rider path only, so we are not weakening confirmation for the whole app.
 
-## The fix
+## Why this fixes the problem
 
-Point Supabase Auth at a real sending service instead of the built-in default, using the Resend account already connected to this project.
+The undelivered mail was Supabase's built-in development sender, which is heavily throttled and frequently spam-filtered. Taking riders off email confirmation removes that sender from the rider funnel completely, so rider onboarding no longer depends on mail delivery at all.
 
-1. **Custom SMTP for Auth** — in the Supabase dashboard, Authentication → Emails → SMTP settings, enable custom SMTP with Resend's SMTP host and the existing Resend API key as the password, and a sender address on a domain verified in Resend (e.g. `no-reply@fixbudi.com`). This immediately replaces the throttled default sender for every auth email: verification, password reset, magic link.
-2. **Raise the auth email rate limit** — the default hourly cap stays low even after SMTP is switched. I'll raise it to a realistic signup volume so batches of riders don't get blocked.
-3. **Verify the sending domain in Resend** — DNS records (SPF/DKIM) for the domain must be verified in Resend, otherwise Gmail and Outlook will spam-folder or reject the mail.
+Worth noting separately: customer and staff signups still use that same throttled sender. If you want those fixed too, the answer is pointing Supabase Auth at a real sending service (Resend, which is already connected) — say the word and I'll plan that as follow-up work.
 
-## App-side improvements I'll make in code
+## Technical details
 
-- **Clear rate-limit feedback on signup**: if Supabase returns an email rate-limit error, show riders a specific message ("too many verification emails just now, try again in a few minutes") instead of the raw error.
-- **Resend-verification action on the rider path**: after signup, give riders a "Didn't get the email? Resend" button with a cooldown, so a lost email isn't a dead end.
-- **Spam-folder hint** in the post-signup message and on the verification screen.
+- New edge function `rider-signup` (service role, `verify_jwt = false`):
+  - Requires proof that the submitted phone was verified — it checks the `phone_verifications` row is consumed, unexpired and matches the phone, so nobody can create a confirmed account without passing SMS.
+  - Creates the auth user with `email_confirm: true` via the admin API, sets `phone` and `phone_verified_at` on the profile, and returns a session for the client to set.
+  - Validates input with Zod; rejects an email that already exists with a clear "sign in instead" message.
+- `supabase/functions/verify-phone-otp` gains support for verifying a phone with **no signed-in user** (pre-account), keeping the current authenticated behaviour intact.
+- `src/components/PhoneVerificationField.tsx` gains an anonymous mode so it works before sign-in.
+- `src/pages/rider/OvapassRiderSignup.tsx` becomes two steps: phone verification + account creation for signed-out visitors, then the existing details/KYC form. The current redirect to `/auth` for signed-out riders is removed.
+- `src/pages/Ovapass.tsx` rider CTA points at `/rider/signup` directly.
+- No schema changes needed — `phone_verifications`, `profiles.phone_verified_at` and `riders.phone_verified_at` already exist.
+- No Supabase dashboard configuration required.
 
-## Alternative worth considering
+## Order of work
 
-Riders already verify their **phone by SMS** (Termii) as part of the Ovapass application. Since riders are phone-first users, we could stop requiring email confirmation for riders entirely and treat the verified phone number as the trust signal — email confirmation would then only matter for repair-center staff and admins. This removes email delivery from the rider funnel completely. Say the word and I'll fold that into the work instead of, or alongside, the SMTP fix.
-
-## Technical notes
-
-- Sender switch and rate limit are Supabase Auth configuration, not code; I can apply the rate limit from here, but SMTP credentials must be entered in the Supabase dashboard (or I can walk you through it click by click).
-- Code touched: `src/pages/Auth.tsx` (error mapping, resend action, spam hint) and `src/pages/EmailVerification.tsx` (resend + guidance).
-- No database changes required.
+1. Extend `verify-phone-otp` for pre-account verification, add the `rider-signup` function.
+2. Anonymous mode on the phone verification component.
+3. Rebuild rider signup as phone-first two-step, remove the sign-in gate.
+4. Check the CTA path end to end from the Ovapass page.
