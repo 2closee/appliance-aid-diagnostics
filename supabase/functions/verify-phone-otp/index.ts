@@ -43,17 +43,18 @@ serve(async (req) => {
   if (!rl.allowed) return rateLimitResponse(rl.resetAt, corsHeaders);
 
   try {
+    // A signed-in user is optional: riders verify their number before signing up.
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Sign in required" }, 401);
-
-    const anon = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: userData, error: userError } = await anon.auth.getUser();
-    if (userError || !userData?.user) return json({ error: "Sign in required" }, 401);
-    const userId = userData.user.id;
+    let userId: string | null = null;
+    if (authHeader?.startsWith("Bearer ")) {
+      const anon = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } },
+      );
+      const { data: userData } = await anon.auth.getUser();
+      userId = userData?.user?.id ?? null;
+    }
 
     const body = await req.json().catch(() => ({}));
     const phone = normalizeNigerianPhone(String(body?.phone ?? ""));
@@ -67,15 +68,19 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: record } = await supa
+    let query = supa
       .from("phone_verifications")
       .select("id, code_hash, attempts, expires_at")
       .eq("phone", phone)
-      .eq("user_id", userId)
-      .is("consumed_at", null)
+      .is("consumed_at", null);
+
+    query = userId ? query.eq("user_id", userId) : query.is("user_id", null);
+
+    const { data: record } = await query
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+
 
     if (!record) return json({ error: "Request a new code to continue." }, 400);
 

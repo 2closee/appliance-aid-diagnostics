@@ -38,19 +38,20 @@ serve(async (req) => {
   if (!ipLimit.allowed) return rateLimitResponse(ipLimit.resetAt, corsHeaders);
 
   try {
+    // Riders verify their phone BEFORE an account exists, so a signed-in user is
+    // optional here. When a session is present we tie the code to that user.
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return json({ error: "Sign in required" }, 401);
+    let userId: string | null = null;
+    if (authHeader?.startsWith("Bearer ")) {
+      const anon = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } },
+      );
+      const { data: userData } = await anon.auth.getUser();
+      userId = userData?.user?.id ?? null;
     }
 
-    const anon = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: userData, error: userError } = await anon.auth.getUser();
-    if (userError || !userData?.user) return json({ error: "Sign in required" }, 401);
-    const userId = userData.user.id;
 
     const body = await req.json().catch(() => ({}));
     const phone = normalizeNigerianPhone(String(body?.phone ?? ""));
