@@ -1362,9 +1362,14 @@ export type Database = {
           id: string
           max_assignment_attempts: number
           max_radius_km: number
+          max_unsettled_amount: number
+          max_unsettled_trips: number
           min_fare: number
+          min_withdrawal: number
           offer_timeout_seconds: number
+          payout_day: number
           per_km: number
+          rider_share_company: number
           updated_at: string
         }
         Insert: {
@@ -1382,9 +1387,14 @@ export type Database = {
           id?: string
           max_assignment_attempts?: number
           max_radius_km?: number
+          max_unsettled_amount?: number
+          max_unsettled_trips?: number
           min_fare?: number
+          min_withdrawal?: number
           offer_timeout_seconds?: number
+          payout_day?: number
           per_km?: number
+          rider_share_company?: number
           updated_at?: string
         }
         Update: {
@@ -1402,9 +1412,14 @@ export type Database = {
           id?: string
           max_assignment_attempts?: number
           max_radius_km?: number
+          max_unsettled_amount?: number
+          max_unsettled_trips?: number
           min_fare?: number
+          min_withdrawal?: number
           offer_timeout_seconds?: number
+          payout_day?: number
           per_km?: number
+          rider_share_company?: number
           updated_at?: string
         }
         Relationships: []
@@ -2853,6 +2868,7 @@ export type Database = {
           settled: boolean
           settled_at: string | null
           settled_by: string | null
+          settlement_period: string | null
           trip_id: string | null
           updated_at: string
         }
@@ -2867,6 +2883,7 @@ export type Database = {
           settled?: boolean
           settled_at?: string | null
           settled_by?: string | null
+          settlement_period?: string | null
           trip_id?: string | null
           updated_at?: string
         }
@@ -2881,6 +2898,7 @@ export type Database = {
           settled?: boolean
           settled_at?: string | null
           settled_by?: string | null
+          settlement_period?: string | null
           trip_id?: string | null
           updated_at?: string
         }
@@ -2932,6 +2950,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "rider_locations_rider_id_fkey"
+            columns: ["rider_id"]
+            isOneToOne: false
+            referencedRelation: "riders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rider_payouts: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          bank_details: string | null
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          paid_at: string | null
+          rider_id: string
+          settlement_period: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_details?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          rider_id: string
+          settlement_period: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_details?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          rider_id?: string
+          settlement_period?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rider_payouts_rider_id_fkey"
             columns: ["rider_id"]
             isOneToOne: false
             referencedRelation: "riders"
@@ -3020,6 +3094,7 @@ export type Database = {
           phone_verified_at: string | null
           plate_number: string | null
           selfie_url: string | null
+          settlement_blocked: boolean
           total_trips: number
           updated_at: string
           user_id: string
@@ -3050,6 +3125,7 @@ export type Database = {
           phone_verified_at?: string | null
           plate_number?: string | null
           selfie_url?: string | null
+          settlement_blocked?: boolean
           total_trips?: number
           updated_at?: string
           user_id: string
@@ -3080,6 +3156,7 @@ export type Database = {
           phone_verified_at?: string | null
           plate_number?: string | null
           selfie_url?: string | null
+          settlement_blocked?: boolean
           total_trips?: number
           updated_at?: string
           user_id?: string
