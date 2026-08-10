@@ -51,6 +51,9 @@ import Ovapass from "./pages/Ovapass";
 import OvapassRiderSignup from "./pages/rider/OvapassRiderSignup";
 import OvapassRiderEarnings from "./pages/rider/OvapassRiderEarnings";
 import RepairCenterOnboarding from "./pages/RepairCenterOnboarding";
+import RepairProtectionTerms from "./pages/legal/RepairProtectionTerms";
+import ProtectionAdmin from "./pages/admin/ProtectionAdmin";
+
 import { trackPageView } from "./lib/analytics";
 
 const queryClient = new QueryClient({
