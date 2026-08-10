@@ -272,9 +272,11 @@ const RepairJobDetail = () => {
       const { data, error } = await supabase.functions.invoke("create-repair-payment", {
         body: {
           repair_job_id: job.id,
-          amount: job.final_cost
+          amount: job.final_cost,
+          include_protection: addProtection
         }
       });
+
 
       if (error) throw error;
 
