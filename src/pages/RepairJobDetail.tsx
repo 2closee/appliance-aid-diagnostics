@@ -634,6 +634,9 @@ const RepairJobDetail = () => {
               </CardContent>
             </Card>
 
+            {/* Repair Protection plan — active cover and claims */}
+            <CustomerProtectionCard repairJobId={job.id} />
+
             {/* Warranty Card - Show if warranty exists */}
             {warranty && (
               <WarrantyCard 
@@ -641,6 +644,7 @@ const RepairJobDetail = () => {
                 onClaimSubmitted={() => refetchWarranty()}
               />
             )}
+
 
             {/* Payment Protection Banner */}
             <PaymentProtectionBanner variant="checkout" />
