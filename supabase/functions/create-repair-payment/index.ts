@@ -153,13 +153,14 @@ serve(async (req) => {
       .insert({
         repair_job_id: repair_job_id,
         payment_reference: paystackData.data.reference,
-        amount: amount,
+        amount: totalAmount,
         currency: "NGN",
         payment_type: "repair_service",
         payment_status: "pending",
         commission_rate: 0.075,
         payment_provider: "paystack"
       });
+
 
     if (paymentError) {
       logStep("Payment record creation failed", { error: paymentError });
