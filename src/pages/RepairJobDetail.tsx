@@ -771,6 +771,31 @@ const RepairJobDetail = () => {
                     </div>
                   )}
 
+                  <ProtectionOptInCard
+                    repairJobId={job.id}
+                    repairCost={job.final_cost}
+                    selected={addProtection}
+                    onSelectedChange={setAddProtection}
+                    onQuoteLoaded={setProtectionFee}
+                  />
+
+                  {addProtection && protectionFee ? (
+                    <div className="space-y-1 rounded-lg border bg-background/70 p-3">
+                      <div className="flex justify-between text-sm">
+                        <span>Repair</span>
+                        <span>₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Repair Protection (90 days)</span>
+                        <span>₦{protectionFee.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-1 font-semibold">
+                        <span>Total to pay</span>
+                        <span>₦{(job.final_cost + protectionFee).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                  ) : null}
+
                   <Button 
                     className={`w-full text-lg font-bold shadow-lg ${
                       isPaymentCritical(job.payment_deadline)
@@ -789,10 +814,11 @@ const RepairJobDetail = () => {
                     ) : (
                       <>
                         <CreditCard className="w-5 h-5 mr-2" />
-                        Pay ₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Now
+                        Pay ₦{((addProtection && protectionFee ? protectionFee : 0) + job.final_cost).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Now
                       </>
                     )}
                   </Button>
+
                   
                   <p className="text-xs text-center text-muted-foreground">
                     Secure payment via Paystack • Your item will be ready for pickup after payment
