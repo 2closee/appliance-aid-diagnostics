@@ -20,6 +20,9 @@ import { WarrantyCard } from "@/components/WarrantyCard";
 import { WarrantyBadge } from "@/components/WarrantyBadge";
 import { PaymentProtectionBanner } from "@/components/PaymentProtectionBanner";
 import { WhyFixBudiSection } from "@/components/WhyFixBudiSection";
+import { ProtectionOptInCard } from "@/components/protection/ProtectionOptInCard";
+import { CustomerProtectionCard } from "@/components/protection/CustomerProtectionCard";
+
 
 interface RepairJob {
   id: string;
