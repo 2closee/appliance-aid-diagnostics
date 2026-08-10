@@ -119,6 +119,9 @@ serve(async (req) => {
         .eq("trip_id", trip_id)
         .limit(1);
 
+      const { data: period } = await supabase.rpc("get_settlement_period", { date_input: now });
+      const isCompanyRider = rider?.fleet_type === "company";
+
       if (!alreadyLogged?.length) {
         await supabase.from("rider_ledger").insert([
           {
@@ -127,7 +130,10 @@ serve(async (req) => {
             entry_type: "earning",
             amount: trip.rider_earning ?? 0,
             currency: trip.currency,
-            description: `Earning for ${trip.trip_type} trip`,
+            settlement_period: period ?? null,
+            description: isCompanyRider
+              ? `Wallet credit for ${trip.trip_type} trip`
+              : `Cash collected on ${trip.trip_type} trip`,
           },
           {
             rider_id: trip.rider_id,
@@ -135,15 +141,54 @@ serve(async (req) => {
             entry_type: "commission",
             amount: -(trip.commission_amount ?? 0),
             currency: trip.currency,
-            description: `FixBudi commission on ${trip.trip_type} trip`,
+            settlement_period: period ?? null,
+            settled: isCompanyRider,
+            settled_at: isCompanyRider ? now : null,
+            description: isCompanyRider
+              ? `FixBudi share of ${trip.trip_type} trip (kept in app)`
+              : `FixBudi commission owed on ${trip.trip_type} trip`,
           },
         ]);
       }
 
-      await supabase
-        .from("riders")
-        .update({ is_available: true, total_trips: (rider?.total_trips ?? 0) + 1 })
-        .eq("id", trip.rider_id);
+      const riderPatch: Record<string, unknown> = {
+        is_available: true,
+        total_trips: (rider?.total_trips ?? 0) + 1,
+      };
+
+      // Partner riders collect cash, so their commission becomes a debt. Once
+      // that debt passes the admin-set cap they stop receiving new offers.
+      if (!isCompanyRider) {
+        const [{ data: pricing }, { data: openDebt }] = await Promise.all([
+          supabase
+            .from("overpass_pricing")
+            .select("max_unsettled_trips, max_unsettled_amount")
+            .eq("active", true)
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from("rider_ledger")
+            .select("amount")
+            .eq("rider_id", trip.rider_id)
+            .eq("entry_type", "commission")
+            .eq("settled", false),
+        ]);
+
+        const owedTrips = openDebt?.length ?? 0;
+        const owedAmount = (openDebt ?? []).reduce(
+          (sum: number, e: { amount: number }) => sum + Math.abs(Number(e.amount)),
+          0,
+        );
+        const maxTrips = Number(pricing?.max_unsettled_trips ?? 5);
+        const maxAmount = Number(pricing?.max_unsettled_amount ?? 20000);
+
+        if (owedTrips >= maxTrips || owedAmount >= maxAmount) {
+          riderPatch.settlement_blocked = true;
+          riderPatch.is_online = false;
+        }
+      }
+
+      await supabase.from("riders").update(riderPatch).eq("id", trip.rider_id);
     }
 
     if (newStatus === "cancelled") {
