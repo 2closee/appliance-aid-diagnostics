@@ -171,8 +171,12 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       url: paystackData.data.authorization_url,
       reference: paystackData.data.reference,
-      access_code: paystackData.data.access_code
+      access_code: paystackData.data.access_code,
+      repair_amount: Number(amount),
+      protection_fee: protectionFee,
+      total_amount: totalAmount
     }), {
+
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
