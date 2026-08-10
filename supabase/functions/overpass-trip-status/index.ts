@@ -120,7 +120,12 @@ serve(async (req) => {
         .limit(1);
 
       const { data: period } = await supabase.rpc("get_settlement_period", { date_input: now });
-      const isCompanyRider = rider?.fleet_type === "company";
+      const { data: tripRider } = await supabase
+        .from("riders")
+        .select("id, fleet_type, total_trips")
+        .eq("id", trip.rider_id)
+        .maybeSingle();
+      const isCompanyRider = tripRider?.fleet_type === "company";
 
       if (!alreadyLogged?.length) {
         await supabase.from("rider_ledger").insert([
@@ -153,7 +158,7 @@ serve(async (req) => {
 
       const riderPatch: Record<string, unknown> = {
         is_available: true,
-        total_trips: (rider?.total_trips ?? 0) + 1,
+        total_trips: (tripRider?.total_trips ?? rider?.total_trips ?? 0) + 1,
       };
 
       // Partner riders collect cash, so their commission becomes a debt. Once
