@@ -116,7 +116,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         email: user.email,
-        amount: Math.round(amount * 100), // Convert to kobo (smallest unit for NGN)
+        amount: Math.round(totalAmount * 100), // Convert to kobo (smallest unit for NGN)
         currency: "NGN",
         reference: `repair_${repair_job_id}_${Date.now()}`,
         callback_url: `${req.headers.get("origin")}/repair-jobs/${repair_job_id}?payment=success`,
@@ -125,9 +125,14 @@ serve(async (req) => {
           user_id: user.id,
           payment_type: "repair_service",
           customer_name: repairJob.customer_name,
-          appliance_type: repairJob.appliance_type
+          appliance_type: repairJob.appliance_type,
+          repair_amount: Number(amount),
+          protection_fee: protectionFee,
+          protection_device_category: protectionFee > 0 ? protectionCategory : null,
+          protection_terms_version: protectionFee > 0 ? "v1.0" : null
         }
       })
+
     });
 
     if (!paystackResponse.ok) {
