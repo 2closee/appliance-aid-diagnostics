@@ -148,6 +148,9 @@ const App = () => (
             <Route path="/admin/logistics-zones" element={<LogisticsZones />} />
             <Route path="/admin/logistics-analytics" element={<LogisticsAnalytics />} />
             <Route path="/repair-center-onboarding" element={<RepairCenterOnboarding />} />
+            <Route path="/legal/repair-protection" element={<RepairProtectionTerms />} />
+            <Route path="/admin/repair-protection" element={<ProtectionAdmin />} />
+
             <Route path="*" element={<NotFound />} />
               </Routes>
             </RouteHandler>
