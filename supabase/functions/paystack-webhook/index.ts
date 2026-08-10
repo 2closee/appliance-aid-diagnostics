@@ -121,16 +121,16 @@ serve(async (req) => {
               repair_job_id: repairJobId,
               user_id: transaction.metadata?.user_id ?? null,
               repair_center_id: job?.repair_center_id ?? null,
-              payment_id: paymentData.id,
+              payment_reference: transaction.reference,
               device_category: transaction.metadata?.protection_device_category ?? null,
-              repair_cost: Number(transaction.metadata?.repair_amount ?? 0),
+              repair_cost_at_purchase: Number(transaction.metadata?.repair_amount ?? 0),
               fee_amount: protectionFee,
               status: "active",
-              purchased_at: purchasedAt.toISOString(),
               starts_at: purchasedAt.toISOString(),
               expires_at: expiresAt.toISOString(),
-              terms_version: transaction.metadata?.protection_terms_version ?? "v1.0",
+              accepted_terms_version: transaction.metadata?.protection_terms_version ?? "v1.0",
             })
+
             .select("id")
             .single();
 
