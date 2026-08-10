@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Wrench, CheckCircle, Clock, FileText, Plus, AlertCircle, MessageCircle, CreditCard, Loader2 } from "lucide-react";
+import { Wrench, CheckCircle, Clock, FileText, Plus, AlertCircle, MessageCircle, CreditCard, Loader2, ShieldCheck } from "lucide-react";
+import { isProtectionEligible } from "@/lib/protection/pricing";
+
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { useConversationNotifications } from "@/hooks/useConversationNotifications";
