@@ -83,3 +83,9 @@ verify_jwt = false
 
 [functions.verify-phone-otp]
 verify_jwt = false
+
+[functions.ovapass-request-payout]
+verify_jwt = true
+
+[functions.ovapass-settle-debt]
+verify_jwt = true

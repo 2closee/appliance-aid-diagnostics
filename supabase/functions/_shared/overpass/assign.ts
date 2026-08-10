@@ -79,6 +79,7 @@ export async function assignNextRider(
   const { data: riders, error: ridersError } = await supabase
     .from("riders")
     .select("id, full_name, fleet_type, last_lat, last_lng, last_ping_at, home_zone_id, average_rating")
+    .eq("settlement_blocked", false)
     .eq("is_online", true)
     .eq("is_available", true)
     .eq("kyc_status", "approved")

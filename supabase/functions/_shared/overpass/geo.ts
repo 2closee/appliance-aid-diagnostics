@@ -13,6 +13,11 @@ export interface PricingConfig {
   after_hours_end: number;
   commission_rate_partner: number;
   commission_rate_company: number;
+  rider_share_company: number;
+  max_unsettled_trips: number;
+  max_unsettled_amount: number;
+  payout_day: number;
+  min_withdrawal: number;
   max_radius_km: number;
   offer_timeout_seconds: number;
   max_assignment_attempts: number;
@@ -125,9 +130,11 @@ export function calculateFee(
   const raw = Number(pricing.base_fare) + distanceCharge + bulky + afterHours;
   const fee = round2(Math.max(raw, Number(pricing.min_fare)));
 
+  // Company (FixBudi-owned bike) riders keep a share of the in-app fee; the rest
+  // stays with FixBudi. Partner riders collect cash and owe FixBudi a commission.
   const commissionRate =
     opts.fleetType === "company"
-      ? Number(pricing.commission_rate_company)
+      ? round2(1 - Number(pricing.rider_share_company ?? 0.5))
       : Number(pricing.commission_rate_partner);
 
   const commissionAmount = round2(fee * commissionRate);

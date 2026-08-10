@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Bike, Loader2, RefreshCw } from "lucide-react";
+import OvapassPaymentsAdmin from "@/components/ovapass/OvapassPaymentsAdmin";
 
 interface Rider {
   id: string;
@@ -123,6 +124,7 @@ const OvapassAdmin = () => {
         <TabsList>
           <TabsTrigger value="riders">Riders</TabsTrigger>
           <TabsTrigger value="trips">Trips</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
         </TabsList>
 
         <TabsContent value="riders">
@@ -254,6 +256,10 @@ const OvapassAdmin = () => {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="payments">
+          <OvapassPaymentsAdmin />
         </TabsContent>
       </Tabs>
     </div>
