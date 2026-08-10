@@ -13,6 +13,11 @@ export interface PricingConfig {
   after_hours_end: number;
   commission_rate_partner: number;
   commission_rate_company: number;
+  rider_share_company: number;
+  max_unsettled_trips: number;
+  max_unsettled_amount: number;
+  payout_day: number;
+  min_withdrawal: number;
   max_radius_km: number;
   offer_timeout_seconds: number;
   max_assignment_attempts: number;
