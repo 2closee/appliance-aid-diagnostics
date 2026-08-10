@@ -423,10 +423,19 @@ const RepairCenterDashboard = () => {
           </Link>
         </div>
 
+        {/* Workmanship warranty undertaking + warranty claim queue */}
+        {repairCenterId && (
+          <>
+            <PartnerAgreementAcceptance repairCenterId={repairCenterId} />
+            <ProtectionClaimsQueue repairCenterId={repairCenterId} />
+          </>
+        )}
+
         {/* Referral Card */}
         {repairCenterId && (
           <RepairCenterReferralCard repairCenterId={repairCenterId} />
         )}
+
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
