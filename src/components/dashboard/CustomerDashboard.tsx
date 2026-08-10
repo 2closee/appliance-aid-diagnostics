@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Wrench, CheckCircle, Clock, FileText, Plus, AlertCircle, MessageCircle, CreditCard, Loader2 } from "lucide-react";
+import { Wrench, CheckCircle, Clock, FileText, Plus, AlertCircle, MessageCircle, CreditCard, Loader2, ShieldCheck } from "lucide-react";
+import { isProtectionEligible } from "@/lib/protection/pricing";
+
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { useConversationNotifications } from "@/hooks/useConversationNotifications";
@@ -362,6 +364,11 @@ const CustomerDashboard = () => {
                           size="lg"
                           onClick={(e) => {
                             e.preventDefault();
+                            if (isProtectionEligible(job.appliance_type)) {
+                              // Phones and laptops can add 90-day Repair Protection at checkout
+                              navigate(`/repair-jobs/${job.id}`);
+                              return;
+                            }
                             handlePayment(job.id, job.final_cost);
                           }}
                           disabled={paymentLoadingId === job.id}
@@ -378,6 +385,13 @@ const CustomerDashboard = () => {
                             </>
                           )}
                         </Button>
+                        {isProtectionEligible(job.appliance_type) && (
+                          <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                            <ShieldCheck className="h-3 w-3" />
+                            Add 90-day Repair Protection at checkout
+                          </p>
+                        )}
+
                       </div>
                     )}
                   </Link>

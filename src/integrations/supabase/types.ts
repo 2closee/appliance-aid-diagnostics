@@ -1552,6 +1552,47 @@ export type Database = {
           },
         ]
       }
+      partner_agreement_acceptances: {
+        Row: {
+          accepted_at: string
+          accepted_by: string
+          accepted_full_name: string
+          agreement_version: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          repair_center_id: number
+        }
+        Insert: {
+          accepted_at?: string
+          accepted_by: string
+          accepted_full_name: string
+          agreement_version: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          repair_center_id: number
+        }
+        Update: {
+          accepted_at?: string
+          accepted_by?: string
+          accepted_full_name?: string
+          agreement_version?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          repair_center_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_agreement_acceptances_repair_center_id_fkey"
+            columns: ["repair_center_id"]
+            isOneToOne: false
+            referencedRelation: "Repair Center"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       password_reset_tokens: {
         Row: {
           created_at: string
@@ -1845,6 +1886,178 @@ export type Database = {
           start_date?: string | null
           tuition_fee?: number
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      protection_claims: {
+        Row: {
+          admin_notes: string | null
+          center_responded_at: string | null
+          center_response_notes: string | null
+          created_at: string
+          description: string | null
+          evidence_urls: string[] | null
+          id: string
+          logistics_cost_paid: number
+          pickup_delivery_id: string | null
+          plan_id: string
+          repair_center_id: number | null
+          repair_job_id: string
+          reported_fault: string
+          resolved_at: string | null
+          return_delivery_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          center_responded_at?: string | null
+          center_response_notes?: string | null
+          created_at?: string
+          description?: string | null
+          evidence_urls?: string[] | null
+          id?: string
+          logistics_cost_paid?: number
+          pickup_delivery_id?: string | null
+          plan_id: string
+          repair_center_id?: number | null
+          repair_job_id: string
+          reported_fault: string
+          resolved_at?: string | null
+          return_delivery_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          center_responded_at?: string | null
+          center_response_notes?: string | null
+          created_at?: string
+          description?: string | null
+          evidence_urls?: string[] | null
+          id?: string
+          logistics_cost_paid?: number
+          pickup_delivery_id?: string | null
+          plan_id?: string
+          repair_center_id?: number | null
+          repair_job_id?: string
+          reported_fault?: string
+          resolved_at?: string | null
+          return_delivery_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protection_claims_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "repair_protection_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protection_claims_repair_center_id_fkey"
+            columns: ["repair_center_id"]
+            isOneToOne: false
+            referencedRelation: "Repair Center"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protection_claims_repair_job_id_fkey"
+            columns: ["repair_job_id"]
+            isOneToOne: false
+            referencedRelation: "repair_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protection_ledger: {
+        Row: {
+          amount: number
+          claim_id: string | null
+          created_at: string
+          entry_type: string
+          id: string
+          notes: string | null
+          period: string | null
+          plan_id: string | null
+        }
+        Insert: {
+          amount: number
+          claim_id?: string | null
+          created_at?: string
+          entry_type: string
+          id?: string
+          notes?: string | null
+          period?: string | null
+          plan_id?: string | null
+        }
+        Update: {
+          amount?: number
+          claim_id?: string | null
+          created_at?: string
+          entry_type?: string
+          id?: string
+          notes?: string | null
+          period?: string | null
+          plan_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protection_ledger_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "protection_claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protection_ledger_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "repair_protection_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protection_pricing_tiers: {
+        Row: {
+          created_at: string
+          fee_cap: number | null
+          flat_fee: number | null
+          id: string
+          is_active: boolean
+          max_repair_cost: number | null
+          min_repair_cost: number
+          percentage_rate: number | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fee_cap?: number | null
+          flat_fee?: number | null
+          id?: string
+          is_active?: boolean
+          max_repair_cost?: number | null
+          min_repair_cost: number
+          percentage_rate?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fee_cap?: number | null
+          flat_fee?: number | null
+          id?: string
+          is_active?: boolean
+          max_repair_cost?: number | null
+          min_repair_cost?: number
+          percentage_rate?: number | null
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2496,6 +2709,78 @@ export type Database = {
             columns: ["repair_center_id"]
             isOneToOne: false
             referencedRelation: "Repair Center"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      repair_protection_plans: {
+        Row: {
+          accepted_terms_version: string
+          claims_used: number
+          created_at: string
+          device_category: string
+          expires_at: string
+          fee_amount: number
+          id: string
+          max_claims: number
+          payment_reference: string | null
+          repair_center_id: number | null
+          repair_cost_at_purchase: number
+          repair_job_id: string
+          starts_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_terms_version?: string
+          claims_used?: number
+          created_at?: string
+          device_category: string
+          expires_at?: string
+          fee_amount: number
+          id?: string
+          max_claims?: number
+          payment_reference?: string | null
+          repair_center_id?: number | null
+          repair_cost_at_purchase: number
+          repair_job_id: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_terms_version?: string
+          claims_used?: number
+          created_at?: string
+          device_category?: string
+          expires_at?: string
+          fee_amount?: number
+          id?: string
+          max_claims?: number
+          payment_reference?: string | null
+          repair_center_id?: number | null
+          repair_cost_at_purchase?: number
+          repair_job_id?: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repair_protection_plans_repair_center_id_fkey"
+            columns: ["repair_center_id"]
+            isOneToOne: false
+            referencedRelation: "Repair Center"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repair_protection_plans_repair_job_id_fkey"
+            columns: ["repair_job_id"]
+            isOneToOne: true
+            referencedRelation: "repair_jobs"
             referencedColumns: ["id"]
           },
         ]

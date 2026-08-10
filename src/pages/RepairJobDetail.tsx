@@ -20,6 +20,9 @@ import { WarrantyCard } from "@/components/WarrantyCard";
 import { WarrantyBadge } from "@/components/WarrantyBadge";
 import { PaymentProtectionBanner } from "@/components/PaymentProtectionBanner";
 import { WhyFixBudiSection } from "@/components/WhyFixBudiSection";
+import { ProtectionOptInCard } from "@/components/protection/ProtectionOptInCard";
+import { CustomerProtectionCard } from "@/components/protection/CustomerProtectionCard";
+
 
 interface RepairJob {
   id: string;
@@ -103,6 +106,9 @@ const RepairJobDetail = () => {
   const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [addProtection, setAddProtection] = useState(false);
+  const [protectionFee, setProtectionFee] = useState<number | null>(null);
+
   const [isCenterStaff, setIsCenterStaff] = useState(false);
   const [deviceReturnConfirmed, setDeviceReturnConfirmed] = useState(false);
   const [satisfactionConfirmed, setSatisfactionConfirmed] = useState(false);
@@ -269,9 +275,11 @@ const RepairJobDetail = () => {
       const { data, error } = await supabase.functions.invoke("create-repair-payment", {
         body: {
           repair_job_id: job.id,
-          amount: job.final_cost
+          amount: job.final_cost,
+          include_protection: addProtection
         }
       });
+
 
       if (error) throw error;
 
@@ -626,6 +634,9 @@ const RepairJobDetail = () => {
               </CardContent>
             </Card>
 
+            {/* Repair Protection plan — active cover and claims */}
+            <CustomerProtectionCard repairJobId={job.id} />
+
             {/* Warranty Card - Show if warranty exists */}
             {warranty && (
               <WarrantyCard 
@@ -633,6 +644,7 @@ const RepairJobDetail = () => {
                 onClaimSubmitted={() => refetchWarranty()}
               />
             )}
+
 
             {/* Payment Protection Banner */}
             <PaymentProtectionBanner variant="checkout" />
@@ -763,6 +775,31 @@ const RepairJobDetail = () => {
                     </div>
                   )}
 
+                  <ProtectionOptInCard
+                    repairJobId={job.id}
+                    repairCost={job.final_cost}
+                    selected={addProtection}
+                    onSelectedChange={setAddProtection}
+                    onQuoteLoaded={setProtectionFee}
+                  />
+
+                  {addProtection && protectionFee ? (
+                    <div className="space-y-1 rounded-lg border bg-background/70 p-3">
+                      <div className="flex justify-between text-sm">
+                        <span>Repair</span>
+                        <span>₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Repair Protection (90 days)</span>
+                        <span>₦{protectionFee.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-1 font-semibold">
+                        <span>Total to pay</span>
+                        <span>₦{(job.final_cost + protectionFee).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                  ) : null}
+
                   <Button 
                     className={`w-full text-lg font-bold shadow-lg ${
                       isPaymentCritical(job.payment_deadline)
@@ -781,10 +818,11 @@ const RepairJobDetail = () => {
                     ) : (
                       <>
                         <CreditCard className="w-5 h-5 mr-2" />
-                        Pay ₦{job.final_cost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Now
+                        Pay ₦{((addProtection && protectionFee ? protectionFee : 0) + job.final_cost).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Now
                       </>
                     )}
                   </Button>
+
                   
                   <p className="text-xs text-center text-muted-foreground">
                     Secure payment via Paystack • Your item will be ready for pickup after payment

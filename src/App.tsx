@@ -51,6 +51,9 @@ import Ovapass from "./pages/Ovapass";
 import OvapassRiderSignup from "./pages/rider/OvapassRiderSignup";
 import OvapassRiderEarnings from "./pages/rider/OvapassRiderEarnings";
 import RepairCenterOnboarding from "./pages/RepairCenterOnboarding";
+import RepairProtectionTerms from "./pages/legal/RepairProtectionTerms";
+import ProtectionAdmin from "./pages/admin/ProtectionAdmin";
+
 import { trackPageView } from "./lib/analytics";
 
 const queryClient = new QueryClient({
@@ -148,6 +151,9 @@ const App = () => (
             <Route path="/admin/logistics-zones" element={<LogisticsZones />} />
             <Route path="/admin/logistics-analytics" element={<LogisticsAnalytics />} />
             <Route path="/repair-center-onboarding" element={<RepairCenterOnboarding />} />
+            <Route path="/legal/repair-protection" element={<RepairProtectionTerms />} />
+            <Route path="/admin/repair-protection" element={<ProtectionAdmin />} />
+
             <Route path="*" element={<NotFound />} />
               </Routes>
             </RouteHandler>

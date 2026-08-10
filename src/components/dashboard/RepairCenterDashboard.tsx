@@ -11,6 +11,9 @@ import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Wrench, Clock, CheckCircle, AlertCircle, DollarSign, Users, MessageCircle, Settings as SettingsIcon, CreditCard, Gift } from "lucide-react";
 import RepairCenterReferralCard from "@/components/RepairCenterReferralCard";
+import { PartnerAgreementAcceptance } from "@/components/protection/PartnerAgreementAcceptance";
+import { ProtectionClaimsQueue } from "@/components/protection/ProtectionClaimsQueue";
+
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -423,10 +426,19 @@ const RepairCenterDashboard = () => {
           </Link>
         </div>
 
+        {/* Workmanship warranty undertaking + warranty claim queue */}
+        {repairCenterId && (
+          <>
+            <PartnerAgreementAcceptance repairCenterId={repairCenterId} />
+            <ProtectionClaimsQueue repairCenterId={repairCenterId} />
+          </>
+        )}
+
         {/* Referral Card */}
         {repairCenterId && (
           <RepairCenterReferralCard repairCenterId={repairCenterId} />
         )}
+
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">

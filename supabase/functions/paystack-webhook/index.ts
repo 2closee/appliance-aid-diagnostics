@@ -107,12 +107,54 @@ serve(async (req) => {
           .eq("id", repairJobId)
           .single();
 
+        // FixBudi Repair Protection is a platform-held fee — never part of the centre payout
+        const protectionFee = Number(transaction.metadata?.protection_fee ?? 0);
+
+        // Create protection plan when the customer opted in at checkout
+        if (protectionFee > 0 && paymentData) {
+          const purchasedAt = new Date();
+          const expiresAt = new Date(purchasedAt.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+          const { data: plan, error: planError } = await supabaseClient
+            .from("repair_protection_plans")
+            .insert({
+              repair_job_id: repairJobId,
+              user_id: transaction.metadata?.user_id ?? null,
+              repair_center_id: job?.repair_center_id ?? null,
+              payment_reference: transaction.reference,
+              device_category: transaction.metadata?.protection_device_category ?? null,
+              repair_cost_at_purchase: Number(transaction.metadata?.repair_amount ?? 0),
+              fee_amount: protectionFee,
+              status: "active",
+              starts_at: purchasedAt.toISOString(),
+              expires_at: expiresAt.toISOString(),
+              accepted_terms_version: transaction.metadata?.protection_terms_version ?? "v1.0",
+            })
+
+            .select("id")
+            .single();
+
+          if (planError) {
+            logStep("Protection plan creation failed", { error: planError });
+          } else {
+            await supabaseClient.from("protection_ledger").insert({
+              plan_id: plan.id,
+              entry_type: "fee_collected",
+              amount: protectionFee,
+              notes: "Repair Protection fee collected at checkout — held in reserve for 90 days",
+            });
+            logStep("Protection plan created", { planId: plan.id, expiresAt });
+          }
+        }
+
         // Create payout record for repair center
         if (job && paymentData) {
-          const grossAmount = transaction.amount / 100; // Convert from kobo to naira
+          const paidAmount = transaction.amount / 100; // Convert from kobo to naira
+          const grossAmount = Math.round((paidAmount - protectionFee) * 100) / 100;
           const commissionRate = 0.075; // 7.5%
           const commissionAmount = Math.round(grossAmount * commissionRate * 100) / 100;
           const netAmount = Math.round((grossAmount - commissionAmount) * 100) / 100;
+
 
           // Get minimum threshold setting
           const { data: thresholdSetting } = await supabaseClient
