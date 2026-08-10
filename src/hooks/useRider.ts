@@ -14,6 +14,7 @@ export interface RiderProfile {
   plate_number: string | null;
   is_online: boolean;
   is_available: boolean;
+  settlement_blocked: boolean;
   last_lat: number | null;
   last_lng: number | null;
   average_rating: number | null;
