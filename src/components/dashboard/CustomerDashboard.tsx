@@ -362,6 +362,11 @@ const CustomerDashboard = () => {
                           size="lg"
                           onClick={(e) => {
                             e.preventDefault();
+                            if (isProtectionEligible(job.appliance_type)) {
+                              // Phones and laptops can add 90-day Repair Protection at checkout
+                              navigate(`/repair-jobs/${job.id}`);
+                              return;
+                            }
                             handlePayment(job.id, job.final_cost);
                           }}
                           disabled={paymentLoadingId === job.id}
@@ -378,6 +383,13 @@ const CustomerDashboard = () => {
                             </>
                           )}
                         </Button>
+                        {isProtectionEligible(job.appliance_type) && (
+                          <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                            <ShieldCheck className="h-3 w-3" />
+                            Add 90-day Repair Protection at checkout
+                          </p>
+                        )}
+
                       </div>
                     )}
                   </Link>
