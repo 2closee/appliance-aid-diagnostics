@@ -535,6 +535,14 @@ const Index = () => {
               <Button 
                 variant="ghost" 
                 size="sm"
+                onClick={() => navigate('/partner-login')}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Repair Center Login
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
                 onClick={() => navigate('/faq')}
                 className="text-muted-foreground hover:text-foreground"
               >
