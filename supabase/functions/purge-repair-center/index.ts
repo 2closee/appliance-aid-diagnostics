@@ -82,11 +82,11 @@ Deno.serve(async (req) => {
     // ---- Collect related ids -------------------------------------------------
     const { data: jobRows } = await admin
       .from('repair_jobs')
-      .select('id, status')
+      .select('id, job_status')
       .eq('repair_center_id', centerId);
     const jobIds = (jobRows ?? []).map((j: any) => j.id);
 
-    const openJobs = (jobRows ?? []).filter((j: any) => OPEN_JOB_STATUSES.includes(j.status));
+    const openJobs = (jobRows ?? []).filter((j: any) => OPEN_JOB_STATUSES.includes(j.job_status));
 
     const { data: payoutRows } = await admin
       .from('repair_center_payouts')
