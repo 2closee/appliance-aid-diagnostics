@@ -98,3 +98,6 @@ verify_jwt = false
 
 [functions.center-offer]
 verify_jwt = false
+
+[functions.purge-repair-center]
+verify_jwt = true

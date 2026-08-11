@@ -577,8 +577,9 @@ const RepairCenterManagement = () => {
                               disabled={deleteCenter.isPending}
                               className="flex items-center gap-1 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
                             >
-                              <XCircle className="h-4 w-4" />
-                              Delete
+                              <Archive className="h-4 w-4" />
+                              Archive
+
                             </Button>
                           </div>
                         </div>
