@@ -193,6 +193,14 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="w-full text-muted-foreground"
+                    onClick={() => setShowForgotPassword(true)}
+                  >
+                    Forgot password?
+                  </Button>
                 </form>
               </CardContent>
             </Card>
