@@ -267,6 +267,12 @@ const Auth = () => {
           </Button>
         </div>
       </div>
+
+      <ForgotPasswordDialog
+        open={showForgotPassword}
+        onOpenChange={setShowForgotPassword}
+        defaultEmail={email}
+      />
     </div>
   );
 };
