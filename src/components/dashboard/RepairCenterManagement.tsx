@@ -408,6 +408,14 @@ const RepairCenterManagement = () => {
               <Badge variant="destructive">{suspendedCenters.length}</Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="archived" className="flex items-center gap-2">
+            <Archive className="h-4 w-4" />
+            Archived
+            {archivedCenters && archivedCenters.length > 0 && (
+              <Badge variant="outline">{archivedCenters.length}</Badge>
+            )}
+          </TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="applications">
@@ -683,7 +691,90 @@ const RepairCenterManagement = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="archived">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Archive className="h-5 w-5" />
+                Archived Centers
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!isSuperAdmin && (
+                <p className="text-sm text-muted-foreground mb-4">
+                  Only super admins can permanently delete archived centers.
+                </p>
+              )}
+              {loadingArchived ? (
+                <div className="space-y-4">
+                  {[...Array(2)].map((_, i) => (
+                    <div key={i} className="h-24 bg-muted animate-pulse rounded" />
+                  ))}
+                </div>
+              ) : archivedCenters && archivedCenters.length > 0 ? (
+                <div className="space-y-4">
+                  {archivedCenters.map((center: any) => (
+                    <div key={center.id} className="border rounded-lg p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold">{center.name}</h3>
+                            <Badge variant="outline">Archived</Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            <p><strong>Email:</strong> {center.email || "—"}</p>
+                            <p><strong>Phone:</strong> {center.phone || "—"}</p>
+                            <p>
+                              <strong>Archived:</strong>{" "}
+                              {center.deleted_at ? new Date(center.deleted_at).toLocaleString() : "—"}
+                            </p>
+                            <p>
+                              <strong>Staff records:</strong>{" "}
+                              {center.repair_center_staff?.length || 0}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => restoreCenter.mutate(center.id)}
+                            disabled={restoreCenter.isPending}
+                            className="flex items-center gap-1"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                            Restore
+                          </Button>
+                          {isSuperAdmin && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => setPurgeCenter(center)}
+                              className="flex items-center gap-1"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete permanently
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Archive className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No archived repair centers</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      <PurgeCenterDialog center={purgeCenter} onClose={() => setPurgeCenter(null)} />
+
 
       {/* Manage Center Dialog */}
       {selectedCenter && (
