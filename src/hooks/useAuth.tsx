@@ -100,11 +100,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser(session?.user ?? null);
           
           if (session?.user) {
+            setRolesLoaded(false);
             setTimeout(() => {
               if (mounted) {
                 checkUserRoles(session.user.id);
               }
             }, 0);
+          } else {
+            setRolesLoaded(true);
           }
         }
         
