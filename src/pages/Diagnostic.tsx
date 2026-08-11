@@ -27,6 +27,7 @@ import { useAuth } from "@/hooks/useAuth";
 import RepairCenterSelector from "@/components/RepairCenterSelector";
 import { DiagnosticHistory } from "@/components/DiagnosticHistory";
 import { DiagnosticReport } from "@/components/DiagnosticReport";
+import RecommendedCentersPanel from "@/components/diagnostic/RecommendedCentersPanel";
 
 type ApplianceType = 'tv' | 'smartphone' | 'headphones' | 'monitor';
 type DiagnosticStep = {
@@ -55,6 +56,7 @@ const Diagnostic = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [diagnosticAttachments, setDiagnosticAttachments] = useState<any>(null);
   const [conversationIdRef, setConversationIdRef] = useState<string | null>(null);
+  const [aiTranscript, setAiTranscript] = useState<{ role: string; content: string }[]>([]);
 
   const appliances = [
     { id: 'tv', name: 'TV', icon: Tv, description: 'Smart TV, LED, OLED' },
@@ -521,20 +523,33 @@ const Diagnostic = () => {
                     setConversationIdRef(report.conversationId);
                   }
                 }}
+                onTranscriptChange={setAiTranscript}
               />
 
               {currentReport && (
-                <DiagnosticReport
-                  appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
-                  diagnosis={currentReport.diagnosis}
-                  confidenceScore={currentReport.confidenceScore}
-                  recommendations={currentReport.recommendations}
-                  estimatedCost={currentReport.estimatedCost}
-                  recommendedParts={currentReport.recommendedParts}
-                  repairUrgency={currentReport.repairUrgency}
-                  isProfessionalRepairNeeded={currentReport.isProfessionalRepairNeeded}
-                />
+                <>
+                  <DiagnosticReport
+                    appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
+                    diagnosis={currentReport.diagnosis}
+                    confidenceScore={currentReport.confidenceScore}
+                    recommendations={currentReport.recommendations}
+                    estimatedCost={currentReport.estimatedCost}
+                    recommendedParts={currentReport.recommendedParts}
+                    repairUrgency={currentReport.repairUrgency}
+                    isProfessionalRepairNeeded={currentReport.isProfessionalRepairNeeded}
+                  />
+
+                  <RecommendedCentersPanel
+                    appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
+                    diagnosis={currentReport.diagnosis}
+                    report={currentReport}
+                    transcript={aiTranscript}
+                    diagnosticConversationId={conversationIdRef}
+                    attachments={diagnosticAttachments}
+                  />
+                </>
               )}
+
             </div>
           )}
 

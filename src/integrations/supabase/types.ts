@@ -330,6 +330,8 @@ export type Database = {
       }
       conversations: {
         Row: {
+          ai_brief: string | null
+          ai_transcript: Json | null
           created_at: string
           customer_id: string
           diagnostic_conversation_id: string | null
@@ -342,6 +344,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_brief?: string | null
+          ai_transcript?: Json | null
           created_at?: string
           customer_id: string
           diagnostic_conversation_id?: string | null
@@ -354,6 +358,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_brief?: string | null
+          ai_transcript?: Json | null
           created_at?: string
           customer_id?: string
           diagnostic_conversation_id?: string | null
@@ -2580,6 +2586,7 @@ export type Database = {
           appliance_model: string | null
           appliance_type: string
           completion_date: string | null
+          conversation_id: string | null
           cost_adjustment_approved: boolean | null
           cost_adjustment_reason: string | null
           created_at: string
@@ -2596,6 +2603,8 @@ export type Database = {
           estimated_cost: number | null
           final_cost: number | null
           id: string
+          inspection_findings: string | null
+          inspection_only: boolean
           issue_description: string
           job_status: Database["public"]["Enums"]["job_status"]
           logistics_category: string | null
@@ -2627,6 +2636,7 @@ export type Database = {
           appliance_model?: string | null
           appliance_type: string
           completion_date?: string | null
+          conversation_id?: string | null
           cost_adjustment_approved?: boolean | null
           cost_adjustment_reason?: string | null
           created_at?: string
@@ -2643,6 +2653,8 @@ export type Database = {
           estimated_cost?: number | null
           final_cost?: number | null
           id?: string
+          inspection_findings?: string | null
+          inspection_only?: boolean
           issue_description: string
           job_status?: Database["public"]["Enums"]["job_status"]
           logistics_category?: string | null
@@ -2674,6 +2686,7 @@ export type Database = {
           appliance_model?: string | null
           appliance_type?: string
           completion_date?: string | null
+          conversation_id?: string | null
           cost_adjustment_approved?: boolean | null
           cost_adjustment_reason?: string | null
           created_at?: string
@@ -2690,6 +2703,8 @@ export type Database = {
           estimated_cost?: number | null
           final_cost?: number | null
           id?: string
+          inspection_findings?: string | null
+          inspection_only?: boolean
           issue_description?: string
           job_status?: Database["public"]["Enums"]["job_status"]
           logistics_category?: string | null
@@ -2712,6 +2727,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "repair_jobs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "repair_jobs_diagnostic_conversation_id_fkey"
             columns: ["diagnostic_conversation_id"]
@@ -3983,6 +4005,8 @@ export type Database = {
         | "quote_negotiating"
         | "quote_expired"
         | "cost_adjustment_pending"
+        | "diagnostics_requested"
+        | "diagnostics_completed"
       payment_status:
         | "pending"
         | "processing"
@@ -4148,6 +4172,8 @@ export const Constants = {
         "quote_negotiating",
         "quote_expired",
         "cost_adjustment_pending",
+        "diagnostics_requested",
+        "diagnostics_completed",
       ],
       payment_status: [
         "pending",
