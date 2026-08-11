@@ -44,6 +44,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isRepairCenterStaff, setIsRepairCenterStaff] = useState(false);
   const [repairCenterId, setRepairCenterId] = useState<number | null>(null);
   const [userRole, setUserRole] = useState<'admin' | 'repair_center' | 'customer' | null>(null);
+  // True once the role lookup for the current session has finished (or there is
+  // no session). Guards pages from deciding access before roles are known.
+  const [rolesLoaded, setRolesLoaded] = useState(false);
 
   useEffect(() => {
     let mounted = true;
