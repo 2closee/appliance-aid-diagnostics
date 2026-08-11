@@ -63,6 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Check user roles when user changes
         if (session?.user) {
+          setRolesLoaded(false);
           setTimeout(() => {
             if (mounted) {
               checkUserRoles(session.user.id);
