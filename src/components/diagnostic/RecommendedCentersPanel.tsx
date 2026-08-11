@@ -134,7 +134,7 @@ export const RecommendedCentersPanel = ({
   };
 
   return (
-    <Card className="mt-6">
+    <Card className="mt-6 relative z-10">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Wrench className="h-5 w-5 text-primary" />

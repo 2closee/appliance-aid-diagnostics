@@ -373,7 +373,7 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
   };
 
   return (
-    <Card className="w-full h-[600px] flex flex-col">
+    <Card className="w-full min-h-[420px] max-h-[75vh] flex flex-col overflow-hidden">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <MessageCircle className="h-5 w-5 text-primary" />
@@ -384,8 +384,9 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col gap-4 p-4">
-        <ScrollArea ref={scrollAreaRef} className="flex-1 pr-4">
+      <CardContent className="flex-1 min-h-0 flex flex-col gap-4 p-4">
+        <ScrollArea ref={scrollAreaRef} className="flex-1 min-h-0 pr-4">
+
           <div className="space-y-4">
             {messages.map((message) => (
               <div
@@ -465,7 +466,7 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
 
         <Separator />
 
-        <div className="space-y-3">
+        <div className="space-y-3 shrink-0">
           <div className="flex gap-2">
             <VideoUpload
               onVideoSelect={handleVideoSelect}

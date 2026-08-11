@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,14 @@ const Diagnostic = () => {
   const [diagnosticAttachments, setDiagnosticAttachments] = useState<any>(null);
   const [conversationIdRef, setConversationIdRef] = useState<string | null>(null);
   const [aiTranscript, setAiTranscript] = useState<{ role: string; content: string }[]>([]);
+  const centersPanelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (currentReport && centersPanelRef.current) {
+      centersPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [currentReport]);
+
 
   const appliances = [
     { id: 'tv', name: 'TV', icon: Tv, description: 'Smart TV, LED, OLED' },
@@ -510,24 +518,27 @@ const Diagnostic = () => {
                   Back to Options
                 </Button>
               </div>
-              
-              <AIChatInterface
-                appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
-                initialDiagnosis={[
-                  typeof window !== 'undefined' ? sessionStorage.getItem('fixbudi_selftest_summary') : null,
-                  diagnosis.message || 'Initial diagnostic questions completed'
-                ].filter(Boolean).join('\n\n')}
-                onDiagnosisUpdate={(newDiag, report) => {
-                  handleDiagnosisUpdate(newDiag, report);
-                  if (report) {
-                    setConversationIdRef(report.conversationId);
-                  }
-                }}
-                onTranscriptChange={setAiTranscript}
-              />
+
+              <div className="relative z-0">
+                <AIChatInterface
+                  appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
+                  initialDiagnosis={[
+                    typeof window !== 'undefined' ? sessionStorage.getItem('fixbudi_selftest_summary') : null,
+                    diagnosis.message || 'Initial diagnostic questions completed'
+                  ].filter(Boolean).join('\n\n')}
+                  onDiagnosisUpdate={(newDiag, report) => {
+                    handleDiagnosisUpdate(newDiag, report);
+                    if (report) {
+                      setConversationIdRef(report.conversationId);
+                    }
+                  }}
+                  onTranscriptChange={setAiTranscript}
+                />
+              </div>
 
               {currentReport && (
-                <>
+                <div ref={centersPanelRef} className="relative z-10 space-y-6">
+
                   <DiagnosticReport
                     appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
                     diagnosis={currentReport.diagnosis}
@@ -547,7 +558,7 @@ const Diagnostic = () => {
                     diagnosticConversationId={conversationIdRef}
                     attachments={diagnosticAttachments}
                   />
-                </>
+                </div>
               )}
 
             </div>
