@@ -369,6 +369,16 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
             </div>
           </div>
         )}
+
+        {/* AI technician brief + full diagnostic transcript */}
+        <DiagnosticBriefPanel brief={aiBrief} transcript={aiTranscript} />
+
+        {/* Job stage, offers and physical diagnostics actions */}
+        <ConversationJobPanel
+          conversationId={conversationId}
+          repairCenterId={repairCenterId ?? resolvedCenterId ?? undefined}
+        />
+
         <ScrollArea className="flex-1 p-4" ref={scrollRef}>
           <div className="space-y-4">
             {messages.map((message) => {
