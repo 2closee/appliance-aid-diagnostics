@@ -111,7 +111,7 @@ serve(async (req) => {
 
       const { data: address } = await supabase
         .from('saved_addresses')
-        .select('address')
+        .select('address_line, city, state')
         .eq('user_id', conversation.customer_id)
         .order('is_default', { ascending: false })
         .limit(1)
@@ -125,7 +125,9 @@ serve(async (req) => {
           customer_name: profile?.full_name || 'FixBudi Customer',
           customer_email: profile?.email || 'unknown@fixbudi.com',
           customer_phone: profile?.phone || 'Not provided',
-          pickup_address: (address as any)?.address || 'To be provided at pickup scheduling',
+          pickup_address: address
+            ? [address.address_line, address.city, address.state].filter(Boolean).join(', ')
+            : 'To be provided at pickup scheduling',
           appliance_type: applianceType,
           issue_description: conversation.diagnostic_summary || conversation.ai_brief || 'Reported via AI diagnostic chat',
           conversation_id: conversationId,
