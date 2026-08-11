@@ -22,7 +22,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email } = await req.json();
+    const { email, redirectTo } = await req.json();
     
     if (!email) {
       throw new Error("Email is required");
