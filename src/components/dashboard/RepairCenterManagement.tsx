@@ -93,6 +93,21 @@ const RepairCenterManagement = () => {
     },
   });
 
+  // Archived (soft-deleted) centers — candidates for permanent deletion
+  const { data: archivedCenters, isLoading: loadingArchived } = useQuery({
+    queryKey: ["archived-centers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("Repair Center")
+        .select(`*, repair_center_staff(*)`)
+        .not("deleted_at", "is", null)
+        .order("deleted_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Filter centers based on their staff status
   const activeCenters = allCenters?.filter((center) => {
     const activeStaff = center.repair_center_staff?.filter((staff: any) => staff.is_active);
@@ -104,6 +119,34 @@ const RepairCenterManagement = () => {
     const hasStaff = center.repair_center_staff && center.repair_center_staff.length > 0;
     return hasStaff && (!activeStaff || activeStaff.length === 0);
   }) || [];
+
+  // Restore an archived center
+  const restoreCenter = useMutation({
+    mutationFn: async (centerId: number) => {
+      const { error } = await supabase
+        .from("Repair Center")
+        .update({ deleted_at: null, deleted_by: null, status: "suspended" })
+        .eq("id", centerId);
+      if (error) throw error;
+      return centerId;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Center restored",
+        description: "The center is back in the suspended list and can be reactivated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["all-centers"] });
+      queryClient.invalidateQueries({ queryKey: ["archived-centers"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to restore center: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
 
   // Approve repair center application - create account with temp password
   const approveApplication = useMutation({
@@ -339,11 +382,11 @@ const RepairCenterManagement = () => {
           <Building className="h-8 w-8 text-primary" />
           <h2 className="text-2xl font-bold">Repair Center Management</h2>
         </div>
-        <DeleteTestCenter />
       </div>
 
       <Tabs defaultValue="applications" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
+
           <TabsTrigger value="applications" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Pending Applications
