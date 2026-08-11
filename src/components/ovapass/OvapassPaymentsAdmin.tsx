@@ -144,12 +144,41 @@ const OvapassPaymentsAdmin = () => {
   };
 
   const markPayout = async (id: string, status: "approved" | "paid" | "rejected") => {
+    const payout = payouts.find((p) => p.id === id);
     const patch: Record<string, unknown> = { status };
     if (status === "paid") patch.paid_at = new Date().toISOString();
-    const { error } = await supabase.from("rider_payouts").update(patch).eq("id", id);
+    // Only transition to paid from a not-yet-paid row, so the wallet is debited once.
+    let query = supabase.from("rider_payouts").update(patch).eq("id", id);
+    if (status === "paid") query = query.neq("status", "paid");
+    const { data: updated, error } = await query.select("id").maybeSingle();
     if (error) {
       toast({ title: "Could not update payout", description: error.message, variant: "destructive" });
       return;
+    }
+    if (status === "paid" && !updated) {
+      toast({ title: "Already paid", description: "This withdrawal was already marked paid." });
+      load();
+      return;
+    }
+    if (status === "paid" && payout) {
+      // Debit the rider wallet so the same earnings cannot be withdrawn again.
+      const { error: ledgerError } = await supabase.from("rider_ledger").insert({
+        rider_id: payout.rider_id,
+        entry_type: "payout",
+        amount: -Math.abs(Number(payout.amount)),
+        description: `Withdrawal paid (${payout.settlement_period})`,
+        settled: true,
+        settled_at: new Date().toISOString(),
+      });
+      if (ledgerError) {
+        toast({
+          title: "Payout marked paid, wallet not updated",
+          description: ledgerError.message,
+          variant: "destructive",
+        });
+        load();
+        return;
+      }
     }
     toast({ title: `Payout ${status}` });
     load();

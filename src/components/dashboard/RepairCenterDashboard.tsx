@@ -13,6 +13,7 @@ import { Wrench, Clock, CheckCircle, AlertCircle, DollarSign, Users, MessageCirc
 import RepairCenterReferralCard from "@/components/RepairCenterReferralCard";
 import { PartnerAgreementAcceptance } from "@/components/protection/PartnerAgreementAcceptance";
 import { ProtectionClaimsQueue } from "@/components/protection/ProtectionClaimsQueue";
+import { CenterBulkyPickupQueue } from "@/components/dashboard/CenterBulkyPickupQueue";
 
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -429,6 +430,7 @@ const RepairCenterDashboard = () => {
         {/* Workmanship warranty undertaking + warranty claim queue */}
         {repairCenterId && (
           <>
+            <CenterBulkyPickupQueue repairCenterId={repairCenterId} />
             <PartnerAgreementAcceptance repairCenterId={repairCenterId} />
             <ProtectionClaimsQueue repairCenterId={repairCenterId} />
           </>
