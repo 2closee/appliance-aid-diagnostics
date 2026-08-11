@@ -83,6 +83,7 @@ const PickupRequest = () => {
   const passedApplianceType = location.state?.applianceType;
   const passedIssueDescription = location.state?.issueDescription;
   const diagnosticData = location.state?.diagnosticData;
+  const existingJobId = location.state?.existingJobId as string | undefined;
   
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
@@ -414,34 +415,52 @@ const PickupRequest = () => {
       // Determine logistics category — bulky items skip API dispatch
       const logisticsCategory = getLogisticsCategory(formData.applianceType);
 
-      // Create repair job
-      const { data: jobData, error: jobError } = await supabase
-        .from("repair_jobs")
-        .insert({
-          user_id: user.id,
-          repair_center_id: parseInt(formData.repairCenter),
-          customer_name: `${formData.firstName} ${formData.lastName}`,
-          customer_email: formData.email,
-          customer_phone: formData.phone,
-          pickup_address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
-          appliance_type: formData.applianceType,
-          appliance_brand: formData.applianceBrand,
-          appliance_model: formData.applianceModel,
-          issue_description: formData.issueDescription,
-          pickup_date: formData.preferredDate ? new Date(formData.preferredDate).toISOString() : null,
-          job_status: "quote_requested",
-          logistics_category: logisticsCategory,
-          diagnostic_conversation_id: diagnosticData?.conversationId,
-          ai_diagnosis_summary: diagnosticData?.diagnosis,
-          ai_confidence_score: diagnosticData?.confidenceScore,
-          ai_estimated_cost_min: diagnosticData?.estimatedCost?.min,
-          ai_estimated_cost_max: diagnosticData?.estimatedCost?.max,
-          diagnostic_attachments: diagnosticData?.attachments
-        })
-        .select()
-        .single();
+      if (existingJobId) {
+        // Scheduling pickup for a job that already exists (offer accepted or
+        // physical diagnostics requested from the chat) — update, don't duplicate.
+        const { error: updateError } = await supabase
+          .from("repair_jobs")
+          .update({
+            customer_name: `${formData.firstName} ${formData.lastName}`,
+            customer_email: formData.email,
+            customer_phone: formData.phone,
+            pickup_address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
+            pickup_date: formData.preferredDate ? new Date(formData.preferredDate).toISOString() : null,
+            logistics_category: logisticsCategory,
+            job_status: "pickup_scheduled",
+          })
+          .eq("id", existingJobId);
 
-      if (jobError) throw jobError;
+        if (updateError) throw updateError;
+      } else {
+        // Create repair job
+        const { error: jobError } = await supabase
+          .from("repair_jobs")
+          .insert({
+            user_id: user.id,
+            repair_center_id: parseInt(formData.repairCenter),
+            customer_name: `${formData.firstName} ${formData.lastName}`,
+            customer_email: formData.email,
+            customer_phone: formData.phone,
+            pickup_address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
+            appliance_type: formData.applianceType,
+            appliance_brand: formData.applianceBrand,
+            appliance_model: formData.applianceModel,
+            issue_description: formData.issueDescription,
+            pickup_date: formData.preferredDate ? new Date(formData.preferredDate).toISOString() : null,
+            job_status: "quote_requested",
+            logistics_category: logisticsCategory,
+            diagnostic_conversation_id: diagnosticData?.conversationId,
+            ai_diagnosis_summary: diagnosticData?.diagnosis,
+            ai_confidence_score: diagnosticData?.confidenceScore,
+            ai_estimated_cost_min: diagnosticData?.estimatedCost?.min,
+            ai_estimated_cost_max: diagnosticData?.estimatedCost?.max,
+            diagnostic_attachments: diagnosticData?.attachments
+          });
+
+        if (jobError) throw jobError;
+      }
+
       
       // Save address if it's new
       await saveAddressIfNew();
