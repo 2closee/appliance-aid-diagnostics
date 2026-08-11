@@ -211,6 +211,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       user, 
       session, 
       isLoading, 
+      rolesLoaded,
       isAdmin, 
       isRepairCenterStaff, 
       repairCenterId, 
