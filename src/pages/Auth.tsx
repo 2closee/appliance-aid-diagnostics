@@ -9,11 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
+import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const { toast } = useToast();
@@ -193,6 +195,14 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="w-full text-muted-foreground"
+                    onClick={() => setShowForgotPassword(true)}
+                  >
+                    Forgot password?
+                  </Button>
                 </form>
               </CardContent>
             </Card>
@@ -257,6 +267,12 @@ const Auth = () => {
           </Button>
         </div>
       </div>
+
+      <ForgotPasswordDialog
+        open={showForgotPassword}
+        onOpenChange={setShowForgotPassword}
+        defaultEmail={email}
+      />
     </div>
   );
 };

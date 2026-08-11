@@ -17,6 +17,9 @@ import RepairJobDetail from "./pages/RepairJobDetail";
 import RevenueAnalytics from "./pages/RevenueAnalytics";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
+import PartnerLogin from "./pages/PartnerLogin";
+import AdminLogin from "./pages/AdminLogin";
+import ResetPassword from "./pages/ResetPassword";
 import ContactSupport from "./pages/ContactSupport";
 import SupportTickets from "./pages/SupportTickets";
 import SupportTicketDetail from "./pages/SupportTicketDetail";
@@ -128,7 +131,11 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/apply-repair-center" element={<RepairCenterApplication />} />
             <Route path="/repair-center-admin" element={<RepairCenterAdmin />} />
+            <Route path="/partner-login" element={<PartnerLogin />} />
+            <Route path="/fixbudi-control" element={<AdminLogin />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/repair-center-chat" element={<RepairCenterChat />} />
+
             <Route path="/repair-center-conversations" element={<RepairCenterConversations />} />
             <Route path="/customer-conversations" element={<CustomerConversations />} />
             <Route path="/admin-conversations" element={<AdminConversations />} />

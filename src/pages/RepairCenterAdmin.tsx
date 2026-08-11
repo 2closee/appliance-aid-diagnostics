@@ -534,6 +534,7 @@ const RepairCenterAdmin = () => {
     );
   }
 
+  // Signed-out visitors are sent to the dedicated partner sign-in page.
   return (
     <>
       <PasswordChangeDialog
@@ -541,182 +542,32 @@ const RepairCenterAdmin = () => {
         onPasswordChange={handlePasswordChange}
         onCancel={handlePasswordChangeCancel}
       />
-      
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-md mx-auto space-y-8">
-        <div className="text-center">
-          <Building className="h-12 w-12 text-primary mx-auto mb-4" />
-          <h1 className="text-3xl font-bold">Repair Center Portal</h1>
-          <p className="text-muted-foreground mt-2">
-            Login to your approved repair center account or apply to join our network
-          </p>
-        </div>
-
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="apply">Apply to Join</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="login">
-            <Card>
-              <CardHeader>
-                <CardTitle>Login to Your Portal</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={loginData.email}
-                      onChange={(e) => setLoginData({...loginData, email: e.target.value})}
-                      placeholder="your@email.com"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={loginData.password}
-                      onChange={(e) => setLoginData({...loginData, password: e.target.value})}
-                      placeholder="Your password"
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full">
-                    Login to Portal
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="w-full"
-                    onClick={() => setShowForgotPassword(true)}
-                  >
-                    Forgot Password?
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="apply">
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Application</CardTitle>
-                <CardDescription>
-                  For a detailed application with more fields, use our{" "}
-                  <Link to="/repair-center-application" className="text-primary hover:underline">
-                    full application form
-                  </Link>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSignup} className="space-y-4">
-                  <div>
-                    <Label htmlFor="centerName">Repair Center Name</Label>
-                    <Input
-                      id="centerName"
-                      value={signupData.centerName}
-                      onChange={(e) => setSignupData({...signupData, centerName: e.target.value})}
-                      placeholder="Tech Solutions Hub"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="contactName">Contact Person Name</Label>
-                    <Input
-                      id="contactName"
-                      value={signupData.contactName}
-                      onChange={(e) => setSignupData({...signupData, contactName: e.target.value})}
-                      placeholder="John Doe"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={signupData.phone}
-                      onChange={(e) => setSignupData({...signupData, phone: e.target.value})}
-                      placeholder="+1234567890"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      value={signupData.email}
-                      onChange={(e) => setSignupData({...signupData, email: e.target.value})}
-                      placeholder="your@email.com"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      value={signupData.password}
-                      onChange={(e) => setSignupData({...signupData, password: e.target.value})}
-                      placeholder="Create a password"
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isSigningUp}>
-                    {isSigningUp ? "Submitting..." : "Submit Application"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-        </div>
-      </div>
-
-      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reset Your Password</DialogTitle>
-            <DialogDescription>
-              Enter your email address and we'll send you a link to reset your password.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleForgotPassword} className="space-y-4">
-            <div>
-              <Label htmlFor="reset-email">Email</Label>
-              <Input
-                id="reset-email"
-                type="email"
-                value={forgotPasswordEmail}
-                onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                placeholder="your@email.com"
-                required
-              />
-            </div>
-            {resetError && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{resetError}</AlertDescription>
-              </Alert>
-            )}
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowForgotPassword(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Send Reset Link</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <RedirectToPartnerLogin isLoading={isLoading} />
     </>
   );
 };
 
+const RedirectToPartnerLogin = ({ isLoading }: { isLoading: boolean }) => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isLoading) {
+      navigate("/partner-login", { replace: true });
+    }
+  }, [isLoading, navigate]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-6">
+      <div className="text-center space-y-3">
+        <Building className="h-10 w-10 text-primary mx-auto" />
+        <p className="text-muted-foreground">Taking you to the repair center login...</p>
+        <Button variant="outline" asChild>
+          <Link to="/partner-login">Go to login</Link>
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export default RepairCenterAdmin;
+

@@ -22,7 +22,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email } = await req.json();
+    const { email, redirectTo } = await req.json();
     
     if (!email) {
       throw new Error("Email is required");
@@ -59,11 +59,15 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Generate password reset link
+    const resetRedirect = typeof redirectTo === 'string' && redirectTo.startsWith('http')
+      ? redirectTo
+      : 'https://fixbudi.com/reset-password';
+
     const { data: resetData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: email,
       options: {
-        redirectTo: 'https://fixbudi.com/repair-center-admin',
+        redirectTo: resetRedirect,
       }
     });
 
