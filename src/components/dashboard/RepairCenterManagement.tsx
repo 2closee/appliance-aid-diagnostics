@@ -20,19 +20,39 @@ import {
   Play,
   BarChart3,
   MapPin,
-  Save
+  Save,
+  Archive,
+  RotateCcw,
+  Trash2
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import CenterPerformance from "./CenterPerformance";
-import { DeleteTestCenter } from "./DeleteTestCenter";
+import { PurgeCenterDialog } from "./PurgeCenterDialog";
 
 const RepairCenterManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedCenter, setSelectedCenter] = useState<any>(null);
   const [performanceCenter, setPerformanceCenter] = useState<any>(null);
+  const [purgeCenter, setPurgeCenter] = useState<any>(null);
   const [editedAddress, setEditedAddress] = useState("");
+
+  // Is the current user a super admin? (permanent delete is gated on this)
+  const { data: isSuperAdmin } = useQuery({
+    queryKey: ["is-super-admin"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      const { data, error } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "super_admin",
+      });
+      if (error) throw error;
+      return !!data;
+    },
+  });
+
 
   // Fetch repair center applications (pending users) from repair_center_applications table
   const { data: pendingApplications, isLoading: loadingApplications } = useQuery({
