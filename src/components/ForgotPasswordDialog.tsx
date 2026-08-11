@@ -45,8 +45,10 @@ export const ForgotPasswordDialog = ({ open, onOpenChange, defaultEmail = "" }: 
 
       toast({
         title: "Check your email",
-        description: "If an account exists for that address, a password reset link is on its way.",
+        description:
+          "If an account exists for that address, a password reset link is on its way. It only works for the exact email the account was created with — also check your spam folder.",
       });
+
       onOpenChange(false);
       setEmail("");
     } catch (err: any) {
