@@ -34,6 +34,7 @@ const RepairCenterAdmin = () => {
   });
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isRepairCenterStaff, setIsRepairCenterStaff] = useState(false);
+  const [staffChecked, setStaffChecked] = useState(false);
   const [repairCenterInfo, setRepairCenterInfo] = useState<any>(null);
   const [showPasswordChangeDialog, setShowPasswordChangeDialog] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
