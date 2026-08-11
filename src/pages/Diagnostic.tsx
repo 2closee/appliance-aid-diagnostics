@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,14 @@ const Diagnostic = () => {
   const [diagnosticAttachments, setDiagnosticAttachments] = useState<any>(null);
   const [conversationIdRef, setConversationIdRef] = useState<string | null>(null);
   const [aiTranscript, setAiTranscript] = useState<{ role: string; content: string }[]>([]);
+  const centersPanelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (currentReport && centersPanelRef.current) {
+      centersPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [currentReport]);
+
 
   const appliances = [
     { id: 'tv', name: 'TV', icon: Tv, description: 'Smart TV, LED, OLED' },
