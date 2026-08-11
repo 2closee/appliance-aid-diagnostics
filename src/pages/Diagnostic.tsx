@@ -518,24 +518,27 @@ const Diagnostic = () => {
                   Back to Options
                 </Button>
               </div>
-              
-              <AIChatInterface
-                appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
-                initialDiagnosis={[
-                  typeof window !== 'undefined' ? sessionStorage.getItem('fixbudi_selftest_summary') : null,
-                  diagnosis.message || 'Initial diagnostic questions completed'
-                ].filter(Boolean).join('\n\n')}
-                onDiagnosisUpdate={(newDiag, report) => {
-                  handleDiagnosisUpdate(newDiag, report);
-                  if (report) {
-                    setConversationIdRef(report.conversationId);
-                  }
-                }}
-                onTranscriptChange={setAiTranscript}
-              />
+
+              <div className="relative z-0">
+                <AIChatInterface
+                  appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
+                  initialDiagnosis={[
+                    typeof window !== 'undefined' ? sessionStorage.getItem('fixbudi_selftest_summary') : null,
+                    diagnosis.message || 'Initial diagnostic questions completed'
+                  ].filter(Boolean).join('\n\n')}
+                  onDiagnosisUpdate={(newDiag, report) => {
+                    handleDiagnosisUpdate(newDiag, report);
+                    if (report) {
+                      setConversationIdRef(report.conversationId);
+                    }
+                  }}
+                  onTranscriptChange={setAiTranscript}
+                />
+              </div>
 
               {currentReport && (
-                <>
+                <div ref={centersPanelRef} className="relative z-10 space-y-6">
+
                   <DiagnosticReport
                     appliance={appliances.find(a => a.id === selectedAppliance)?.name || selectedAppliance}
                     diagnosis={currentReport.diagnosis}
