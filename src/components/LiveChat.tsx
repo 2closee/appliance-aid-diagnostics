@@ -11,6 +11,8 @@ import { Send, User, Wrench, Circle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import DiagnosticBriefPanel from "@/components/chat/DiagnosticBriefPanel";
+import ConversationJobPanel from "@/components/chat/ConversationJobPanel";
 
 interface Message {
   id: string;
@@ -50,6 +52,9 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [priority, setPriority] = useState<'normal' | 'high' | 'urgent'>('normal');
   const [repairCenterLogo, setRepairCenterLogo] = useState<string | null>(null);
+  const [aiBrief, setAiBrief] = useState<string | null>(null);
+  const [aiTranscript, setAiTranscript] = useState<any>(null);
+  const [resolvedCenterId, setResolvedCenterId] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -63,11 +68,17 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
 
     const { data: conversation } = await supabase
       .from('conversations')
-      .select('repair_center_id')
+      .select('repair_center_id, ai_brief, ai_transcript')
       .eq('id', conversationId)
       .single();
 
+    if (conversation) {
+      setAiBrief((conversation as any).ai_brief || null);
+      setAiTranscript((conversation as any).ai_transcript || null);
+    }
+
     if (conversation?.repair_center_id) {
+      setResolvedCenterId(conversation.repair_center_id);
       const { data: center } = await supabase
         .from('Repair Center')
         .select('logo_url')
