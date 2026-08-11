@@ -34,6 +34,7 @@ const RepairCenterAdmin = () => {
   });
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isRepairCenterStaff, setIsRepairCenterStaff] = useState(false);
+  const [staffChecked, setStaffChecked] = useState(false);
   const [repairCenterInfo, setRepairCenterInfo] = useState<any>(null);
   const [showPasswordChangeDialog, setShowPasswordChangeDialog] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -54,24 +55,27 @@ const RepairCenterAdmin = () => {
   useEffect(() => {
     const checkRepairCenterStatus = async () => {
       if (user) {
-        const { data: staffData, error } = await supabase
+        const { data: staffRows, error } = await supabase
           .from("repair_center_staff")
           .select(`
             *,
             repair_center:repair_center_id("Repair Center"(*))
           `)
           .eq("user_id", user.id)
-          .eq("is_active", true)
-          .maybeSingle();
+          .eq("is_active", true);
+
+        const staffData = staffRows?.[0] ?? null;
 
         if (!error && staffData) {
           setIsRepairCenterStaff(true);
           setRepairCenterInfo(staffData);
         }
+        setStaffChecked(true);
       }
     };
 
     if (user && !isLoading) {
+      setStaffChecked(false);
       checkRepairCenterStatus();
     }
   }, [user, isLoading]);
@@ -503,7 +507,16 @@ const RepairCenterAdmin = () => {
     );
   }
 
-  if (user && !isLoading && !isRepairCenterStaff) {
+  // Don't decide anything until the staff lookup has finished.
+  if (user && !isLoading && !staffChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <p className="text-muted-foreground">Loading your repair center portal...</p>
+      </div>
+    );
+  }
+
+  if (user && !isLoading && staffChecked && !isRepairCenterStaff) {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-md mx-auto space-y-8">

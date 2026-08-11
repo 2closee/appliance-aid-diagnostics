@@ -13,14 +13,16 @@ import { useAuth } from "@/hooks/useAuth";
 const AdminLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, isAdmin, isLoading } = useAuth();
+  const { user, isAdmin, isLoading, rolesLoaded } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   useEffect(() => {
-    if (isLoading || !user) return;
+    // Wait until the role lookup has actually finished — deciding earlier would
+    // reject a legitimate admin whose roles simply hadn't loaded yet.
+    if (isLoading || !user || !rolesLoaded) return;
 
     if (isAdmin) {
       navigate("/admin", { replace: true });
@@ -32,7 +34,7 @@ const AdminLogin = () => {
       });
       supabase.auth.signOut();
     }
-  }, [user, isAdmin, isLoading, navigate, toast]);
+  }, [user, isAdmin, isLoading, rolesLoaded, navigate, toast]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
