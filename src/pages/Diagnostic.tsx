@@ -558,7 +558,7 @@ const Diagnostic = () => {
                     diagnosticConversationId={conversationIdRef}
                     attachments={diagnosticAttachments}
                   />
-                </>
+                </div>
               )}
 
             </div>
