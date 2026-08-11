@@ -27,7 +27,7 @@ const Admin = () => {
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        navigate("/auth");
+        navigate("/fixbudi-control");
         return;
       }
       if (!isAdmin) {
