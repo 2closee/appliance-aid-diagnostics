@@ -36,19 +36,45 @@ const handler = async (req: Request): Promise<Response> => {
     
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if user exists
-    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers();
-    
-    if (userError) {
-      console.error('Error fetching users:', userError);
-      throw new Error('Failed to check user existence');
+    // Look up the account case-insensitively, paging through all users
+    const normalizedEmail = String(email).trim().toLowerCase();
+    let user: { id: string; email?: string } | undefined;
+    let page = 1;
+
+    while (!user && page <= 40) {
+      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage: 200,
+      });
+
+      if (userError) {
+        console.error('Error fetching users:', userError);
+        throw new Error('Failed to check user existence');
+      }
+
+      user = userData.users.find(u => (u.email ?? '').trim().toLowerCase() === normalizedEmail);
+
+      if (userData.users.length < 200) break;
+      page++;
     }
 
-    const user = userData.users.find(u => u.email === email);
-    
     if (!user) {
-      // For security, we still return success even if user doesn't exist
-      console.log('User not found, but returning success for security');
+      // For security, we still return success even if user doesn't exist,
+      // but log it so unsent requests are visible in the email log.
+      console.log('No account found for that address; nothing sent (returning success for security)');
+
+      try {
+        await supabaseAdmin.from('email_logs').insert({
+          email_type: 'password_reset',
+          recipient_email: email,
+          subject: 'Reset Your FixBudi Password',
+          status: 'skipped_no_account',
+          error_message: 'No account exists for this email address',
+        });
+      } catch (logError) {
+        console.error('Error logging skipped reset:', logError);
+      }
+
       return new Response(
         JSON.stringify({ success: true, message: 'If an account exists, a password reset link has been sent.' }),
         {
@@ -57,6 +83,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+
 
     // Generate password reset link
     const resetRedirect = typeof redirectTo === 'string' && redirectTo.startsWith('http')
