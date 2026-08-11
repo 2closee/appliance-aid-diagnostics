@@ -47,6 +47,7 @@ interface AIChatInterfaceProps {
   initialDiagnosis: string;
   language?: string;
   onDiagnosisUpdate?: (newDiagnosis: string, report?: any & { conversationId?: string }) => void;
+  onTranscriptChange?: (transcript: { role: string; content: string }[]) => void;
 }
 
 const AIChatInterface: React.FC<AIChatInterfaceProps> = ({ 
@@ -55,7 +56,8 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
   applianceModel,
   initialDiagnosis,
   language = 'en',
-  onDiagnosisUpdate 
+  onDiagnosisUpdate,
+  onTranscriptChange
 }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -227,7 +229,13 @@ const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
         }
       };
 
-      setMessages(prev => [...prev, aiResponse]);
+      setMessages(prev => {
+        const next = [...prev, aiResponse];
+        onTranscriptChange?.(
+          next.map(m => ({ role: m.type === 'ai' ? 'assistant' : 'user', content: m.content }))
+        );
+        return next;
+      });
 
       const report = {
         diagnosis: data.updatedDiagnosis || initialDiagnosis,
