@@ -131,34 +131,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log('Checking user roles for:', userId);
       
-      // Check if user is admin
+      // Check if user is admin (list query: an account may hold several roles)
       const { data: adminData, error: adminError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId)
-        .in("role", ["admin", "super_admin"])
-        .maybeSingle();
+        .in("role", ["admin", "super_admin"]);
 
-      if (adminError && !adminError.message.includes('JSON object requested')) {
+      if (adminError) {
         console.error("Error checking admin status:", adminError);
       }
 
-      const isAdminUser = !!adminData;
+      const isAdminUser = (adminData?.length ?? 0) > 0;
       console.log('Is admin:', isAdminUser);
       setIsAdmin(isAdminUser);
 
       // Check if user is repair center staff
-      const { data: staffData, error: staffError } = await supabase
+      const { data: staffRows, error: staffError } = await supabase
         .from("repair_center_staff")
         .select("repair_center_id, role, is_active")
         .eq("user_id", userId)
-        .eq("is_active", true)
-        .maybeSingle();
+        .eq("is_active", true);
 
-      if (staffError && !staffError.message.includes('JSON object requested')) {
+      if (staffError) {
         console.error("Error checking repair center staff status:", staffError);
       }
 
+      const staffData = staffRows?.[0] ?? null;
       const isStaff = !!staffData;
       console.log('Is repair center staff:', isStaff, staffData);
       setIsRepairCenterStaff(isStaff);
@@ -176,7 +175,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('Final user role:', isAdminUser ? 'admin' : (isStaff ? 'repair_center' : 'customer'));
     } catch (error) {
       console.error("Error checking user roles:", error);
-      resetUserRoles();
+      setIsAdmin(false);
+      setIsRepairCenterStaff(false);
+      setRepairCenterId(null);
+      setUserRole(null);
+    } finally {
+      setRolesLoaded(true);
     }
   };
 
@@ -185,6 +189,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsRepairCenterStaff(false);
     setRepairCenterId(null);
     setUserRole(null);
+    setRolesLoaded(true);
   };
 
   const signOut = async () => {
