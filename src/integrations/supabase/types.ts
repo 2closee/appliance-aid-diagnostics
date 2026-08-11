@@ -2391,6 +2391,36 @@ export type Database = {
           },
         ]
       }
+      repair_center_purge_log: {
+        Row: {
+          center_email: string | null
+          center_id: number
+          center_name: string | null
+          created_at: string
+          deleted_counts: Json
+          id: string
+          purged_by: string | null
+        }
+        Insert: {
+          center_email?: string | null
+          center_id: number
+          center_name?: string | null
+          created_at?: string
+          deleted_counts?: Json
+          id?: string
+          purged_by?: string | null
+        }
+        Update: {
+          center_email?: string | null
+          center_id?: number
+          center_name?: string | null
+          created_at?: string
+          deleted_counts?: Json
+          id?: string
+          purged_by?: string | null
+        }
+        Relationships: []
+      }
       repair_center_recommendations: {
         Row: {
           center_name: string

@@ -20,19 +20,39 @@ import {
   Play,
   BarChart3,
   MapPin,
-  Save
+  Save,
+  Archive,
+  RotateCcw,
+  Trash2
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import CenterPerformance from "./CenterPerformance";
-import { DeleteTestCenter } from "./DeleteTestCenter";
+import { PurgeCenterDialog } from "./PurgeCenterDialog";
 
 const RepairCenterManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedCenter, setSelectedCenter] = useState<any>(null);
   const [performanceCenter, setPerformanceCenter] = useState<any>(null);
+  const [purgeCenter, setPurgeCenter] = useState<any>(null);
   const [editedAddress, setEditedAddress] = useState("");
+
+  // Is the current user a super admin? (permanent delete is gated on this)
+  const { data: isSuperAdmin } = useQuery({
+    queryKey: ["is-super-admin"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      const { data, error } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "super_admin",
+      });
+      if (error) throw error;
+      return !!data;
+    },
+  });
+
 
   // Fetch repair center applications (pending users) from repair_center_applications table
   const { data: pendingApplications, isLoading: loadingApplications } = useQuery({
@@ -73,6 +93,21 @@ const RepairCenterManagement = () => {
     },
   });
 
+  // Archived (soft-deleted) centers — candidates for permanent deletion
+  const { data: archivedCenters, isLoading: loadingArchived } = useQuery({
+    queryKey: ["archived-centers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("Repair Center")
+        .select(`*, repair_center_staff(*)`)
+        .not("deleted_at", "is", null)
+        .order("deleted_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Filter centers based on their staff status
   const activeCenters = allCenters?.filter((center) => {
     const activeStaff = center.repair_center_staff?.filter((staff: any) => staff.is_active);
@@ -84,6 +119,34 @@ const RepairCenterManagement = () => {
     const hasStaff = center.repair_center_staff && center.repair_center_staff.length > 0;
     return hasStaff && (!activeStaff || activeStaff.length === 0);
   }) || [];
+
+  // Restore an archived center
+  const restoreCenter = useMutation({
+    mutationFn: async (centerId: number) => {
+      const { error } = await supabase
+        .from("Repair Center")
+        .update({ deleted_at: null, deleted_by: null, status: "suspended" })
+        .eq("id", centerId);
+      if (error) throw error;
+      return centerId;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Center restored",
+        description: "The center is back in the suspended list and can be reactivated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["all-centers"] });
+      queryClient.invalidateQueries({ queryKey: ["archived-centers"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to restore center: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
 
   // Approve repair center application - create account with temp password
   const approveApplication = useMutation({
@@ -319,11 +382,11 @@ const RepairCenterManagement = () => {
           <Building className="h-8 w-8 text-primary" />
           <h2 className="text-2xl font-bold">Repair Center Management</h2>
         </div>
-        <DeleteTestCenter />
       </div>
 
       <Tabs defaultValue="applications" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
+
           <TabsTrigger value="applications" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Pending Applications
@@ -345,6 +408,14 @@ const RepairCenterManagement = () => {
               <Badge variant="destructive">{suspendedCenters.length}</Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="archived" className="flex items-center gap-2">
+            <Archive className="h-4 w-4" />
+            Archived
+            {archivedCenters && archivedCenters.length > 0 && (
+              <Badge variant="outline">{archivedCenters.length}</Badge>
+            )}
+          </TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="applications">
@@ -506,8 +577,9 @@ const RepairCenterManagement = () => {
                               disabled={deleteCenter.isPending}
                               className="flex items-center gap-1 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
                             >
-                              <XCircle className="h-4 w-4" />
-                              Delete
+                              <Archive className="h-4 w-4" />
+                              Archive
+
                             </Button>
                           </div>
                         </div>
@@ -620,7 +692,90 @@ const RepairCenterManagement = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="archived">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Archive className="h-5 w-5" />
+                Archived Centers
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!isSuperAdmin && (
+                <p className="text-sm text-muted-foreground mb-4">
+                  Only super admins can permanently delete archived centers.
+                </p>
+              )}
+              {loadingArchived ? (
+                <div className="space-y-4">
+                  {[...Array(2)].map((_, i) => (
+                    <div key={i} className="h-24 bg-muted animate-pulse rounded" />
+                  ))}
+                </div>
+              ) : archivedCenters && archivedCenters.length > 0 ? (
+                <div className="space-y-4">
+                  {archivedCenters.map((center: any) => (
+                    <div key={center.id} className="border rounded-lg p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold">{center.name}</h3>
+                            <Badge variant="outline">Archived</Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            <p><strong>Email:</strong> {center.email || "—"}</p>
+                            <p><strong>Phone:</strong> {center.phone || "—"}</p>
+                            <p>
+                              <strong>Archived:</strong>{" "}
+                              {center.deleted_at ? new Date(center.deleted_at).toLocaleString() : "—"}
+                            </p>
+                            <p>
+                              <strong>Staff records:</strong>{" "}
+                              {center.repair_center_staff?.length || 0}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => restoreCenter.mutate(center.id)}
+                            disabled={restoreCenter.isPending}
+                            className="flex items-center gap-1"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                            Restore
+                          </Button>
+                          {isSuperAdmin && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => setPurgeCenter(center)}
+                              className="flex items-center gap-1"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete permanently
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Archive className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No archived repair centers</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      <PurgeCenterDialog center={purgeCenter} onClose={() => setPurgeCenter(null)} />
+
 
       {/* Manage Center Dialog */}
       {selectedCenter && (
