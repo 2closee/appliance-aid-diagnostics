@@ -55,24 +55,27 @@ const RepairCenterAdmin = () => {
   useEffect(() => {
     const checkRepairCenterStatus = async () => {
       if (user) {
-        const { data: staffData, error } = await supabase
+        const { data: staffRows, error } = await supabase
           .from("repair_center_staff")
           .select(`
             *,
             repair_center:repair_center_id("Repair Center"(*))
           `)
           .eq("user_id", user.id)
-          .eq("is_active", true)
-          .maybeSingle();
+          .eq("is_active", true);
+
+        const staffData = staffRows?.[0] ?? null;
 
         if (!error && staffData) {
           setIsRepairCenterStaff(true);
           setRepairCenterInfo(staffData);
         }
+        setStaffChecked(true);
       }
     };
 
     if (user && !isLoading) {
+      setStaffChecked(false);
       checkRepairCenterStatus();
     }
   }, [user, isLoading]);
