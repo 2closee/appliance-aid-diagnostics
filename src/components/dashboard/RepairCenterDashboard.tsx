@@ -429,6 +429,7 @@ const RepairCenterDashboard = () => {
         {/* Workmanship warranty undertaking + warranty claim queue */}
         {repairCenterId && (
           <>
+            <CenterBulkyPickupQueue repairCenterId={repairCenterId} />
             <PartnerAgreementAcceptance repairCenterId={repairCenterId} />
             <ProtectionClaimsQueue repairCenterId={repairCenterId} />
           </>
