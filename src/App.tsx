@@ -131,7 +131,10 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/apply-repair-center" element={<RepairCenterApplication />} />
             <Route path="/repair-center-admin" element={<RepairCenterAdmin />} />
-            <Route path="/repair-center-chat" element={<RepairCenterChat />} />
+            <Route path="/partner-login" element={<PartnerLogin />} />
+            <Route path="/fixbudi-control" element={<AdminLogin />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
             <Route path="/repair-center-conversations" element={<RepairCenterConversations />} />
             <Route path="/customer-conversations" element={<CustomerConversations />} />
             <Route path="/admin-conversations" element={<AdminConversations />} />
