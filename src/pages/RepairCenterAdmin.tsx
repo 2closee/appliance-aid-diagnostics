@@ -507,7 +507,16 @@ const RepairCenterAdmin = () => {
     );
   }
 
-  if (user && !isLoading && !isRepairCenterStaff) {
+  // Don't decide anything until the staff lookup has finished.
+  if (user && !isLoading && !staffChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <p className="text-muted-foreground">Loading your repair center portal...</p>
+      </div>
+    );
+  }
+
+  if (user && !isLoading && staffChecked && !isRepairCenterStaff) {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-md mx-auto space-y-8">
