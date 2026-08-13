@@ -207,9 +207,13 @@ const ContactSupport = () => {
                   support@fixbudi.com
                 </a>
               </p>
+              <p className="text-sm text-muted-foreground flex items-start gap-1.5">
+                <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+                <span><strong>Visit us:</strong> 26 Iwowarri Avenue, Off Peter Odili Road, Port Harcourt, Nigeria</span>
+              </p>
               <p className="text-sm text-muted-foreground">
                 <strong>Looking for answers?</strong> Check our{" "}
-                <button 
+                <button
                   onClick={() => navigate("/faq")}
                   className="text-primary hover:underline font-medium"
                 >
