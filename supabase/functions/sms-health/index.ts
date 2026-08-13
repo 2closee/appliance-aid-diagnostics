@@ -98,7 +98,9 @@ serve(async (req) => {
         configured: true,
         key_valid: true,
         sender_id: senderId,
+        sender_id_valid: true,
         account: parsed.user,
+
         balance: parsed.balance,
         currency: parsed.currency,
       },
