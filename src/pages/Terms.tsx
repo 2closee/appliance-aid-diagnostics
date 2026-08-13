@@ -101,7 +101,8 @@ const Terms = () => {
               <p>
                 For questions about these terms, contact us at:<br/>
                 Email: support@fixbudi.com<br/>
-                Phone: +234 XXX XXX XXXX
+                Phone: +234 XXX XXX XXXX<br/>
+                Address: 26 Iwowarri Avenue, Off Peter Odili Road, Port Harcourt, Nigeria
               </p>
             </section>
           </CardContent>

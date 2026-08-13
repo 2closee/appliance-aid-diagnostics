@@ -136,7 +136,7 @@ const Privacy = () => {
                 <strong>Data Protection Officer (DPO)</strong><br/>
                 Email: dpo@fixbudi.com<br/>
                 Phone: +234 XXX XXX XXXX<br/>
-                Address: [Company Address], Nigeria
+                Address: 26 Iwowarri Avenue, Off Peter Odili Road, Port Harcourt, Nigeria
               </p>
               <p className="mt-4">
                 You also have the right to lodge a complaint with the Nigeria Data Protection Bureau (NDPB) 
