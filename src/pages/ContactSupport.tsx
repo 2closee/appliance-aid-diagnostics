@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Mail, Loader2 } from "lucide-react";
+import { ArrowLeft, Mail, Loader2, MapPin } from "lucide-react";
 import Navigation from "@/components/Navigation";
 
 const contactSchema = z.object({
@@ -207,9 +207,13 @@ const ContactSupport = () => {
                   support@fixbudi.com
                 </a>
               </p>
+              <p className="text-sm text-muted-foreground flex items-start gap-1.5">
+                <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+                <span><strong>Visit us:</strong> 26 Iwowarri Avenue, Off Peter Odili Road, Port Harcourt, Nigeria</span>
+              </p>
               <p className="text-sm text-muted-foreground">
                 <strong>Looking for answers?</strong> Check our{" "}
-                <button 
+                <button
                   onClick={() => navigate("/faq")}
                   className="text-primary hover:underline font-medium"
                 >
