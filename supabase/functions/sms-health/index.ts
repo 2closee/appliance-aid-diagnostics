@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { isValidSenderId } from "../_shared/sms/termii.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,12 +48,28 @@ serve(async (req) => {
     const twilioConfigured =
       !!Deno.env.get("TWILIO_ACCOUNT_SID") && !!Deno.env.get("TWILIO_AUTH_TOKEN");
 
+    const senderIdValid = isValidSenderId(senderId);
+
     if (!apiKey || !senderId) {
       return json({
         termii: { configured: false, error: "TERMII_API_KEY or TERMII_SENDER_ID is missing" },
         twilio_fallback_configured: twilioConfigured,
       });
     }
+
+    if (!senderIdValid) {
+      return json({
+        termii: {
+          configured: true,
+          sender_id: senderId,
+          sender_id_valid: false,
+          error:
+            "TERMII_SENDER_ID must be the approved sender name (3-11 characters, e.g. \"FixBudi\"), not the dashboard UUID.",
+        },
+        twilio_fallback_configured: twilioConfigured,
+      });
+    }
+
 
     const res = await fetch(
       `https://api.ng.termii.com/api/get-balance?api_key=${encodeURIComponent(apiKey)}`,
@@ -80,7 +98,9 @@ serve(async (req) => {
         configured: true,
         key_valid: true,
         sender_id: senderId,
+        sender_id_valid: true,
         account: parsed.user,
+
         balance: parsed.balance,
         currency: parsed.currency,
       },
