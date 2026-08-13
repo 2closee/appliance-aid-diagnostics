@@ -520,9 +520,13 @@ const Index = () => {
       <footer className="bg-muted/30 mt-16 py-8 border-t">
         <div className="container mx-auto max-w-6xl px-4">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground text-center sm:text-left">
-              {t("footer.rights", { year: new Date().getFullYear() })}
-            </p>
+            <div className="text-sm text-muted-foreground text-center sm:text-left space-y-1">
+              <p>{t("footer.rights", { year: new Date().getFullYear() })}</p>
+              <p className="flex items-center justify-center sm:justify-start gap-1.5">
+                <MapPin className="h-3.5 w-3.5" />
+                26 Iwowarri Avenue, Off Peter Odili Road, Port Harcourt, Nigeria
+              </p>
+            </div>
             <div className="flex flex-wrap gap-2 sm:gap-4 justify-center">
               <Button 
                 variant="ghost" 
