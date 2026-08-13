@@ -2,6 +2,18 @@ import type { SmsMessage, SmsProvider, SmsResult } from "./types.ts";
 
 const API_BASE = "https://api.ng.termii.com";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Termii expects the APPROVED SENDER NAME (e.g. "FixBudi"), not the UUID shown
+ * beside the sender ID in the Termii dashboard.
+ */
+export function isValidSenderId(value: string | undefined | null): boolean {
+  const v = (value ?? "").trim();
+  if (!v || UUID_RE.test(v)) return false;
+  return /^[A-Za-z0-9 _-]{3,11}$/.test(v);
+}
+
 /**
  * Termii SMS adapter — primary provider for Nigerian numbers.
  * Requires TERMII_API_KEY and TERMII_SENDER_ID secrets.
@@ -10,15 +22,33 @@ export const termiiProvider: SmsProvider = {
   name: "termii",
 
   isConfigured() {
-    return !!Deno.env.get("TERMII_API_KEY") && !!Deno.env.get("TERMII_SENDER_ID");
+    const senderId = Deno.env.get("TERMII_SENDER_ID");
+    if (!Deno.env.get("TERMII_API_KEY")) return false;
+    if (!isValidSenderId(senderId)) {
+      console.error(
+        "TERMII_SENDER_ID is invalid. Use the approved sender name (3-11 chars, e.g. \"FixBudi\"), " +
+          "not the dashboard UUID.",
+      );
+      return false;
+    }
+    return true;
   },
 
   async send({ to, body }: SmsMessage): Promise<SmsResult> {
     const apiKey = Deno.env.get("TERMII_API_KEY");
-    const senderId = Deno.env.get("TERMII_SENDER_ID");
+    const senderId = Deno.env.get("TERMII_SENDER_ID")?.trim();
     if (!apiKey || !senderId) {
       return { provider: "termii", ok: false, error: "Termii is not configured" };
     }
+    if (!isValidSenderId(senderId)) {
+      return {
+        provider: "termii",
+        ok: false,
+        error:
+          "TERMII_SENDER_ID must be the approved sender name (3-11 characters), not the dashboard UUID.",
+      };
+    }
+
 
     const res = await fetch(`${API_BASE}/api/sms/send`, {
       method: "POST",
