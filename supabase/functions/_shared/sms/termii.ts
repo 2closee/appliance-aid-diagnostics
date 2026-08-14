@@ -49,40 +49,55 @@ export const termiiProvider: SmsProvider = {
       };
     }
 
+    // Nigerian workspaces are often only provisioned for one route. Try the
+    // configured/likely channels in order so a missing GENERIC route does not
+    // block delivery.
+    const channels = ["dnd", "generic", "whatsapp"];
+    let lastError = "Termii send was not attempted";
 
-    const res = await fetch(`${API_BASE}/api/sms/send`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        to: to.replace(/^\+/, ""),
-        from: senderId,
-        sms: body,
-        type: "plain",
-        channel: "generic",
-        api_key: apiKey,
-      }),
-    });
+    for (const channel of channels) {
+      const res = await fetch(`${API_BASE}/api/sms/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: to.replace(/^\+/, ""),
+          from: senderId,
+          sms: body,
+          type: "plain",
+          channel,
+          api_key: apiKey,
+        }),
+      });
 
-    const text = await res.text();
-    if (!res.ok) {
-      console.error(`Termii send failed [${res.status}]: ${text}`);
-      return { provider: "termii", ok: false, error: `Termii error ${res.status}: ${text}` };
+      const text = await res.text();
+
+      if (!res.ok) {
+        console.error(`Termii send failed on channel ${channel} [${res.status}]: ${text}`);
+        lastError = `Termii error ${res.status}: ${text}`;
+        // Only a missing/unconfigured route is worth retrying on another channel.
+        if (/Route not configured|route=/i.test(text)) continue;
+        return { provider: "termii", ok: false, error: lastError };
+      }
+
+      let parsed: { message_id?: string; message?: string; code?: string } = {};
+      try {
+        parsed = text ? JSON.parse(text) : {};
+      } catch {
+        // Termii returned a non-JSON 200; treat as sent but log it.
+        console.warn(`Termii returned non-JSON body: ${text.slice(0, 200)}`);
+      }
+
+      // Termii signals failures inside 200 responses via `code`.
+      if (parsed.code && parsed.code !== "ok") {
+        console.error(`Termii rejected message on channel ${channel}: ${text}`);
+        lastError = parsed.message ?? parsed.code;
+        continue;
+      }
+
+      return { provider: "termii", ok: true, messageId: parsed.message_id };
     }
 
-    let parsed: { message_id?: string; message?: string; code?: string } = {};
-    try {
-      parsed = text ? JSON.parse(text) : {};
-    } catch {
-      // Termii returned a non-JSON 200; treat as sent but log it.
-      console.warn(`Termii returned non-JSON body: ${text.slice(0, 200)}`);
-    }
+    return { provider: "termii", ok: false, error: lastError };
 
-    // Termii signals failures inside 200 responses via `code`.
-    if (parsed.code && parsed.code !== "ok") {
-      console.error(`Termii rejected message: ${text}`);
-      return { provider: "termii", ok: false, error: parsed.message ?? parsed.code };
-    }
-
-    return { provider: "termii", ok: true, messageId: parsed.message_id };
   },
 };
