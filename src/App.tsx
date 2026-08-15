@@ -108,6 +108,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <RouteHandler>
+              <AppBackButton />
               <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
