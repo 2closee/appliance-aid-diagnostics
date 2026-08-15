@@ -46,8 +46,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isRepairCenterStaff, setIsRepairCenterStaff] = useState(false);
+  const [isRider, setIsRider] = useState(false);
   const [repairCenterId, setRepairCenterId] = useState<number | null>(null);
-  const [userRole, setUserRole] = useState<'admin' | 'repair_center' | 'customer' | null>(null);
+  const [userRole, setUserRole] = useState<AppUserRole | null>(null);
   // True once the role lookup for the current session has finished (or there is
   // no session). Guards pages from deciding access before roles are known.
   const [rolesLoaded, setRolesLoaded] = useState(false);
