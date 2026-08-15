@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useRider } from "@/hooks/useRider";
 import { Button } from "@/components/ui/button";
-import Navigation from "@/components/Navigation";
+import AppNavigation from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -90,7 +90,7 @@ const OvapassRiderHome = () => {
   if (!rider) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 pt-20">
-        <Navigation />
+        <AppNavigation />
         <Card className="w-full max-w-md text-center">
           <CardHeader>
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
@@ -115,7 +115,7 @@ const OvapassRiderHome = () => {
     const rejected = rider.kyc_status === "rejected";
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 pt-20">
-        <Navigation />
+        <AppNavigation />
         <Card className="w-full max-w-md text-center">
           <CardHeader>
             <Badge variant={rejected ? "destructive" : "secondary"} className="mx-auto">
@@ -140,7 +140,7 @@ const OvapassRiderHome = () => {
 
   return (
     <div className="min-h-screen bg-muted/30 px-4 pb-6 pt-20">
-      <Navigation />
+      <AppNavigation />
       <div className="mx-auto max-w-lg space-y-4">
         <div className="flex items-center justify-between">
           <div>
