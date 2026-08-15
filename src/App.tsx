@@ -57,6 +57,8 @@ import RepairCenterOnboarding from "./pages/RepairCenterOnboarding";
 import RepairProtectionTerms from "./pages/legal/RepairProtectionTerms";
 import ProtectionAdmin from "./pages/admin/ProtectionAdmin";
 
+import AppBackButton from "./components/AppBackButton";
+
 import { trackPageView } from "./lib/analytics";
 
 const queryClient = new QueryClient({
