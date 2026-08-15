@@ -3,6 +3,8 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
+export type AppUserRole = 'admin' | 'repair_center' | 'rider' | 'customer';
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -10,8 +12,9 @@ interface AuthContextType {
   rolesLoaded: boolean;
   isAdmin: boolean;
   isRepairCenterStaff: boolean;
+  isRider: boolean;
   repairCenterId: number | null;
-  userRole: 'admin' | 'repair_center' | 'customer' | null;
+  userRole: AppUserRole | null;
   signOut: () => Promise<void>;
 }
 
@@ -22,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   rolesLoaded: false,
   isAdmin: false,
   isRepairCenterStaff: false,
+  isRider: false,
   repairCenterId: null,
   userRole: null,
   signOut: async () => {},
