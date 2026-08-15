@@ -5,6 +5,7 @@ import { useRider } from "@/hooks/useRider";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Navigation from "@/components/Navigation";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, Loader2, AlertTriangle, Wallet } from "lucide-react";
@@ -105,7 +106,8 @@ const OvapassRiderEarnings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 px-4 py-6">
+    <div className="min-h-screen bg-muted/30 px-4 pb-6 pt-20">
+      <Navigation />
       <div className="mx-auto max-w-2xl space-y-4">
         <Button variant="ghost" size="sm" asChild className="-ml-2">
           <Link to="/rider">

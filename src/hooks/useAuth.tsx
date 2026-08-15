@@ -3,6 +3,8 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
+export type AppUserRole = 'admin' | 'repair_center' | 'rider' | 'customer';
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -10,8 +12,9 @@ interface AuthContextType {
   rolesLoaded: boolean;
   isAdmin: boolean;
   isRepairCenterStaff: boolean;
+  isRider: boolean;
   repairCenterId: number | null;
-  userRole: 'admin' | 'repair_center' | 'customer' | null;
+  userRole: AppUserRole | null;
   signOut: () => Promise<void>;
 }
 
@@ -22,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   rolesLoaded: false,
   isAdmin: false,
   isRepairCenterStaff: false,
+  isRider: false,
   repairCenterId: null,
   userRole: null,
   signOut: async () => {},
@@ -42,8 +46,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isRepairCenterStaff, setIsRepairCenterStaff] = useState(false);
+  const [isRider, setIsRider] = useState(false);
   const [repairCenterId, setRepairCenterId] = useState<number | null>(null);
-  const [userRole, setUserRole] = useState<'admin' | 'repair_center' | 'customer' | null>(null);
+  const [userRole, setUserRole] = useState<AppUserRole | null>(null);
   // True once the role lookup for the current session has finished (or there is
   // no session). Guards pages from deciding access before roles are known.
   const [rolesLoaded, setRolesLoaded] = useState(false);
@@ -167,20 +172,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsRepairCenterStaff(isStaff);
       setRepairCenterId(staffData?.repair_center_id || null);
 
-      // Determine primary user role
-      if (isAdminUser) {
-        setUserRole('admin');
-      } else if (isStaff) {
-        setUserRole('repair_center');
-      } else {
-        setUserRole('customer');
+      // Check if user is an Ovapass rider (only relevant when not admin/staff)
+      let riderFound = false;
+      if (!isAdminUser && !isStaff) {
+        const { data: riderRow, error: riderError } = await supabase
+          .from("riders")
+          .select("id")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (riderError) {
+          console.error("Error checking rider status:", riderError);
+        }
+        riderFound = !!riderRow;
       }
-      
-      console.log('Final user role:', isAdminUser ? 'admin' : (isStaff ? 'repair_center' : 'customer'));
+      setIsRider(riderFound);
+
+      // Determine primary user role
+      const role: AppUserRole = isAdminUser
+        ? 'admin'
+        : isStaff
+          ? 'repair_center'
+          : riderFound
+            ? 'rider'
+            : 'customer';
+      setUserRole(role);
+
+      console.log('Final user role:', role);
     } catch (error) {
       console.error("Error checking user roles:", error);
       setIsAdmin(false);
       setIsRepairCenterStaff(false);
+      setIsRider(false);
       setRepairCenterId(null);
       setUserRole(null);
     } finally {
@@ -191,6 +214,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const resetUserRoles = () => {
     setIsAdmin(false);
     setIsRepairCenterStaff(false);
+    setIsRider(false);
     setRepairCenterId(null);
     setUserRole(null);
     setRolesLoaded(true);
@@ -223,6 +247,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       rolesLoaded,
       isAdmin, 
       isRepairCenterStaff, 
+      isRider,
       repairCenterId, 
       userRole, 
       signOut 

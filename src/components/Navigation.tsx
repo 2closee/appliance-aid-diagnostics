@@ -44,30 +44,50 @@ const Navigation = () => {
     userRole === 'customer' ? user?.id : undefined
   );
 
-  const navItems = [
-    { path: "/", label: "Home", icon: Home },
-    ...(user ? [{ path: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] : []),
-    // Only show customer features for actual customers and logged-out users (not repair center staff)
-    ...(userRole === 'customer' || (!user && !isRepairCenterStaff) ? [
+  type NavItem = { path: string; label: string; icon: typeof Home };
+
+  // One tailored menu per role — users only ever see what applies to them.
+  const roleMenus: Record<string, NavItem[]> = {
+    guest: [
+      { path: "/", label: "Home", icon: Home },
       { path: "/diagnostic", label: "AI Diagnostic", icon: Bot },
       { path: "/self-test", label: "Self-Test", icon: Stethoscope },
       { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
       { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },
       { path: "/ovapass", label: "Ride with Ovapass", icon: Bike },
-    ] : []),
-    // Show payment history for customers
-    ...(userRole === 'customer' ? [
+    ],
+    customer: [
+      { path: "/", label: "Home", icon: Home },
+      { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { path: "/diagnostic", label: "AI Diagnostic", icon: Bot },
+      { path: "/self-test", label: "Self-Test", icon: Stethoscope },
+      { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
+      { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },
       { path: "/payment-history", label: "Payment History", icon: CreditCard },
-    ] : []),
-    // Super Admin specific navigation
-    ...(userRole === 'admin' ? [
+      { path: "/ovapass", label: "Ride with Ovapass", icon: Bike },
+    ],
+    repair_center: [
+      { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { path: "/repair-jobs", label: "Repair Jobs", icon: Stethoscope },
+      { path: "/center-earnings", label: "Earnings", icon: CreditCard },
+      { path: "/repair-center-admin", label: "Center Settings", icon: Settings },
+    ],
+    rider: [
+      { path: "/rider", label: "Dashboard", icon: Bike },
+      { path: "/rider/earnings", label: "Earnings", icon: CreditCard },
+      { path: "/contact-support", label: "Support", icon: Mail },
+    ],
+    admin: [
+      { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { path: "/super-admin", label: "Super Admin", icon: Settings },
       { path: "/strategic-analytics", label: "Strategic Planning", icon: Target },
       { path: "/payout-management", label: "Payout Management", icon: CreditCard },
-    ] : []),
-  ];
+    ],
+  };
 
-  const primaryPaths = ["/", "/dashboard", "/diagnostic", "/repair-centers", "/pickup-selection", "/ovapass"];
+  const navItems = !user ? roleMenus.guest : roleMenus[userRole ?? "customer"] ?? roleMenus.customer;
+
+  const primaryPaths = ["/", "/dashboard", "/rider", "/diagnostic", "/repair-jobs", "/repair-centers", "/pickup-selection", "/ovapass"];
   const primaryItems = navItems.filter((item) => primaryPaths.includes(item.path));
   const overflowItems = navItems.filter((item) => !primaryPaths.includes(item.path));
 
