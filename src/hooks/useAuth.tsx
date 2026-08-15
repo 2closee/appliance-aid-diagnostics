@@ -172,20 +172,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsRepairCenterStaff(isStaff);
       setRepairCenterId(staffData?.repair_center_id || null);
 
-      // Determine primary user role
-      if (isAdminUser) {
-        setUserRole('admin');
-      } else if (isStaff) {
-        setUserRole('repair_center');
-      } else {
-        setUserRole('customer');
+      // Check if user is an Ovapass rider (only relevant when not admin/staff)
+      let riderFound = false;
+      if (!isAdminUser && !isStaff) {
+        const { data: riderRow, error: riderError } = await supabase
+          .from("riders")
+          .select("id")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (riderError) {
+          console.error("Error checking rider status:", riderError);
+        }
+        riderFound = !!riderRow;
       }
-      
-      console.log('Final user role:', isAdminUser ? 'admin' : (isStaff ? 'repair_center' : 'customer'));
+      setIsRider(riderFound);
+
+      // Determine primary user role
+      const role: AppUserRole = isAdminUser
+        ? 'admin'
+        : isStaff
+          ? 'repair_center'
+          : riderFound
+            ? 'rider'
+            : 'customer';
+      setUserRole(role);
+
+      console.log('Final user role:', role);
     } catch (error) {
       console.error("Error checking user roles:", error);
       setIsAdmin(false);
       setIsRepairCenterStaff(false);
+      setIsRider(false);
       setRepairCenterId(null);
       setUserRole(null);
     } finally {
@@ -196,6 +214,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const resetUserRoles = () => {
     setIsAdmin(false);
     setIsRepairCenterStaff(false);
+    setIsRider(false);
     setRepairCenterId(null);
     setUserRole(null);
     setRolesLoaded(true);
