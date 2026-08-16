@@ -38,6 +38,8 @@ export interface OvapassTrip {
   dropoff_address: string;
   pickup_lat: number | null;
   pickup_lng: number | null;
+  dropoff_lat: number | null;
+  dropoff_lng: number | null;
   customer_name: string | null;
   customer_phone: string | null;
   distance_km: number | null;
@@ -50,6 +52,7 @@ export interface OvapassTrip {
 }
 
 const PING_INTERVAL_MS = 20000;
+const ACTIVE_PING_INTERVAL_MS = 8000;
 
 export function useRider() {
   const { user } = useAuth();
@@ -165,12 +168,13 @@ export function useRider() {
       return;
     }
     pingLocation(rider.id);
-    pingTimer.current = window.setInterval(() => pingLocation(rider.id), PING_INTERVAL_MS);
+    const interval = activeTrip ? ACTIVE_PING_INTERVAL_MS : PING_INTERVAL_MS;
+    pingTimer.current = window.setInterval(() => pingLocation(rider.id), interval);
     return () => {
       if (pingTimer.current) window.clearInterval(pingTimer.current);
       pingTimer.current = null;
     };
-  }, [rider?.is_online, rider?.id, pingLocation, rider]);
+  }, [rider?.is_online, rider?.id, activeTrip?.id, pingLocation, rider]);
 
   const setOnline = useCallback(
     async (online: boolean) => {
