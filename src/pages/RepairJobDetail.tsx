@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import RequestOvapassRider from "@/components/ovapass/RequestOvapassRider";
+import OvapassJobTracking from "@/components/ovapass/OvapassJobTracking";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -870,6 +871,8 @@ const RepairJobDetail = () => {
               />
             )}
 
+            {/* Live rider tracking (customer + center) */}
+            <OvapassJobTracking repairJobId={job.id} />
 
             {/* Actions */}
             <Card>

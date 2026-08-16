@@ -3973,6 +3973,20 @@ export type Database = {
       }
       get_rider_id: { Args: { _user_id: string }; Returns: string }
       get_settlement_period: { Args: { date_input: string }; Returns: string }
+      get_trip_rider_position: {
+        Args: { _trip_id: string }
+        Returns: {
+          bike_make: string
+          lat: number
+          lng: number
+          plate_number: string
+          rider_name: string
+          rider_phone: string
+          status: string
+          trip_id: string
+          updated_at: string
+        }[]
+      }
       get_user_repair_center: { Args: { _user_id: string }; Returns: number }
       get_user_role: {
         Args: { _user_id: string }
