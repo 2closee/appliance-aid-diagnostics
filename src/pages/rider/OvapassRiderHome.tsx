@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import LiveTripMap from "@/components/ovapass/LiveTripMap";
+import { useTripRiderPosition } from "@/hooks/useTripRiderPosition";
 import { Bike, Clock, Loader2, MapPin, Navigation, Phone, Wallet } from "lucide-react";
 
 const formatMoney = (amount: number | null | undefined, currency = "NGN") =>
@@ -25,6 +27,7 @@ const OvapassRiderHome = () => {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [otp, setOtp] = useState("");
   const [busy, setBusy] = useState(false);
+  const { position: livePosition } = useTripRiderPosition(activeTrip?.id, !!activeTrip);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -239,18 +242,30 @@ const OvapassRiderHome = () => {
                 </p>
               </div>
 
+              <LiveTripMap
+                riderPosition={
+                  livePosition?.lat != null && livePosition?.lng != null
+                    ? { lat: Number(livePosition.lat), lng: Number(livePosition.lng) }
+                    : null
+                }
+                origin={{
+                  lat: activeTrip.pickup_lat,
+                  lng: activeTrip.pickup_lng,
+                  address: activeTrip.pickup_address,
+                  label: "Pickup",
+                }}
+                destination={{
+                  lat: activeTrip.dropoff_lat,
+                  lng: activeTrip.dropoff_lng,
+                  address: activeTrip.dropoff_address,
+                  label: "Destination",
+                }}
+                target={activeTrip.status === "picked_up" ? "destination" : "origin"}
+                mode="rider"
+                height={300}
+              />
+
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1" asChild>
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-                      activeTrip.status === "picked_up" ? activeTrip.dropoff_address : activeTrip.pickup_address,
-                    )}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Navigation className="mr-2 h-4 w-4" /> Navigate
-                  </a>
-                </Button>
                 {activeTrip.customer_phone && (
                   <Button variant="outline" size="sm" className="flex-1" asChild>
                     <a href={`tel:${activeTrip.customer_phone}`}>
