@@ -78,7 +78,7 @@ const AdminDashboard = () => {
         .from("repair_jobs")
         .select(`
           *,
-          repair_center:repair_center_id("Repair Center"(*))
+          repair_center:"Repair Center"(*)
         `)
         .order("created_at", { ascending: false })
         .limit(10);

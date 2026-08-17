@@ -35,6 +35,7 @@ const RepairCenterAdmin = () => {
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isRepairCenterStaff, setIsRepairCenterStaff] = useState(false);
   const [staffChecked, setStaffChecked] = useState(false);
+  const [staffLookupError, setStaffLookupError] = useState<string | null>(null);
   const [repairCenterInfo, setRepairCenterInfo] = useState<any>(null);
   const [showPasswordChangeDialog, setShowPasswordChangeDialog] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -59,16 +60,22 @@ const RepairCenterAdmin = () => {
           .from("repair_center_staff")
           .select(`
             *,
-            repair_center:repair_center_id("Repair Center"(*))
+            repair_center:"Repair Center"(*)
           `)
           .eq("user_id", user.id)
           .eq("is_active", true);
 
         const staffData = staffRows?.[0] ?? null;
 
-        if (!error && staffData) {
-          setIsRepairCenterStaff(true);
-          setRepairCenterInfo(staffData);
+        if (error) {
+          console.error("Repair center staff lookup failed:", error);
+          setStaffLookupError(error.message || "Could not load your repair center portal.");
+        } else {
+          setStaffLookupError(null);
+          if (staffData) {
+            setIsRepairCenterStaff(true);
+            setRepairCenterInfo(staffData);
+          }
         }
         setStaffChecked(true);
       }
@@ -76,6 +83,7 @@ const RepairCenterAdmin = () => {
 
     if (user && !isLoading) {
       setStaffChecked(false);
+      setStaffLookupError(null);
       checkRepairCenterStatus();
     }
   }, [user, isLoading]);
@@ -375,7 +383,7 @@ const RepairCenterAdmin = () => {
       .from("repair_center_staff")
       .select(`
         *,
-        repair_center:repair_center_id("Repair Center"(*))
+        repair_center:"Repair Center"(*)
       `)
       .eq("user_id", user?.id)
       .eq("is_active", true)
@@ -512,6 +520,34 @@ const RepairCenterAdmin = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <p className="text-muted-foreground">Loading your repair center portal...</p>
+      </div>
+    );
+  }
+
+  // A failed lookup must never look like a pending approval.
+  if (user && !isLoading && staffChecked && staffLookupError && !isRepairCenterStaff) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-md mx-auto space-y-6">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h1 className="text-2xl font-bold">We couldn't load your portal</h1>
+            <p className="text-muted-foreground mt-2">
+              This is a temporary problem on our side, not a problem with your approval.
+            </p>
+          </div>
+          <Alert variant="destructive">
+            <AlertDescription>{staffLookupError}</AlertDescription>
+          </Alert>
+          <div className="space-y-2">
+            <Button className="w-full" onClick={() => window.location.reload()}>
+              Try again
+            </Button>
+            <Button variant="outline" className="w-full" onClick={handleSignOut}>
+              Sign Out
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
