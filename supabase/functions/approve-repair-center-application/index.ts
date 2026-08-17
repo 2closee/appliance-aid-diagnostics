@@ -84,7 +84,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
       
       const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
-        redirectTo: `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/repair-center-admin`
+        redirectTo: resetPasswordUrl
       });
 
       if (resetError) {
@@ -264,7 +264,7 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
               
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${supabaseUrl.replace('.supabase.co', '.lovable.app')}/repair-center-admin" 
+                <a href="${partnerLoginUrl}" 
                    style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                   Access Your Portal
                 </a>
@@ -311,7 +311,7 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
               
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${supabaseUrl.replace('.supabase.co', '.lovable.app')}/repair-center-admin" 
+                <a href="${partnerLoginUrl}" 
                    style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                   Go to Portal
                 </a>
