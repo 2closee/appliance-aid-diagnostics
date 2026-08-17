@@ -383,7 +383,7 @@ const RepairCenterAdmin = () => {
       .from("repair_center_staff")
       .select(`
         *,
-        repair_center:repair_center_id("Repair Center"(*))
+        repair_center:"Repair Center"(*)
       `)
       .eq("user_id", user?.id)
       .eq("is_active", true)
