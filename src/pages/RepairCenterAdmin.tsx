@@ -60,16 +60,22 @@ const RepairCenterAdmin = () => {
           .from("repair_center_staff")
           .select(`
             *,
-            repair_center:repair_center_id("Repair Center"(*))
+            repair_center:"Repair Center"(*)
           `)
           .eq("user_id", user.id)
           .eq("is_active", true);
 
         const staffData = staffRows?.[0] ?? null;
 
-        if (!error && staffData) {
-          setIsRepairCenterStaff(true);
-          setRepairCenterInfo(staffData);
+        if (error) {
+          console.error("Repair center staff lookup failed:", error);
+          setStaffLookupError(error.message || "Could not load your repair center portal.");
+        } else {
+          setStaffLookupError(null);
+          if (staffData) {
+            setIsRepairCenterStaff(true);
+            setRepairCenterInfo(staffData);
+          }
         }
         setStaffChecked(true);
       }
@@ -77,6 +83,7 @@ const RepairCenterAdmin = () => {
 
     if (user && !isLoading) {
       setStaffChecked(false);
+      setStaffLookupError(null);
       checkRepairCenterStatus();
     }
   }, [user, isLoading]);
