@@ -524,6 +524,34 @@ const RepairCenterAdmin = () => {
     );
   }
 
+  // A failed lookup must never look like a pending approval.
+  if (user && !isLoading && staffChecked && staffLookupError && !isRepairCenterStaff) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-md mx-auto space-y-6">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h1 className="text-2xl font-bold">We couldn't load your portal</h1>
+            <p className="text-muted-foreground mt-2">
+              This is a temporary problem on our side, not a problem with your approval.
+            </p>
+          </div>
+          <Alert variant="destructive">
+            <AlertDescription>{staffLookupError}</AlertDescription>
+          </Alert>
+          <div className="space-y-2">
+            <Button className="w-full" onClick={() => window.location.reload()}>
+              Try again
+            </Button>
+            <Button variant="outline" className="w-full" onClick={handleSignOut}>
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (user && !isLoading && staffChecked && !isRepairCenterStaff) {
     return (
       <div className="min-h-screen bg-background p-6">
