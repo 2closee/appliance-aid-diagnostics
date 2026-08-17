@@ -32,6 +32,9 @@ const handler = async (req: Request): Promise<Response> => {
     // Initialize Supabase admin client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const appUrl = (Deno.env.get('APP_URL') || 'https://fixbudi.lovable.app').replace(/\/$/, '');
+    const partnerLoginUrl = `${appUrl}/partner-login`;
+    const resetPasswordUrl = `${appUrl}/reset-password`;
     
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
