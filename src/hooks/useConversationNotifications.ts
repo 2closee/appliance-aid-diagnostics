@@ -91,6 +91,9 @@ export const useConversationNotifications = (repairCenterId?: number, customerId
               }));
               setTotalUnread(prev => prev + 1);
 
+              // Audible chime for new messages
+              playChime();
+
               // Show toast notification
               if (repairCenterId) {
                 const jobInfo: any = conversation.repair_jobs;
