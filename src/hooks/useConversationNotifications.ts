@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { playChime } from "@/lib/chime";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 interface UnreadCounts {
@@ -89,6 +90,9 @@ export const useConversationNotifications = (repairCenterId?: number, customerId
                 [conversation.id]: (prev[conversation.id] || 0) + 1
               }));
               setTotalUnread(prev => prev + 1);
+
+              // Audible chime for new messages
+              playChime();
 
               // Show toast notification
               if (repairCenterId) {

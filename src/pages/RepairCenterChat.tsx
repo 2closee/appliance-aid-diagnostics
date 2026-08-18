@@ -19,11 +19,12 @@ const RepairCenterChat = () => {
   const [fetchedConversationId, setFetchedConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Use passed conversationId for repair center staff, or create/fetch for customers
+  // Only create/lookup a conversation for customers arriving without an explicit conversation id
   const { conversationId: customerConversationId, isLoading: isCreatingConversation } = useConversation(
     selectedCenter?.id,
     repairJobId,
-    diagnosticContext
+    diagnosticContext,
+    !passedConversationId && !isRepairCenterStaff
   );
 
   const conversationId = passedConversationId || customerConversationId || fetchedConversationId;
@@ -32,42 +33,44 @@ const RepairCenterChat = () => {
   useEffect(() => {
     const fetchConversationDetails = async () => {
       setLoading(true);
-      
-      // For repair center staff viewing from conversations list
-      if (isRepairCenterStaff && passedConversationId) {
+
+      // Anyone (staff or customer) arriving with an explicit conversation id
+      if (passedConversationId) {
         try {
-          // Fetch conversation details
           const { data: conversation, error: convError } = await supabase
             .from('conversations')
             .select('*')
             .eq('id', passedConversationId)
-            .single();
+            .maybeSingle();
 
           if (convError) throw convError;
 
           if (conversation) {
             setFetchedConversationId(conversation.id);
-            
-            // Fetch repair center name separately
-            const { data: center } = await supabase
-              .from('Repair Center')
-              .select('name')
-              .eq('id', conversation.repair_center_id)
-              .single();
-            
-            setCenterName(center?.name || "Repair Center");
+
+            if (selectedCenter?.name) {
+              setCenterName(selectedCenter.name);
+            } else {
+              const { data: center } = await supabase
+                .from('Repair Center')
+                .select('name')
+                .eq('id', conversation.repair_center_id)
+                .maybeSingle();
+
+              setCenterName(center?.name || "Repair Center");
+            }
           }
         } catch (error) {
           console.error('Error fetching conversation:', error);
           toast.error("Failed to load conversation details");
         }
-      } 
+      }
       // For customers with selectedCenter
       else if (selectedCenter) {
         setCenterName(selectedCenter.name || "Repair Center");
       }
       // If no context provided, redirect
-      else if (!passedConversationId) {
+      else {
         navigate('/repair-centers');
         return;
       }
