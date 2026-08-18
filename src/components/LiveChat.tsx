@@ -13,6 +13,7 @@ import { formatDistanceToNow } from "date-fns";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import DiagnosticBriefPanel from "@/components/chat/DiagnosticBriefPanel";
 import ConversationJobPanel from "@/components/chat/ConversationJobPanel";
+import { playChime } from "@/lib/chime";
 
 interface Message {
   id: string;
@@ -137,7 +138,12 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
           filter: `conversation_id=eq.${conversationId}`
         },
         (payload) => {
-          setMessages(prev => [...prev, payload.new as Message]);
+          const incoming = payload.new as Message;
+          setMessages(prev => (prev.some(m => m.id === incoming.id) ? prev : [...prev, incoming]));
+          // Chime for messages from the other party
+          if (incoming.sender_id !== user?.id || incoming.is_auto_reply) {
+            playChime();
+          }
         }
       )
       .subscribe();
