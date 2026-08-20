@@ -148,17 +148,7 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
       )
       .subscribe();
 
-    // Presence tracking for online status
-    if (!isRepairCenterStaff && repairCenterId) {
-      presenceChannelRef.current = supabase.channel(`presence-rc-${repairCenterId}`)
-        .on('presence', { event: 'sync' }, () => {
-          const state = presenceChannelRef.current?.presenceState();
-          setIsOnline(state && Object.keys(state).length > 0);
-        })
-        .subscribe();
-    }
-
-    // Update online status for repair center staff
+    // Update persisted center status for staff.
     if (isRepairCenterStaff && userRepairCenterId) {
       supabase
         .from('repair_center_settings')
@@ -169,26 +159,35 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
         .eq('repair_center_id', userRepairCenterId)
         .then();
 
-      // Join presence channel
-      presenceChannelRef.current = supabase.channel(`presence-rc-${userRepairCenterId}`)
-        .on('presence', { event: 'sync' }, () => {
-          const state = presenceChannelRef.current?.presenceState();
-          const typing = Object.values(state || {})
-            .flat()
-            .filter((p: any) => p.typing && p.user_id !== user?.id)
-            .map((p: any) => p.user_id);
-          setTypingUsers(new Set(typing));
-        })
-        .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await presenceChannelRef.current?.track({
-              user_id: user?.id,
-              online_at: new Date().toISOString(),
-              typing: false
-            });
-          }
-        });
     }
+
+    // Both participants join the same conversation-scoped presence channel.
+    presenceChannelRef.current = supabase
+      .channel(`presence-conversation-${conversationId}`, { config: { presence: { key: user?.id } } })
+      .on('presence', { event: 'sync' }, () => {
+        const participants = Object.values(presenceChannelRef.current?.presenceState() || {}).flat() as Array<{
+          user_id?: string;
+          participant_type?: string;
+          typing?: boolean;
+        }>;
+        const others = participants.filter((participant) => participant.user_id && participant.user_id !== user?.id);
+        setIsOnline(others.length > 0);
+        setTypingUsers(new Set(
+          others
+            .filter((participant) => participant.typing)
+            .map((participant) => participant.participant_type || 'participant'),
+        ));
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED' && user?.id) {
+          await presenceChannelRef.current?.track({
+            user_id: user.id,
+            participant_type: isRepairCenterStaff ? 'repair_center' : 'customer',
+            online_at: new Date().toISOString(),
+            typing: false,
+          });
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -211,10 +210,11 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
 
-    // Mark messages as read for repair center staff
-    if (isRepairCenterStaff && messages.length > 0) {
+    // Mark messages from the other participant as read.
+    if (messages.length > 0) {
+      const incomingType = isRepairCenterStaff ? 'customer' : 'repair_center';
       const unreadMessages = messages.filter(
-        m => !m.is_read && m.sender_type === 'customer'
+        m => !m.is_read && m.sender_type === incomingType
       );
       
       if (unreadMessages.length > 0) {
@@ -279,6 +279,12 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
 
     setNewMessage("");
     setPriority('normal');
+    await presenceChannelRef.current?.track({
+      user_id: user.id,
+      participant_type: isRepairCenterStaff ? 'repair_center' : 'customer',
+      online_at: new Date().toISOString(),
+      typing: false,
+    });
     setIsLoading(false);
   };
 
@@ -293,6 +299,7 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
     // Update presence to show typing
     presenceChannelRef.current.track({
       user_id: user.id,
+      participant_type: isRepairCenterStaff ? 'repair_center' : 'customer',
       online_at: new Date().toISOString(),
       typing: true
     });
@@ -301,6 +308,7 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
     typingTimeoutRef.current = setTimeout(() => {
       presenceChannelRef.current?.track({
         user_id: user.id,
+        participant_type: isRepairCenterStaff ? 'repair_center' : 'customer',
         online_at: new Date().toISOString(),
         typing: false
       });
@@ -441,7 +449,9 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
                   </AvatarFallback>
                 </Avatar>
                 <div className="bg-muted rounded-lg px-4 py-2">
-                  <p className="text-sm text-muted-foreground italic">Typing...</p>
+                  <p className="text-sm text-muted-foreground italic">
+                    {typingUsers.has('customer') ? 'Customer is typing…' : 'Repair center is typing…'}
+                  </p>
                 </div>
               </div>
             )}
@@ -482,6 +492,15 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
               onChange={(e) => {
                 setNewMessage(e.target.value);
                 handleTyping();
+              }}
+              onBlur={() => {
+                if (!user?.id) return;
+                presenceChannelRef.current?.track({
+                  user_id: user.id,
+                  participant_type: isRepairCenterStaff ? 'repair_center' : 'customer',
+                  online_at: new Date().toISOString(),
+                  typing: false,
+                });
               }}
               onKeyPress={handleKeyPress}
               disabled={isLoading}
