@@ -900,7 +900,7 @@ const RepairJobDetail = () => {
                   <Button 
                     className="w-full"
                     variant="outline"
-                    onClick={() => navigate('/repair-center-chat', {
+                    onClick={() => navigate(`/repair-center-chat/${conversation.id}`, {
                       state: {
                         conversationId: conversation.id,
                         selectedCenter: conversation.repair_center,

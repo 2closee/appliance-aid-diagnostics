@@ -21,7 +21,7 @@ interface Conversation {
     name: string;
     logo_url?: string | null;
   };
-  repair_jobs?: {
+  repair_job?: {
     id: string;
     appliance_type: string;
     job_status: string;
@@ -41,7 +41,7 @@ const CustomerConversations = () => {
         .select(`
           *,
           repair_center:"Repair Center"!repair_center_id(id, name, logo_url),
-          repair_jobs(id, appliance_type, job_status)
+          repair_job:repair_jobs!conversations_repair_job_id_fkey(id, appliance_type, job_status)
         `)
         .eq("customer_id", user?.id)
         .order("updated_at", { ascending: false });
@@ -53,11 +53,11 @@ const CustomerConversations = () => {
   });
 
   const handleViewChat = (conversation: Conversation) => {
-    navigate("/repair-center-chat", {
+    navigate(`/repair-center-chat/${conversation.id}`, {
       state: {
         conversationId: conversation.id,
         selectedCenter: conversation.repair_center,
-        repairJobId: conversation.repair_jobs?.id
+        repairJobId: conversation.repair_job?.id
       }
     });
   };

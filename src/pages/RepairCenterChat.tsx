@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Navigation from "@/components/Navigation";
 import LiveChat from "@/components/LiveChat";
@@ -13,8 +13,10 @@ import { toast } from "sonner";
 const RepairCenterChat = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isRepairCenterStaff, repairCenterId } = useAuth();
-  const { selectedCenter, repairJobId, conversationId: passedConversationId, diagnosticContext } = location.state || {};
+  const { conversationId: routeConversationId } = useParams<{ conversationId: string }>();
+  const { isRepairCenterStaff } = useAuth();
+  const { selectedCenter, repairJobId, conversationId: stateConversationId, diagnosticContext } = location.state || {};
+  const passedConversationId = routeConversationId || stateConversationId;
   const [centerName, setCenterName] = useState<string>("");
   const [fetchedConversationId, setFetchedConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +61,8 @@ const RepairCenterChat = () => {
 
               setCenterName(center?.name || "Repair Center");
             }
+          } else {
+            toast.error("This conversation is unavailable or you do not have access to it.");
           }
         } catch (error) {
           console.error('Error fetching conversation:', error);
@@ -79,7 +83,7 @@ const RepairCenterChat = () => {
     };
 
     fetchConversationDetails();
-  }, [selectedCenter, passedConversationId, isRepairCenterStaff, navigate]);
+  }, [selectedCenter, passedConversationId, navigate]);
 
   if (isRepairCenterStaff && !conversationId && !isLoading) {
     return (

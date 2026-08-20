@@ -22,7 +22,7 @@ const RepairCenterConversations = () => {
         .from("conversations")
         .select(`
           *,
-          repair_jobs (
+          repair_job:repair_jobs!conversations_repair_job_id_fkey (
             id,
             appliance_type,
             customer_name,
@@ -60,7 +60,7 @@ const RepairCenterConversations = () => {
     await markConversationAsRead(conversation.id);
     
     // Navigate to chat with conversation details
-    navigate('/repair-center-chat', {
+    navigate(`/repair-center-chat/${conversation.id}`, {
       state: {
         conversationId: conversation.id,
         repairJobId: conversation.repair_job_id,
@@ -113,7 +113,7 @@ const RepairCenterConversations = () => {
                         <div className="flex items-center gap-2 flex-wrap">
                           <MessageCircle className="h-4 w-4 text-primary" />
                           <h3 className="font-medium">
-                            {conversation.repair_jobs?.[0]?.customer_name || 'Customer'}
+                            {conversation.repair_job?.customer_name || 'Customer'}
                           </h3>
                           {isDiagnosticOrigin && (
                             <Badge variant="secondary" className="text-xs">
@@ -135,11 +135,11 @@ const RepairCenterConversations = () => {
                             AI Diagnosis: {(conversation as any).diagnostic_summary}
                           </p>
                         )}
-                        {conversation.repair_jobs?.[0] && (
+                        {conversation.repair_job && (
                           <p className="text-sm text-muted-foreground">
-                            Job: {conversation.repair_jobs[0].appliance_type} - 
+                            Job: {conversation.repair_job.appliance_type} - 
                             <span className="ml-1 capitalize">
-                              {conversation.repair_jobs[0].job_status?.replace('_', ' ')}
+                              {conversation.repair_job.job_status?.replace('_', ' ')}
                             </span>
                           </p>
                         )}
