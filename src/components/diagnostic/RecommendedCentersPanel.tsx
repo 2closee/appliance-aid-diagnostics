@@ -109,7 +109,7 @@ export const RecommendedCentersPanel = ({
         description: 'Your AI diagnosis and chat history were shared. They will respond shortly.',
       });
 
-      navigate('/repair-center-chat', {
+      navigate(`/repair-center-chat/${data.conversationId}`, {
         state: {
           conversationId: data.conversationId,
           selectedCenter: { id: center.id, name: center.name },

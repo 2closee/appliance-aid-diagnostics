@@ -137,7 +137,7 @@ export const useQuoteActions = () => {
       // Take the customer straight into the conversation
       const opened = await openJobConversation(jobId);
       if (opened) {
-        navigate('/repair-center-chat', {
+        navigate(`/repair-center-chat/${opened.conversationId}`, {
           state: {
             conversationId: opened.conversationId,
             repairJobId: jobId,
