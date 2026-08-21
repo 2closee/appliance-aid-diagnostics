@@ -81,6 +81,8 @@ export const CenterBulkyPickupQueue = ({ repairCenterId }: Props) => {
                     <CheckCircle2 className="h-3 w-3 mr-1" /> Mark picked up
                   </Button>
                 </div>
+                {/* Requesting a pickup dispatches the closest Ovapass rider straight away. */}
+                <RequestOvapassRider repairJobId={j.id} tripType="pickup" />
               </div>
             ))}
           </div>
