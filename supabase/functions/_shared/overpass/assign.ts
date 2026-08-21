@@ -3,6 +3,8 @@
 // and offers the trip to the closest one who has not already declined it.
 
 import { haversineKm, PricingConfig } from "./geo.ts";
+import { sendSms } from "../sms/dispatcher.ts";
+import { normalizeNigerianPhone } from "../sms/types.ts";
 
 // deno-lint-ignore no-explicit-any
 type Client = any;
@@ -153,6 +155,8 @@ export async function assignNextRider(
 
   console.log(`[overpass] trip ${tripId} offered to rider ${chosen.id} (attempt ${attempt})`);
 
+  await notifyRiderOfOffer(supabase, chosen.id, trip);
+
   return {
     assigned: true,
     rider_id: chosen.id,
@@ -160,4 +164,73 @@ export async function assignNextRider(
     attempt,
     candidates_considered: candidates.length,
   };
+}
+
+/**
+ * Immediate rider alert for a fresh offer: an in-app notification (delivered live
+ * through Realtime) plus an SMS fallback when a phone number is on file.
+ * Alerting must never break dispatch, so failures are logged only.
+ */
+export async function notifyRiderOfOffer(
+  supabase: Client,
+  riderId: string,
+  // deno-lint-ignore no-explicit-any
+  trip: any,
+): Promise<void> {
+  try {
+    const { data: rider } = await supabase
+      .from("riders")
+      .select("user_id, phone, full_name")
+      .eq("id", riderId)
+      .maybeSingle();
+
+    if (!rider) return;
+
+    const tripType = trip?.trip_type === "return" ? "return" : "pickup";
+    const earning = Number(trip?.rider_earning ?? 0);
+    const message = `New ${tripType} request${earning ? ` — you earn ₦${earning.toLocaleString()}` : ""}. Open Ovapass to accept.`;
+
+    if (rider.user_id) {
+      const { error } = await supabase.from("notifications").insert({
+        user_id: rider.user_id,
+        title: `New Ovapass ${tripType} request`,
+        message,
+        type: "ovapass_offer",
+        related_entity_type: "overpass_trip",
+        related_entity_id: trip?.id ?? null,
+      });
+      if (error) console.error(`[overpass] rider notification failed: ${error.message}`);
+    }
+
+    if (rider.phone) {
+      const phone = normalizeNigerianPhone(rider.phone);
+      if (phone) {
+        const sms = await sendSms({ to: phone, body: `FixBudi Ovapass: ${message}` });
+        if (!sms.ok) console.error(`[overpass] rider SMS failed: ${sms.error}`);
+      }
+    }
+  } catch (e) {
+    console.error(`[overpass] rider alert error: ${(e as Error).message}`);
+  }
+}
+
+/** Retries assignment for trips still searching, e.g. when a rider comes online. */
+export async function retrySearchingTrips(supabase: Client, limit = 5): Promise<AssignResult[]> {
+  const { data: trips } = await supabase
+    .from("overpass_trips")
+    .select("id")
+    .in("status", ["pending", "searching"])
+    .is("rider_id", null)
+    .order("created_at", { ascending: true })
+    .limit(limit);
+
+  const results: AssignResult[] = [];
+  for (const t of trips ?? []) {
+    try {
+      results.push(await assignNextRider(supabase, t.id));
+    } catch (e) {
+      results.push({ assigned: false, reason: (e as Error).message });
+    }
+  }
+  return results;
 }

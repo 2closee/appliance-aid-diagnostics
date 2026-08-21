@@ -4,7 +4,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, jsonResponse } from "../_shared/overpass/geo.ts";
-import { assignNextRider, expireStaleOffers } from "../_shared/overpass/assign.ts";
+import { assignNextRider, expireStaleOffers, retrySearchingTrips } from "../_shared/overpass/assign.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -21,7 +21,18 @@ serve(async (req) => {
     );
     if (authError || !user) return jsonResponse({ error: "Unauthorized" }, 401);
 
-    const { trip_id, reset_attempts } = await req.json();
+    const { trip_id, reset_attempts, retry_searching } = await req.json();
+
+    // A rider coming online (or refreshing location) retries trips that stalled
+    // because no rider had a fresh position at the time.
+    if (retry_searching && !trip_id) {
+      const { data: riderId } = await supabase.rpc("get_rider_id", { _user_id: user.id });
+      if (!riderId) return jsonResponse({ error: "Not a rider" }, 403);
+      await expireStaleOffers(supabase);
+      const results = await retrySearchingTrips(supabase);
+      return jsonResponse({ success: true, retried: results.length, assignments: results });
+    }
+
     if (!trip_id) return jsonResponse({ error: "trip_id is required" }, 400);
 
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });

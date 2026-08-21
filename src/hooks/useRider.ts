@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { playChime } from "@/lib/chime";
 
 export interface RiderProfile {
   id: string;
@@ -128,7 +129,10 @@ export function useRider() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "trip_offers", filter: `rider_id=eq.${rider.id}` },
-        () => loadWork(rider.id),
+        (payload) => {
+          if (payload.eventType === "INSERT") playChime();
+          loadWork(rider.id);
+        },
       )
       .on(
         "postgres_changes",
@@ -184,7 +188,11 @@ export function useRider() {
         .update({ is_online: online, last_ping_at: new Date().toISOString() })
         .eq("id", rider.id);
       setRider({ ...rider, is_online: online });
-      if (online) pingLocation(rider.id);
+      if (online) {
+        pingLocation(rider.id);
+        // Pick up trips that stalled while no rider had a fresh location.
+        void supabase.functions.invoke("overpass-assign", { body: { retry_searching: true } });
+      }
     },
     [rider, pingLocation],
   );

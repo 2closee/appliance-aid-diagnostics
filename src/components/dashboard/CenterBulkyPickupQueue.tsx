@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import RequestOvapassRider from "@/components/ovapass/RequestOvapassRider";
 
 interface Job {
   id: string;
@@ -81,6 +82,8 @@ export const CenterBulkyPickupQueue = ({ repairCenterId }: Props) => {
                     <CheckCircle2 className="h-3 w-3 mr-1" /> Mark picked up
                   </Button>
                 </div>
+                {/* Requesting a pickup dispatches the closest Ovapass rider straight away. */}
+                <RequestOvapassRider repairJobId={j.id} tripType="pickup" />
               </div>
             ))}
           </div>
