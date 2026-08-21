@@ -16,6 +16,7 @@ interface TripSummary {
   status: string;
   fee: number | null;
   distance_km: number | null;
+  rider_id: string | null;
   pickup_otp: string | null;
   dropoff_otp: string | null;
 }
@@ -30,7 +31,7 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
   const load = async () => {
     const { data } = await supabase
       .from("overpass_trips")
-      .select("id, status, fee, distance_km, pickup_otp, dropoff_otp")
+      .select("id, status, fee, distance_km, rider_id, pickup_otp, dropoff_otp")
       .eq("repair_job_id", repairJobId)
       .eq("trip_type", tripType)
       .order("created_at", { ascending: false })
@@ -41,6 +42,22 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repairJobId, tripType]);
+
+  // Keep the card truthful as the trip moves from searching to offered/accepted.
+  useEffect(() => {
+    const channel = supabase
+      .channel(`ovapass-job-${repairJobId}-${tripType}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "overpass_trips", filter: `repair_job_id=eq.${repairJobId}` },
+        () => load(),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repairJobId, tripType]);
 
@@ -87,6 +104,12 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
               <span className="text-muted-foreground">Status</span>
               <Badge>{trip.status.replace(/_/g, " ")}</Badge>
             </div>
+            {trip.status === "searching" && !trip.rider_id && (
+              <p className="text-xs text-muted-foreground">
+                Waiting for an available nearby rider — we alert the closest one automatically and keep
+                trying as riders come online.
+              </p>
+            )}
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Delivery fee</span>
               <span className="font-medium">₦{Number(trip.fee ?? 0).toLocaleString()}</span>
