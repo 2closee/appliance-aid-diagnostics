@@ -153,6 +153,8 @@ export async function assignNextRider(
 
   console.log(`[overpass] trip ${tripId} offered to rider ${chosen.id} (attempt ${attempt})`);
 
+  await notifyRiderOfOffer(supabase, chosen.id, trip);
+
   return {
     assigned: true,
     rider_id: chosen.id,
