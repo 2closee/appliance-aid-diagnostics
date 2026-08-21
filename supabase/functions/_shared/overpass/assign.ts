@@ -3,6 +3,8 @@
 // and offers the trip to the closest one who has not already declined it.
 
 import { haversineKm, PricingConfig } from "./geo.ts";
+import { sendSms } from "../sms/dispatcher.ts";
+import { normalizeNigerianPhone } from "../sms/types.ts";
 
 // deno-lint-ignore no-explicit-any
 type Client = any;
