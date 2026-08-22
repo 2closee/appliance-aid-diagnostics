@@ -16,7 +16,9 @@ export interface AssignResult {
   attempt?: number;
   reason?: string;
   candidates_considered?: number;
+  required_capability?: "gadget" | "bulky";
 }
+
 
 const STALE_PING_MINUTES = 10;
 
@@ -78,13 +80,21 @@ export async function assignNextRider(
 
   const staleBefore = new Date(Date.now() - STALE_PING_MINUTES * 60 * 1000).toISOString();
 
+  // What this package needs: bulky appliances (TV, AC, washing machine, fridge)
+  // require a bulky-capable vehicle; gadgets can go on a bike or any vehicle.
+  const requiredCapability: "gadget" | "bulky" = trip.required_capability === "bulky" ? "bulky" : "gadget";
+  const allowedCapabilities = requiredCapability === "bulky" ? ["bulky", "both"] : ["gadget", "both"];
+
   const { data: riders, error: ridersError } = await supabase
     .from("riders")
-    .select("id, full_name, fleet_type, last_lat, last_lng, last_ping_at, home_zone_id, average_rating")
+    .select(
+      "id, full_name, fleet_type, vehicle_class, carry_capability, last_lat, last_lng, last_ping_at, home_zone_id, average_rating",
+    )
     .eq("settlement_blocked", false)
     .eq("is_online", true)
     .eq("is_available", true)
     .eq("kyc_status", "approved")
+    .in("carry_capability", allowedCapabilities)
     .gte("last_ping_at", staleBefore);
 
   if (ridersError) throw new Error(`Rider lookup failed: ${ridersError.message}`);
@@ -112,9 +122,17 @@ export async function assignNextRider(
     })
     .sort(
       (
-        a: { distance_to_pickup_km: number | null },
-        b: { distance_to_pickup_km: number | null },
-      ) => (a.distance_to_pickup_km ?? 9999) - (b.distance_to_pickup_km ?? 9999),
+        a: { distance_to_pickup_km: number | null; fleet_type: string },
+        b: { distance_to_pickup_km: number | null; fleet_type: string },
+      ) => {
+        // Ovapass fleet riders get gadget work first; bulky is ranked purely by
+        // distance since only third-party vehicles usually qualify.
+        if (requiredCapability === "gadget" && a.fleet_type !== b.fleet_type) {
+          if (a.fleet_type === "company") return -1;
+          if (b.fleet_type === "company") return 1;
+        }
+        return (a.distance_to_pickup_km ?? 9999) - (b.distance_to_pickup_km ?? 9999);
+      },
     );
 
   if (!candidates.length) {
@@ -122,8 +140,16 @@ export async function assignNextRider(
       .from("overpass_trips")
       .update({ status: "searching" })
       .eq("id", tripId);
-    return { assigned: false, reason: "No riders available nearby", candidates_considered: 0 };
+    return {
+      assigned: false,
+      reason: requiredCapability === "bulky"
+        ? "No bulky-capable vehicle online nearby"
+        : "No rider online nearby",
+      required_capability: requiredCapability,
+      candidates_considered: 0,
+    };
   }
+
 
   const chosen = candidates[0];
   const attempt = (trip.assignment_attempts ?? 0) + 1;
