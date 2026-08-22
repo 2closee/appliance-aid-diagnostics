@@ -140,9 +140,9 @@ const CustomerConversations = () => {
                                 <CardTitle className="text-lg">
                                   {conversation.repair_center?.name}
                                 </CardTitle>
-                                {conversation.repair_jobs && (
+                                {conversation.repair_job && (
                                   <CardDescription>
-                                    {conversation.repair_jobs.appliance_type} Repair
+                                    {conversation.repair_job.appliance_type} Repair
                                   </CardDescription>
                                 )}
                               </div>
@@ -189,9 +189,9 @@ const CustomerConversations = () => {
                               <CardTitle className="text-lg">
                                 {conversation.repair_center?.name}
                               </CardTitle>
-                              {conversation.repair_jobs && (
+                              {conversation.repair_job && (
                                 <CardDescription>
-                                  {conversation.repair_jobs.appliance_type} Repair
+                                  {conversation.repair_job.appliance_type} Repair
                                 </CardDescription>
                               )}
                             </div>
