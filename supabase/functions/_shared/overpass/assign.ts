@@ -188,8 +188,10 @@ export async function assignNextRider(
     rider_id: chosen.id,
     offer_id: offer.id,
     attempt,
+    required_capability: requiredCapability,
     candidates_considered: candidates.length,
   };
+
 }
 
 /**
