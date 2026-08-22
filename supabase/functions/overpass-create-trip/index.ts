@@ -123,7 +123,9 @@ serve(async (req) => {
 
 
     const isBulky = job.logistics_category === "bulky";
+    const requiredCapability = isBulky ? "bulky" : "gadget";
     const breakdown = calculateFee(pricing, distanceKm, { isBulky });
+
 
     // Match the pickup point to a service zone.
     let zoneId: string | null = null;
@@ -148,7 +150,9 @@ serve(async (req) => {
         repair_job_id: body.repair_job_id,
         trip_type: tripType,
         status: "pending",
+        required_capability: requiredCapability,
         zone_id: zoneId,
+
         pickup_address: pickupAddress,
         pickup_lat: pickupLat ?? null,
         pickup_lng: pickupLng ?? null,
