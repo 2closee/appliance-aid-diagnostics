@@ -110,6 +110,29 @@ serve(async (req) => {
       }
     }
 
+    // On acceptance, dispatch the pickup straight away so a rider is offered the
+    // trip without waiting for the center to press "Request pickup".
+    if (response === 'accept') {
+      try {
+        const dispatch = await fetch(
+          `${Deno.env.get('SUPABASE_URL')}/functions/v1/overpass-create-trip`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: authHeader,
+              apikey: Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+            },
+            body: JSON.stringify({ repair_job_id, trip_type: 'pickup' }),
+          },
+        );
+        logStep("Ovapass dispatch attempted", { status: dispatch.status });
+      } catch (dispatchError) {
+        console.error('Ovapass dispatch error (non-fatal):', dispatchError);
+      }
+    }
+
+
     // Send email notification to repair center
     try {
       await supabase.functions.invoke('send-job-notification', {
