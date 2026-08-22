@@ -1461,6 +1461,7 @@ export type Database = {
           pickup_otp: string | null
           pickup_otp_verified_at: string | null
           repair_job_id: string
+          required_capability: string
           rider_earning: number | null
           rider_id: string | null
           status: string
@@ -1498,6 +1499,7 @@ export type Database = {
           pickup_otp?: string | null
           pickup_otp_verified_at?: string | null
           repair_job_id: string
+          required_capability?: string
           rider_earning?: number | null
           rider_id?: string | null
           status?: string
@@ -1535,6 +1537,7 @@ export type Database = {
           pickup_otp?: string | null
           pickup_otp_verified_at?: string | null
           repair_job_id?: string
+          required_capability?: string
           rider_earning?: number | null
           rider_id?: string | null
           status?: string
@@ -3126,6 +3129,7 @@ export type Database = {
           average_rating: number | null
           bike_make: string | null
           bike_photo_url: string | null
+          carry_capability: string
           created_at: string
           email: string | null
           fleet_type: string
@@ -3150,6 +3154,7 @@ export type Database = {
           total_trips: number
           updated_at: string
           user_id: string
+          vehicle_class: string
         }
         Insert: {
           approved_at?: string | null
@@ -3157,6 +3162,7 @@ export type Database = {
           average_rating?: number | null
           bike_make?: string | null
           bike_photo_url?: string | null
+          carry_capability?: string
           created_at?: string
           email?: string | null
           fleet_type?: string
@@ -3181,6 +3187,7 @@ export type Database = {
           total_trips?: number
           updated_at?: string
           user_id: string
+          vehicle_class?: string
         }
         Update: {
           approved_at?: string | null
@@ -3188,6 +3195,7 @@ export type Database = {
           average_rating?: number | null
           bike_make?: string | null
           bike_photo_url?: string | null
+          carry_capability?: string
           created_at?: string
           email?: string | null
           fleet_type?: string
@@ -3212,6 +3220,7 @@ export type Database = {
           total_trips?: number
           updated_at?: string
           user_id?: string
+          vehicle_class?: string
         }
         Relationships: [
           {
