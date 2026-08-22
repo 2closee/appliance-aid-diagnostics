@@ -153,9 +153,11 @@ const OvapassAdmin = () => {
                   <TableRow>
                     <TableHead>Rider</TableHead>
                     <TableHead>Fleet</TableHead>
+                    <TableHead>Vehicle &amp; capability</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Trips</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
+
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -169,7 +171,39 @@ const OvapassAdmin = () => {
                       </TableCell>
                       <TableCell className="capitalize">{r.fleet_type}</TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-col gap-2">
+                          <Select
+                            value={r.vehicle_class}
+                            onValueChange={(v) => updateVehicle(r.id, { vehicle_class: v })}
+                          >
+                            <SelectTrigger className="h-8 w-[130px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="bike">Bike</SelectItem>
+                              <SelectItem value="car">Car</SelectItem>
+                              <SelectItem value="suv">SUV</SelectItem>
+                              <SelectItem value="van">Van</SelectItem>
+                              <SelectItem value="truck">Truck</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={r.carry_capability}
+                            onValueChange={(v) => updateVehicle(r.id, { carry_capability: v })}
+                          >
+                            <SelectTrigger className="h-8 w-[160px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="gadget">Gadgets only</SelectItem>
+                              <SelectItem value="bulky">Bulky only</SelectItem>
+                              <SelectItem value="both">Gadgets &amp; bulky</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+
                           <Badge
                             variant={
                               r.kyc_status === "approved" ? "default" : r.kyc_status === "rejected" ? "destructive" : "secondary"
