@@ -52,7 +52,8 @@ serve(async (req) => {
 
     if (jobError || !job) return jsonResponse({ error: "Repair job not found" }, 404);
 
-    // Only center staff or an admin may dispatch a rider.
+    // Only center staff, an admin, or the job's own customer (right after they
+    // accept a quote) may dispatch a rider.
     const { data: isStaff } = await supabase.rpc("is_staff_at_center", {
       _user_id: user.id,
       _center_id: job.repair_center_id,
@@ -61,9 +62,12 @@ serve(async (req) => {
       _user_id: user.id,
       _role: "admin",
     });
-    if (!isStaff && !isAdmin) {
+    const isJobCustomerAfterAcceptance = job.user_id === user.id &&
+      ["quote_accepted", "pickup_scheduled"].includes(job.job_status);
+    if (!isStaff && !isAdmin && !isJobCustomerAfterAcceptance) {
       return jsonResponse({ error: "Only the repair center or an admin can dispatch a rider" }, 403);
     }
+
 
     // Do not create a second live trip of the same type for one job.
     const { data: existing } = await supabase
