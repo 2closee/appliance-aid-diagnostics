@@ -14,6 +14,8 @@ interface Rider {
   full_name: string;
   phone: string;
   fleet_type: string;
+  vehicle_class: string;
+  carry_capability: string;
   kyc_status: string;
   phone_verified_at: string | null;
   is_online: boolean;
@@ -23,6 +25,7 @@ interface Rider {
   average_rating: number | null;
   created_at: string;
 }
+
 
 interface Trip {
   id: string;
@@ -69,6 +72,17 @@ const OvapassAdmin = () => {
     toast({ title: status === "approved" ? "Rider approved" : "Rider rejected" });
     load();
   };
+
+  const updateVehicle = async (id: string, patch: Partial<Pick<Rider, "vehicle_class" | "carry_capability">>) => {
+    const { error } = await supabase.from("riders").update(patch).eq("id", id);
+    if (error) {
+      toast({ title: "Could not update vehicle", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Vehicle details updated" });
+    load();
+  };
+
 
   const retryAssignment = async (tripId: string) => {
     const { error } = await supabase.functions.invoke("overpass-assign", { body: { trip_id: tripId } });
