@@ -14,6 +14,8 @@ interface Rider {
   full_name: string;
   phone: string;
   fleet_type: string;
+  vehicle_class: string;
+  carry_capability: string;
   kyc_status: string;
   phone_verified_at: string | null;
   is_online: boolean;
@@ -23,6 +25,7 @@ interface Rider {
   average_rating: number | null;
   created_at: string;
 }
+
 
 interface Trip {
   id: string;
@@ -69,6 +72,17 @@ const OvapassAdmin = () => {
     toast({ title: status === "approved" ? "Rider approved" : "Rider rejected" });
     load();
   };
+
+  const updateVehicle = async (id: string, patch: Partial<Pick<Rider, "vehicle_class" | "carry_capability">>) => {
+    const { error } = await supabase.from("riders").update(patch).eq("id", id);
+    if (error) {
+      toast({ title: "Could not update vehicle", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Vehicle details updated" });
+    load();
+  };
+
 
   const retryAssignment = async (tripId: string) => {
     const { error } = await supabase.functions.invoke("overpass-assign", { body: { trip_id: tripId } });
@@ -139,9 +153,11 @@ const OvapassAdmin = () => {
                   <TableRow>
                     <TableHead>Rider</TableHead>
                     <TableHead>Fleet</TableHead>
+                    <TableHead>Vehicle &amp; capability</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Trips</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
+
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -155,7 +171,39 @@ const OvapassAdmin = () => {
                       </TableCell>
                       <TableCell className="capitalize">{r.fleet_type}</TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-col gap-2">
+                          <Select
+                            value={r.vehicle_class}
+                            onValueChange={(v) => updateVehicle(r.id, { vehicle_class: v })}
+                          >
+                            <SelectTrigger className="h-8 w-[130px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="bike">Bike</SelectItem>
+                              <SelectItem value="car">Car</SelectItem>
+                              <SelectItem value="suv">SUV</SelectItem>
+                              <SelectItem value="van">Van</SelectItem>
+                              <SelectItem value="truck">Truck</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={r.carry_capability}
+                            onValueChange={(v) => updateVehicle(r.id, { carry_capability: v })}
+                          >
+                            <SelectTrigger className="h-8 w-[160px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="gadget">Gadgets only</SelectItem>
+                              <SelectItem value="bulky">Bulky only</SelectItem>
+                              <SelectItem value="both">Gadgets &amp; bulky</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+
                           <Badge
                             variant={
                               r.kyc_status === "approved" ? "default" : r.kyc_status === "rejected" ? "destructive" : "secondary"
