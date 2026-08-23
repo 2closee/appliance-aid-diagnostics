@@ -107,11 +107,19 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
               <Badge>{trip.status.replace(/_/g, " ")}</Badge>
             </div>
             {trip.status === "searching" && !trip.rider_id && (
-              <p className="text-xs text-muted-foreground">
-                Waiting for an available nearby rider — we alert the closest one automatically and keep
-                trying as riders come online.
-              </p>
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {trip.required_capability === "bulky"
+                    ? "Waiting for a bulky-capable vehicle (van or truck) online nearby — we alert the closest one automatically and keep trying as vehicles come online."
+                    : "Waiting for an available nearby rider — we alert the closest one automatically and keep trying as riders come online."}
+                </p>
+                <Button variant="outline" size="sm" className="w-full" onClick={retryDispatch} disabled={busy}>
+                  {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Search again now
+                </Button>
+              </>
             )}
+
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Delivery fee</span>
               <span className="font-medium">₦{Number(trip.fee ?? 0).toLocaleString()}</span>
