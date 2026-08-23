@@ -28,6 +28,8 @@ const OvapassRiderSignup = () => {
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
+    carry_capability: "gadget",
+    vehicle_class: "bike",
     fleet_type: "partner",
     bike_make: "",
     plate_number: "",
@@ -39,6 +41,14 @@ const OvapassRiderSignup = () => {
     bike_photo: null,
     selfie: null,
   });
+
+  const carriesBulky = form.carry_capability !== "gadget";
+  const isVehicle = form.vehicle_class !== "bike";
+  // Bulky appliances (TVs, ACs, washing machines, fridges) need a van or truck.
+  const vehicleOptions = carriesBulky
+    ? [["van", "Van / bus"], ["truck", "Pickup truck / lorry"]]
+    : [["bike", "Motorbike or electric bike"], ["car", "Car"], ["suv", "SUV"], ["van", "Van / bus"]];
+
 
   // Riders are phone-first: signed-out visitors create their account right here,
   // using the SMS code as proof of identity instead of an email confirmation link.
