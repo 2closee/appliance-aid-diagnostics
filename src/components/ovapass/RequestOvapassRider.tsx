@@ -85,7 +85,31 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
     }
   };
 
+  const retryDispatch = async () => {
+    if (!trip) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("overpass-assign", {
+        body: { trip_id: trip.id },
+      });
+      if (error) throw error;
+      const assignment = (data as { assignment?: { assigned?: boolean; reason?: string } })?.assignment;
+      toast({
+        title: assignment?.assigned ? "Rider notified" : "Still searching",
+        description: assignment?.assigned
+          ? "The closest suitable rider has been offered this trip."
+          : assignment?.reason ?? "No suitable vehicle is online nearby yet.",
+      });
+      await load();
+    } catch (e) {
+      toast({ title: "Could not search again", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (loading) return null;
+
 
   return (
     <Card>
