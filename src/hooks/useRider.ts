@@ -117,9 +117,16 @@ export function useRider() {
 
   useEffect(() => {
     loadRider().then((r) => {
-      if (r) loadWork(r.id);
+      if (!r) return;
+      loadWork(r.id);
+      // An already-online rider opening the app should pick up trips that
+      // stalled while no suitable vehicle was reachable.
+      if (r.is_online && r.kyc_status === "approved") {
+        void supabase.functions.invoke("overpass-assign", { body: { retry_searching: true } });
+      }
     });
   }, [loadRider, loadWork]);
+
 
   // Live offers and trip changes
   useEffect(() => {
