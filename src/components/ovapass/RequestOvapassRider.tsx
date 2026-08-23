@@ -19,6 +19,7 @@ interface TripSummary {
   rider_id: string | null;
   pickup_otp: string | null;
   dropoff_otp: string | null;
+  required_capability: string | null;
 }
 
 /** Lets repair center staff dispatch an Ovapass rider for a job. */
@@ -31,7 +32,7 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
   const load = async () => {
     const { data } = await supabase
       .from("overpass_trips")
-      .select("id, status, fee, distance_km, rider_id, pickup_otp, dropoff_otp")
+      .select("id, status, fee, distance_km, rider_id, pickup_otp, dropoff_otp, required_capability")
       .eq("repair_job_id", repairJobId)
       .eq("trip_type", tripType)
       .order("created_at", { ascending: false })
@@ -39,6 +40,7 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
     setTrip((data?.[0] as TripSummary) ?? null);
     setLoading(false);
   };
+
 
   useEffect(() => {
     load();
@@ -83,7 +85,31 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
     }
   };
 
+  const retryDispatch = async () => {
+    if (!trip) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("overpass-assign", {
+        body: { trip_id: trip.id },
+      });
+      if (error) throw error;
+      const assignment = (data as { assignment?: { assigned?: boolean; reason?: string } })?.assignment;
+      toast({
+        title: assignment?.assigned ? "Rider notified" : "Still searching",
+        description: assignment?.assigned
+          ? "The closest suitable rider has been offered this trip."
+          : assignment?.reason ?? "No suitable vehicle is online nearby yet.",
+      });
+      await load();
+    } catch (e) {
+      toast({ title: "Could not search again", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (loading) return null;
+
 
   return (
     <Card>
@@ -105,11 +131,19 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
               <Badge>{trip.status.replace(/_/g, " ")}</Badge>
             </div>
             {trip.status === "searching" && !trip.rider_id && (
-              <p className="text-xs text-muted-foreground">
-                Waiting for an available nearby rider — we alert the closest one automatically and keep
-                trying as riders come online.
-              </p>
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {trip.required_capability === "bulky"
+                    ? "Waiting for a bulky-capable vehicle (van or truck) online nearby — we alert the closest one automatically and keep trying as vehicles come online."
+                    : "Waiting for an available nearby rider — we alert the closest one automatically and keep trying as riders come online."}
+                </p>
+                <Button variant="outline" size="sm" className="w-full" onClick={retryDispatch} disabled={busy}>
+                  {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Search again now
+                </Button>
+              </>
             )}
+
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Delivery fee</span>
               <span className="font-medium">₦{Number(trip.fee ?? 0).toLocaleString()}</span>

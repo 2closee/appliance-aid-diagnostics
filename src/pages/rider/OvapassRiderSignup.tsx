@@ -28,6 +28,8 @@ const OvapassRiderSignup = () => {
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
+    carry_capability: "gadget",
+    vehicle_class: "bike",
     fleet_type: "partner",
     bike_make: "",
     plate_number: "",
@@ -39,6 +41,14 @@ const OvapassRiderSignup = () => {
     bike_photo: null,
     selfie: null,
   });
+
+  const carriesBulky = form.carry_capability !== "gadget";
+  const isVehicle = form.vehicle_class !== "bike";
+  // Bulky appliances (TVs, ACs, washing machines, fridges) need a van or truck.
+  const vehicleOptions = carriesBulky
+    ? [["van", "Van / bus"], ["truck", "Pickup truck / lorry"]]
+    : [["bike", "Motorbike or electric bike"], ["car", "Car"], ["suv", "SUV"], ["van", "Van / bus"]];
+
 
   // Riders are phone-first: signed-out visitors create their account right here,
   // using the SMS code as proof of identity instead of an email confirmation link.
@@ -153,6 +163,22 @@ const OvapassRiderSignup = () => {
       });
       return;
     }
+    if (carriesBulky && !["van", "truck"].includes(form.vehicle_class)) {
+      toast({
+        title: "Vehicle not suitable for bulky items",
+        description: "Televisions, ACs, washing machines and fridges need a van or a pickup truck.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (isVehicle && !form.plate_number) {
+      toast({
+        title: "Plate number required",
+        description: "Vehicles must be registered with their plate number.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setSaving(true);
     try {
@@ -168,7 +194,10 @@ const OvapassRiderSignup = () => {
         phone: form.phone,
         phone_verified_at: new Date().toISOString(),
         email: user.email,
-        fleet_type: form.fleet_type,
+        carry_capability: form.carry_capability,
+        vehicle_class: form.vehicle_class,
+        // Only a FixBudi electric bike counts as company fleet.
+        fleet_type: form.vehicle_class === "bike" ? form.fleet_type : "partner",
         bike_make: form.bike_make || null,
         plate_number: form.plate_number || null,
         guarantor_name: form.guarantor_name || null,
@@ -177,6 +206,7 @@ const OvapassRiderSignup = () => {
         bike_photo_url: bikePhoto,
         selfie_url: selfie,
       });
+
 
       if (error) throw error;
 
@@ -370,27 +400,76 @@ const OvapassRiderSignup = () => {
             />
 
             <div className="space-y-2">
-              <Label>Whose bike will you ride?</Label>
-              <Select value={form.fleet_type} onValueChange={set("fleet_type")}>
+              <Label>What will you deliver?</Label>
+              <Select
+                value={form.carry_capability}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    carry_capability: v,
+                    // Bulky work needs a van or truck; reset an unsuitable choice.
+                    vehicle_class: v === "gadget"
+                      ? f.vehicle_class
+                      : ["van", "truck"].includes(f.vehicle_class) ? f.vehicle_class : "van",
+                  }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="partner">Third-party rider — my own bike</SelectItem>
-                  <SelectItem value="company">FixBudi rider — a FixBudi electric bike</SelectItem>
+                  <SelectItem value="gadget">Gadgets only — phones, laptops, computers</SelectItem>
+                  <SelectItem value="bulky">Bulky only — TVs, ACs, washing machines, fridges</SelectItem>
+                  <SelectItem value="both">Both gadgets and bulky appliances</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Bulky appliances are only assigned to registered vans and pickup trucks.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Vehicle type</Label>
+              <Select value={form.vehicle_class} onValueChange={set("vehicle_class")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {vehicleOptions.map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+
+            {!isVehicle && (
+              <div className="space-y-2">
+                <Label>Whose bike will you ride?</Label>
+                <Select value={form.fleet_type} onValueChange={set("fleet_type")}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="partner">Third-party rider — my own bike</SelectItem>
+                    <SelectItem value="company">FixBudi rider — a FixBudi electric bike</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="bike_make">Bike make</Label>
+                <Label htmlFor="bike_make">{isVehicle ? "Vehicle make & model" : "Bike make"}</Label>
                 <Input id="bike_make" value={form.bike_make} onChange={(e) => set("bike_make")(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="plate_number">Plate number</Label>
+                <Label htmlFor="plate_number">Plate number{isVehicle ? "" : " (optional)"}</Label>
                 <Input id="plate_number" value={form.plate_number} onChange={(e) => set("plate_number")(e.target.value)} />
               </div>
             </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="guarantor_name">Guarantor name</Label>
@@ -409,14 +488,17 @@ const OvapassRiderSignup = () => {
             <CardTitle className="flex items-center gap-2 text-lg">
               <ShieldCheck className="h-5 w-5 text-primary" /> Verification documents
             </CardTitle>
-            <CardDescription>Government ID, a photo of your bike, and a clear selfie.</CardDescription>
+            <CardDescription>
+              Government ID, a photo of your {isVehicle ? "vehicle" : "bike"}, and a clear selfie.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {([
-              ["id_doc", "Government ID"],
-              ["bike_photo", "Photo of your bike"],
+              ["id_doc", isVehicle ? "Government ID and vehicle papers" : "Government ID"],
+              ["bike_photo", isVehicle ? "Photo of your vehicle" : "Photo of your bike"],
               ["selfie", "Selfie"],
             ] as [FileField, string][]).map(([field, label]) => (
+
               <div key={field} className="space-y-2">
                 <Label htmlFor={field}>{label}</Label>
                 <Input

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { useToast } from "@/hooks/use-toast";
 import { Bike, Loader2, RefreshCw } from "lucide-react";
 import OvapassPaymentsAdmin from "@/components/ovapass/OvapassPaymentsAdmin";
@@ -203,6 +205,8 @@ const OvapassAdmin = () => {
                         </div>
                       </TableCell>
                       <TableCell>
+                        <div className="flex flex-wrap gap-1">
+
 
                           <Badge
                             variant={
@@ -237,7 +241,8 @@ const OvapassAdmin = () => {
                   ))}
                   {riders.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                      <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+
                         No riders have applied yet.
                       </TableCell>
                     </TableRow>
