@@ -400,27 +400,76 @@ const OvapassRiderSignup = () => {
             />
 
             <div className="space-y-2">
-              <Label>Whose bike will you ride?</Label>
-              <Select value={form.fleet_type} onValueChange={set("fleet_type")}>
+              <Label>What will you deliver?</Label>
+              <Select
+                value={form.carry_capability}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    carry_capability: v,
+                    // Bulky work needs a van or truck; reset an unsuitable choice.
+                    vehicle_class: v === "gadget"
+                      ? f.vehicle_class
+                      : ["van", "truck"].includes(f.vehicle_class) ? f.vehicle_class : "van",
+                  }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="partner">Third-party rider — my own bike</SelectItem>
-                  <SelectItem value="company">FixBudi rider — a FixBudi electric bike</SelectItem>
+                  <SelectItem value="gadget">Gadgets only — phones, laptops, computers</SelectItem>
+                  <SelectItem value="bulky">Bulky only — TVs, ACs, washing machines, fridges</SelectItem>
+                  <SelectItem value="both">Both gadgets and bulky appliances</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Bulky appliances are only assigned to registered vans and pickup trucks.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Vehicle type</Label>
+              <Select value={form.vehicle_class} onValueChange={set("vehicle_class")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {vehicleOptions.map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+
+            {!isVehicle && (
+              <div className="space-y-2">
+                <Label>Whose bike will you ride?</Label>
+                <Select value={form.fleet_type} onValueChange={set("fleet_type")}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="partner">Third-party rider — my own bike</SelectItem>
+                    <SelectItem value="company">FixBudi rider — a FixBudi electric bike</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="bike_make">Bike make</Label>
+                <Label htmlFor="bike_make">{isVehicle ? "Vehicle make & model" : "Bike make"}</Label>
                 <Input id="bike_make" value={form.bike_make} onChange={(e) => set("bike_make")(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="plate_number">Plate number</Label>
+                <Label htmlFor="plate_number">Plate number{isVehicle ? "" : " (optional)"}</Label>
                 <Input id="plate_number" value={form.plate_number} onChange={(e) => set("plate_number")(e.target.value)} />
               </div>
             </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="guarantor_name">Guarantor name</Label>
