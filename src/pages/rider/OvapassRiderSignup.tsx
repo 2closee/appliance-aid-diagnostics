@@ -488,14 +488,17 @@ const OvapassRiderSignup = () => {
             <CardTitle className="flex items-center gap-2 text-lg">
               <ShieldCheck className="h-5 w-5 text-primary" /> Verification documents
             </CardTitle>
-            <CardDescription>Government ID, a photo of your bike, and a clear selfie.</CardDescription>
+            <CardDescription>
+              Government ID, a photo of your {isVehicle ? "vehicle" : "bike"}, and a clear selfie.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {([
-              ["id_doc", "Government ID"],
-              ["bike_photo", "Photo of your bike"],
+              ["id_doc", isVehicle ? "Government ID and vehicle papers" : "Government ID"],
+              ["bike_photo", isVehicle ? "Photo of your vehicle" : "Photo of your bike"],
               ["selfie", "Selfie"],
             ] as [FileField, string][]).map(([field, label]) => (
+
               <div key={field} className="space-y-2">
                 <Label htmlFor={field}>{label}</Label>
                 <Input
