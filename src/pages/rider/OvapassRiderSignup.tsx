@@ -163,6 +163,22 @@ const OvapassRiderSignup = () => {
       });
       return;
     }
+    if (carriesBulky && !["van", "truck"].includes(form.vehicle_class)) {
+      toast({
+        title: "Vehicle not suitable for bulky items",
+        description: "Televisions, ACs, washing machines and fridges need a van or a pickup truck.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (isVehicle && !form.plate_number) {
+      toast({
+        title: "Plate number required",
+        description: "Vehicles must be registered with their plate number.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setSaving(true);
     try {
@@ -178,7 +194,10 @@ const OvapassRiderSignup = () => {
         phone: form.phone,
         phone_verified_at: new Date().toISOString(),
         email: user.email,
-        fleet_type: form.fleet_type,
+        carry_capability: form.carry_capability,
+        vehicle_class: form.vehicle_class,
+        // Only a FixBudi electric bike counts as company fleet.
+        fleet_type: form.vehicle_class === "bike" ? form.fleet_type : "partner",
         bike_make: form.bike_make || null,
         plate_number: form.plate_number || null,
         guarantor_name: form.guarantor_name || null,
@@ -187,6 +206,7 @@ const OvapassRiderSignup = () => {
         bike_photo_url: bikePhoto,
         selfie_url: selfie,
       });
+
 
       if (error) throw error;
 
