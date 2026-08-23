@@ -203,6 +203,8 @@ const OvapassAdmin = () => {
                         </div>
                       </TableCell>
                       <TableCell>
+                        <div className="flex flex-wrap gap-1">
+
 
                           <Badge
                             variant={
@@ -237,7 +239,8 @@ const OvapassAdmin = () => {
                   ))}
                   {riders.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                      <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+
                         No riders have applied yet.
                       </TableCell>
                     </TableRow>
