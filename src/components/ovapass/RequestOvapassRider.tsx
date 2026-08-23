@@ -19,6 +19,7 @@ interface TripSummary {
   rider_id: string | null;
   pickup_otp: string | null;
   dropoff_otp: string | null;
+  required_capability: string | null;
 }
 
 /** Lets repair center staff dispatch an Ovapass rider for a job. */
@@ -31,7 +32,7 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
   const load = async () => {
     const { data } = await supabase
       .from("overpass_trips")
-      .select("id, status, fee, distance_km, rider_id, pickup_otp, dropoff_otp")
+      .select("id, status, fee, distance_km, rider_id, pickup_otp, dropoff_otp, required_capability")
       .eq("repair_job_id", repairJobId)
       .eq("trip_type", tripType)
       .order("created_at", { ascending: false })
@@ -39,6 +40,7 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
     setTrip((data?.[0] as TripSummary) ?? null);
     setLoading(false);
   };
+
 
   useEffect(() => {
     load();
