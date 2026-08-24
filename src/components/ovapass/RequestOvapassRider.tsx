@@ -22,6 +22,7 @@ interface TripSummary {
   required_capability: string | null;
   assignment_attempts: number | null;
   assigned_at: string | null;
+  current_offer_expires_at?: string | null;
 }
 
 /** Lets repair center staff dispatch an Ovapass rider for a job. */
@@ -39,7 +40,19 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
       .eq("trip_type", tripType)
       .order("created_at", { ascending: false })
       .limit(1);
-    setTrip((data?.[0] as TripSummary) ?? null);
+    const latestTrip = (data?.[0] as TripSummary) ?? null;
+    if (latestTrip) {
+      const { data: offers } = await supabase
+        .from("trip_offers")
+        .select("expires_at")
+        .eq("trip_id", latestTrip.id)
+        .eq("status", "offered")
+        .gt("expires_at", new Date().toISOString())
+        .order("offered_at", { ascending: false })
+        .limit(1);
+      latestTrip.current_offer_expires_at = offers?.[0]?.expires_at ?? null;
+    }
+    setTrip(latestTrip);
     setLoading(false);
   };
 
@@ -86,7 +99,7 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
       if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
       toast({
         title: "Rider requested",
-        description: (data as { assigned?: boolean })?.assigned
+         description: (data as { assignment?: { assigned?: boolean } })?.assignment?.assigned
           ? "A rider has been offered the trip."
           : "We're searching for the nearest available rider.",
       });
@@ -147,7 +160,7 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
             {trip.status === "searching" && !trip.rider_id && (
               <>
                 <p className="text-xs text-muted-foreground">
-                  {trip.assigned_at && Date.now() - new Date(trip.assigned_at).getTime() < 180_000
+                  {trip.current_offer_expires_at
                     ? "Offer sent — waiting for the rider to respond."
                     : trip.assignment_attempts
                       ? "The previous offer expired. Ovapass is retrying automatically."
