@@ -63,6 +63,7 @@ export function useRider() {
   const [activeTrip, setActiveTrip] = useState<OvapassTrip | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const pingTimer = useRef<number | null>(null);
+  const lastRetryAt = useRef(0);
 
   const loadRider = useCallback(async () => {
     if (!user) {
@@ -132,7 +133,7 @@ export function useRider() {
   useEffect(() => {
     if (!rider) return;
     const channel = supabase
-      .channel(`overpass-rider-${rider.id}`)
+      .channel(`ovapass-rider-${rider.id}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "trip_offers", filter: `rider_id=eq.${rider.id}` },
@@ -165,6 +166,12 @@ export function useRider() {
         await supabase
           .from("rider_locations")
           .insert({ rider_id: riderId, lat: latitude, lng: longitude, accuracy_m: accuracy });
+        // Periodically rescue searching trips while an eligible rider is online.
+        // The edge function enforces live-offer uniqueness and re-offer cooldowns.
+        if (Date.now() - lastRetryAt.current >= 90_000) {
+          lastRetryAt.current = Date.now();
+          void supabase.functions.invoke("overpass-assign", { body: { retry_searching: true } });
+        }
       },
       (err) => console.warn("Location unavailable:", err.message),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 },
@@ -196,6 +203,7 @@ export function useRider() {
         .eq("id", rider.id);
       setRider({ ...rider, is_online: online });
       if (online) {
+        lastRetryAt.current = Date.now();
         pingLocation(rider.id);
         // Pick up trips that stalled while no rider had a fresh location.
         void supabase.functions.invoke("overpass-assign", { body: { retry_searching: true } });

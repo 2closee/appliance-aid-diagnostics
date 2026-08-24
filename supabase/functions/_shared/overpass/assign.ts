@@ -1,6 +1,6 @@
 // Nearest-rider auto-assignment for Ovapass trips.
 // Ranks online, approved, available riders by distance from the pickup point
-// and offers the trip to the closest one who has not already declined it.
+// and offers the trip to the closest one who has not declined it.
 
 import { haversineKm, PricingConfig } from "./geo.ts";
 import { sendSms } from "../sms/dispatcher.ts";
@@ -21,6 +21,7 @@ export interface AssignResult {
 
 
 const STALE_PING_MINUTES = 10;
+const REOFFER_COOLDOWN_SECONDS = 90;
 
 export async function expireStaleOffers(supabase: Client): Promise<void> {
   await supabase
@@ -62,21 +63,33 @@ export async function assignNextRider(
 
   const config = pricing ?? (await getPricing(supabase));
 
-  if (trip.assignment_attempts >= config.max_assignment_attempts) {
-    await supabase
-      .from("overpass_trips")
-      .update({ status: "unassigned" })
-      .eq("id", tripId);
-    return { assigned: false, reason: "No rider accepted after maximum attempts" };
-  }
-
-  // Riders that already saw this trip should not be offered it again.
+  // A live offer must finish before another rider can be offered the trip.
   const { data: priorOffers } = await supabase
     .from("trip_offers")
-    .select("rider_id, status")
+    .select("id, rider_id, status, responded_at, expires_at")
     .eq("trip_id", tripId);
 
-  const excluded = new Set<string>((priorOffers ?? []).map((o: { rider_id: string }) => o.rider_id));
+  const liveOffer = (priorOffers ?? []).find(
+    (o: { status: string; expires_at: string }) =>
+      o.status === "offered" && new Date(o.expires_at).getTime() > Date.now(),
+  );
+  if (liveOffer) {
+    return { assigned: true, rider_id: liveOffer.rider_id, offer_id: liveOffer.id, reason: "Offer sent—waiting for rider" };
+  }
+
+  // A decline excludes the rider for this trip. An expired offer only applies a
+  // short cooldown, allowing the sole nearby qualified rider to be alerted again.
+  const cooldownSince = Date.now() - REOFFER_COOLDOWN_SECONDS * 1000;
+  const excluded = new Set<string>(
+    (priorOffers ?? [])
+      .filter((o: { status: string; responded_at: string | null; expires_at: string }) => {
+        if (o.status === "declined") return true;
+        if (o.status !== "expired") return false;
+        const finishedAt = o.responded_at ?? o.expires_at;
+        return new Date(finishedAt).getTime() > cooldownSince;
+      })
+      .map((o: { rider_id: string }) => o.rider_id),
+  );
 
   const staleBefore = new Date(Date.now() - STALE_PING_MINUTES * 60 * 1000).toISOString();
 
@@ -179,7 +192,7 @@ export async function assignNextRider(
     })
     .eq("id", tripId);
 
-  console.log(`[overpass] trip ${tripId} offered to rider ${chosen.id} (attempt ${attempt})`);
+  console.log(`[ovapass] trip ${tripId} offered to rider ${chosen.id} (attempt ${attempt})`);
 
   await notifyRiderOfOffer(supabase, chosen.id, trip);
 
@@ -223,22 +236,22 @@ export async function notifyRiderOfOffer(
         user_id: rider.user_id,
         title: `New Ovapass ${tripType} request`,
         message,
-        type: "ovapass_offer",
-        related_entity_type: "overpass_trip",
+        type: "alert",
+        related_entity_type: "ovapass_trip",
         related_entity_id: trip?.id ?? null,
       });
-      if (error) console.error(`[overpass] rider notification failed: ${error.message}`);
+      if (error) console.error(`[ovapass] rider notification failed: ${error.message}`);
     }
 
     if (rider.phone) {
       const phone = normalizeNigerianPhone(rider.phone);
       if (phone) {
         const sms = await sendSms({ to: phone, body: `FixBudi Ovapass: ${message}` });
-        if (!sms.ok) console.error(`[overpass] rider SMS failed: ${sms.error}`);
+        if (!sms.ok) console.error(`[ovapass] rider SMS failed: ${sms.error}`);
       }
     }
   } catch (e) {
-    console.error(`[overpass] rider alert error: ${(e as Error).message}`);
+    console.error(`[ovapass] rider alert error: ${(e as Error).message}`);
   }
 }
 

@@ -20,6 +20,8 @@ interface TripSummary {
   pickup_otp: string | null;
   dropoff_otp: string | null;
   required_capability: string | null;
+  assignment_attempts: number | null;
+  assigned_at: string | null;
 }
 
 /** Lets repair center staff dispatch an Ovapass rider for a job. */
@@ -32,7 +34,7 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
   const load = async () => {
     const { data } = await supabase
       .from("overpass_trips")
-      .select("id, status, fee, distance_km, rider_id, pickup_otp, dropoff_otp, required_capability")
+      .select("id, status, fee, distance_km, rider_id, pickup_otp, dropoff_otp, required_capability, assignment_attempts, assigned_at")
       .eq("repair_job_id", repairJobId)
       .eq("trip_type", tripType)
       .order("created_at", { ascending: false })
@@ -46,6 +48,17 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repairJobId, tripType]);
+
+  // Retry a searching pickup while this center card is open. This complements
+  // rider-online retries and means the center need not repeatedly press a button.
+  useEffect(() => {
+    if (!trip || trip.status !== "searching" || trip.rider_id) return;
+    const timer = window.setInterval(() => {
+      void supabase.functions.invoke("overpass-assign", { body: { trip_id: trip.id } }).then(() => load());
+    }, 90_000);
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trip?.id, trip?.status, trip?.rider_id]);
 
   // Keep the card truthful as the trip moves from searching to offered/accepted.
   useEffect(() => {
@@ -94,10 +107,11 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
       });
       if (error) throw error;
       const assignment = (data as { assignment?: { assigned?: boolean; reason?: string } })?.assignment;
+      const assigned = Boolean(assignment?.assigned);
       toast({
-        title: assignment?.assigned ? "Rider notified" : "Still searching",
-        description: assignment?.assigned
-          ? "The closest suitable rider has been offered this trip."
+        title: assigned ? "Rider notified" : "Still searching",
+        description: assigned
+          ? assignment?.reason ?? "The closest suitable rider has been offered this trip."
           : assignment?.reason ?? "No suitable vehicle is online nearby yet.",
       });
       await load();
@@ -119,7 +133,7 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
         </CardTitle>
         <CardDescription>
           {trip
-            ? "Our own rider fleet is handling this leg."
+            ? "Ovapass is coordinating this delivery leg."
             : `Dispatch a FixBudi rider for this ${tripType === "pickup" ? "pickup" : "return"}.`}
         </CardDescription>
       </CardHeader>
@@ -133,9 +147,13 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
             {trip.status === "searching" && !trip.rider_id && (
               <>
                 <p className="text-xs text-muted-foreground">
-                  {trip.required_capability === "bulky"
-                    ? "Waiting for a bulky-capable vehicle (van or truck) online nearby — we alert the closest one automatically and keep trying as vehicles come online."
-                    : "Waiting for an available nearby rider — we alert the closest one automatically and keep trying as riders come online."}
+                  {trip.assigned_at && Date.now() - new Date(trip.assigned_at).getTime() < 180_000
+                    ? "Offer sent — waiting for the rider to respond."
+                    : trip.assignment_attempts
+                      ? "The previous offer expired. Ovapass is retrying automatically."
+                      : trip.required_capability === "bulky"
+                        ? "Waiting for an approved bulky-capable vehicle nearby. Ovapass will alert the closest match automatically."
+                        : "Waiting for an available nearby rider. Ovapass will alert the closest match automatically."}
                 </p>
                 <Button variant="outline" size="sm" className="w-full" onClick={retryDispatch} disabled={busy}>
                   {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
