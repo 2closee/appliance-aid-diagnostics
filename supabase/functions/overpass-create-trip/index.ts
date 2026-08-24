@@ -183,7 +183,7 @@ serve(async (req) => {
         repair_job_id: body.repair_job_id,
         delivery_type: tripType,
         provider: "overpass",
-        provider_name: "overpass",
+        provider_name: "Ovapass",
         provider_order_id: trip.id,
         pickup_address: pickupAddress,
         delivery_address: dropoffAddress,
@@ -214,7 +214,7 @@ serve(async (req) => {
       assignment,
     });
   } catch (error) {
-    console.error("[overpass-create-trip]", error);
+    console.error("[ovapass-create-trip]", error);
     return jsonResponse({ error: (error as Error).message }, 500);
   }
 });

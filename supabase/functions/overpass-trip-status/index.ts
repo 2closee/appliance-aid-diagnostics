@@ -211,7 +211,7 @@ serve(async (req) => {
 
     return jsonResponse({ success: true, trip: updated });
   } catch (error) {
-    console.error("[overpass-trip-status]", error);
+    console.error("[ovapass-trip-status]", error);
     return jsonResponse({ error: (error as Error).message }, 500);
   }
 });

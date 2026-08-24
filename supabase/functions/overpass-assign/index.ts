@@ -71,7 +71,7 @@ serve(async (req) => {
     const result = await assignNextRider(supabase, trip_id);
     return jsonResponse({ success: true, assignment: result });
   } catch (error) {
-    console.error("[overpass-assign]", error);
+    console.error("[ovapass-assign]", error);
     return jsonResponse({ error: (error as Error).message }, 500);
   }
 });
