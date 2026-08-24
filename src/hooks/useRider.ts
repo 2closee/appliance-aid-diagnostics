@@ -64,6 +64,14 @@ export function useRider() {
   const [isLoading, setIsLoading] = useState(true);
   const pingTimer = useRef<number | null>(null);
   const lastRetryAt = useRef(0);
+  const lastOfferAlert = useRef<{ tripId: string; at: number } | null>(null);
+
+  const alertForTrip = useCallback((tripId: string) => {
+    const previous = lastOfferAlert.current;
+    if (previous?.tripId === tripId && Date.now() - previous.at < 5_000) return;
+    lastOfferAlert.current = { tripId, at: Date.now() };
+    playChime();
+  }, []);
 
   const loadRider = useCallback(async () => {
     if (!user) {
@@ -138,7 +146,16 @@ export function useRider() {
         "postgres_changes",
         { event: "*", schema: "public", table: "trip_offers", filter: `rider_id=eq.${rider.id}` },
         (payload) => {
-          if (payload.eventType === "INSERT") playChime();
+          if (payload.eventType === "INSERT") alertForTrip(String(payload.new.trip_id));
+          loadWork(rider.id);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${rider.user_id}` },
+        (payload) => {
+          if (payload.new.related_entity_type !== "ovapass_trip") return;
+          alertForTrip(String(payload.new.related_entity_id));
           loadWork(rider.id);
         },
       )
@@ -152,7 +169,7 @@ export function useRider() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [rider, loadWork]);
+  }, [rider, loadWork, alertForTrip]);
 
   const pingLocation = useCallback(async (riderId: string) => {
     if (!("geolocation" in navigator)) return;

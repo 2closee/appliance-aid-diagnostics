@@ -181,6 +181,21 @@ export async function assignNextRider(
     .select()
     .single();
 
+  if (offerError?.code === "23505") {
+    const { data: existingOffer } = await supabase
+      .from("trip_offers")
+      .select("id, rider_id")
+      .eq("trip_id", tripId)
+      .eq("status", "offered")
+      .maybeSingle();
+    return {
+      assigned: Boolean(existingOffer),
+      rider_id: existingOffer?.rider_id,
+      offer_id: existingOffer?.id,
+      reason: existingOffer ? "Offer sent—waiting for rider" : "Another assignment is already in progress",
+      required_capability: requiredCapability,
+    };
+  }
   if (offerError) throw new Error(`Could not create offer: ${offerError.message}`);
 
   await supabase
