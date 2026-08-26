@@ -112,6 +112,8 @@ serve(async (req) => {
 
     // On acceptance, dispatch the pickup straight away so a rider is offered the
     // trip without waiting for the center to press "Request pickup".
+    let dispatchResult: unknown = null;
+
     if (response === 'accept') {
       try {
         const dispatch = await fetch(
@@ -126,7 +128,30 @@ serve(async (req) => {
             body: JSON.stringify({ repair_job_id, trip_type: 'pickup' }),
           },
         );
-        logStep("Ovapass dispatch attempted", { status: dispatch.status });
+        const dispatchBody = await dispatch.json().catch(async () => ({ error: await dispatch.text() }));
+        dispatchResult = { status: dispatch.status, body: dispatchBody };
+        logStep("Ovapass dispatch attempted", dispatchResult);
+
+        const existingTripId = dispatch.status === 409 && typeof dispatchBody?.trip_id === 'string'
+          ? dispatchBody.trip_id
+          : null;
+        if (existingTripId) {
+          const retry = await fetch(
+            `${Deno.env.get('SUPABASE_URL')}/functions/v1/overpass-assign`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: authHeader,
+                apikey: Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+              },
+              body: JSON.stringify({ trip_id: existingTripId }),
+            },
+          );
+          const retryBody = await retry.json().catch(async () => ({ error: await retry.text() }));
+          dispatchResult = { ...dispatchResult as Record<string, unknown>, retry: { status: retry.status, body: retryBody } };
+          logStep("Existing Ovapass trip reassignment attempted", { status: retry.status, body: retryBody });
+        }
       } catch (dispatchError) {
         console.error('Ovapass dispatch error (non-fatal):', dispatchError);
       }
@@ -150,7 +175,7 @@ serve(async (req) => {
       console.error('Email error (non-fatal):', emailError);
     }
 
-    return new Response(JSON.stringify({ success: true, status: newStatus }), {
+    return new Response(JSON.stringify({ success: true, status: newStatus, dispatch: dispatchResult }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: any) {

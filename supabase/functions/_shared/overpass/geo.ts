@@ -36,7 +36,7 @@ export async function geocodeAddress(
       `?access_token=${token}&country=NG&limit=1`;
     const res = await fetch(url);
     if (!res.ok) {
-      console.warn(`[overpass] geocode ${res.status}: ${await res.text()}`);
+      console.warn(`[ovapass] geocode ${res.status}: ${await res.text()}`);
       return null;
     }
     const data = await res.json();
@@ -44,7 +44,7 @@ export async function geocodeAddress(
     if (!Array.isArray(c) || c.length < 2) return null;
     return { lat: Number(c[1]), lng: Number(c[0]) };
   } catch (e) {
-    console.warn(`[overpass] geocode failed: ${(e as Error).message}`);
+    console.warn(`[ovapass] geocode failed: ${(e as Error).message}`);
     return null;
   }
 }
@@ -83,7 +83,7 @@ export async function roadDistanceKm(
       `?access_token=${token}&overview=false`;
     const res = await fetch(url);
     if (!res.ok) {
-      console.warn(`[overpass] mapbox directions ${res.status}: ${await res.text()}`);
+      console.warn(`[ovapass] mapbox directions ${res.status}: ${await res.text()}`);
       return fallback;
     }
     const data = await res.json();
@@ -91,7 +91,7 @@ export async function roadDistanceKm(
     if (typeof meters !== "number") return fallback;
     return { distance_km: round2(meters / 1000), source: "mapbox" };
   } catch (e) {
-    console.warn(`[overpass] mapbox directions failed: ${(e as Error).message}`);
+    console.warn(`[ovapass] mapbox directions failed: ${(e as Error).message}`);
     return fallback;
   }
 }
