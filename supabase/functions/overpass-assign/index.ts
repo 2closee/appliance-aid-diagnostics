@@ -15,24 +15,28 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { trip_id, reset_attempts, retry_searching } = await req.json();
+    const { trip_id, reset_attempts, retry_searching, source } = await req.json();
 
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "");
     const isServiceRole = token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const isScheduledRetry = token === Deno.env.get("SUPABASE_ANON_KEY") &&
+      source === "cron" && retry_searching === true && !trip_id;
     const { data: { user }, error: authError } = isServiceRole
       ? { data: { user: null }, error: null }
       : await supabase.auth.getUser(token);
-    if (!isServiceRole && (authError || !user)) return jsonResponse({ error: "Unauthorized" }, 401);
+    if (!isServiceRole && !isScheduledRetry && (authError || !user)) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
     const userId = user?.id ?? null;
 
     // A rider coming online (or refreshing location) retries trips that stalled
     // because no rider had a fresh position at the time.
     if (retry_searching && !trip_id) {
-      if (isServiceRole) {
+      if (isServiceRole || isScheduledRetry) {
         await expireStaleOffers(supabase);
         const results = await retrySearchingTrips(supabase);
-        return jsonResponse({ success: true, retried: results.length, assignments: results });
+        return jsonResponse({ success: true, retried: results.length });
       }
       if (!userId) return jsonResponse({ error: "Unauthorized" }, 401);
       const { data: riderId } = await supabase.rpc("get_rider_id", { _user_id: userId });
