@@ -24,6 +24,7 @@ serve(async (req) => {
       ? { data: { user: null }, error: null }
       : await supabase.auth.getUser(token);
     if (!isServiceRole && (authError || !user)) return jsonResponse({ error: "Unauthorized" }, 401);
+    const userId = user?.id ?? null;
 
     // A rider coming online (or refreshing location) retries trips that stalled
     // because no rider had a fresh position at the time.
@@ -33,7 +34,8 @@ serve(async (req) => {
         const results = await retrySearchingTrips(supabase);
         return jsonResponse({ success: true, retried: results.length, assignments: results });
       }
-      const { data: riderId } = await supabase.rpc("get_rider_id", { _user_id: user.id });
+      if (!userId) return jsonResponse({ error: "Unauthorized" }, 401);
+      const { data: riderId } = await supabase.rpc("get_rider_id", { _user_id: userId });
       if (!riderId) return jsonResponse({ error: "Not a rider" }, 403);
       await expireStaleOffers(supabase);
       const results = await retrySearchingTrips(supabase);
@@ -44,7 +46,7 @@ serve(async (req) => {
 
     const { data: isAdmin } = isServiceRole
       ? { data: true }
-      : await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+      : await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
 
     const { data: trip } = await supabase
       .from("overpass_trips")
@@ -63,10 +65,10 @@ serve(async (req) => {
         .eq("id", trip.repair_job_id)
         .maybeSingle();
       const { data: isStaff } = await supabase.rpc("is_staff_at_center", {
-        _user_id: user.id,
+        _user_id: userId,
         _center_id: job?.repair_center_id,
       });
-      const isJobCustomerAfterAcceptance = job?.user_id === user.id &&
+      const isJobCustomerAfterAcceptance = job?.user_id === userId &&
         ["quote_accepted", "pickup_scheduled"].includes(job?.job_status ?? "");
       if (!isStaff && !isJobCustomerAfterAcceptance) {
         return jsonResponse({ error: "Not allowed to reassign this trip" }, 403);
