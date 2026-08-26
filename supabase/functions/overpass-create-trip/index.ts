@@ -182,7 +182,7 @@ serve(async (req) => {
       .insert({
         repair_job_id: body.repair_job_id,
         delivery_type: tripType,
-        provider: "overpass",
+        provider: "ovapass",
         provider_name: "Ovapass",
         provider_order_id: trip.id,
         pickup_address: pickupAddress,
