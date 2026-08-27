@@ -3943,6 +3943,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      dispatch_searching_ovapass_trips: { Args: never; Returns: number }
       generate_matriculation_number: {
         Args: {
           p_batch_id: string
