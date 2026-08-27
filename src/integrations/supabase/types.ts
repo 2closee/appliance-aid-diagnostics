@@ -1352,6 +1352,41 @@ export type Database = {
         }
         Relationships: []
       }
+      ovapass_dispatch_queue: {
+        Row: {
+          error_message: string | null
+          id: string
+          processed_at: string | null
+          requested_at: string
+          status: string
+          trip_id: string
+        }
+        Insert: {
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          requested_at?: string
+          status?: string
+          trip_id: string
+        }
+        Update: {
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          requested_at?: string
+          status?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ovapass_dispatch_queue_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "overpass_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       overpass_pricing: {
         Row: {
           active: boolean
@@ -4017,6 +4052,7 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      queue_ovapass_dispatch_retries: { Args: never; Returns: number }
       toggle_user_suspension: {
         Args: { suspend: boolean; target_user_id: string }
         Returns: undefined
