@@ -164,7 +164,7 @@ export function calculateFee(
 
   return {
     distance_km: distanceKm,
-    base_fare: Number(pricing.base_fare),
+    base_fare: baseFare,
     distance_charge: distanceCharge,
     bulky_surcharge: bulky,
     after_hours_surcharge: afterHours,
