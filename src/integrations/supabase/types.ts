@@ -1368,6 +1368,7 @@ export type Database = {
           id: string
           max_assignment_attempts: number
           max_radius_km: number
+          max_search_radius_km: number
           max_unsettled_amount: number
           max_unsettled_trips: number
           min_fare: number
@@ -1375,6 +1376,7 @@ export type Database = {
           offer_timeout_seconds: number
           payout_day: number
           per_km: number
+          preferred_radius_km: number
           rider_share_company: number
           updated_at: string
         }
@@ -1393,6 +1395,7 @@ export type Database = {
           id?: string
           max_assignment_attempts?: number
           max_radius_km?: number
+          max_search_radius_km?: number
           max_unsettled_amount?: number
           max_unsettled_trips?: number
           min_fare?: number
@@ -1400,6 +1403,7 @@ export type Database = {
           offer_timeout_seconds?: number
           payout_day?: number
           per_km?: number
+          preferred_radius_km?: number
           rider_share_company?: number
           updated_at?: string
         }
@@ -1418,6 +1422,7 @@ export type Database = {
           id?: string
           max_assignment_attempts?: number
           max_radius_km?: number
+          max_search_radius_km?: number
           max_unsettled_amount?: number
           max_unsettled_trips?: number
           min_fare?: number
@@ -1425,6 +1430,7 @@ export type Database = {
           offer_timeout_seconds?: number
           payout_day?: number
           per_km?: number
+          preferred_radius_km?: number
           rider_share_company?: number
           updated_at?: string
         }
@@ -1460,6 +1466,8 @@ export type Database = {
           pickup_lng: number | null
           pickup_otp: string | null
           pickup_otp_verified_at: string | null
+          quoted_fee: number | null
+          rate_vehicle_class: string | null
           repair_job_id: string
           required_capability: string
           rider_earning: number | null
@@ -1498,6 +1506,8 @@ export type Database = {
           pickup_lng?: number | null
           pickup_otp?: string | null
           pickup_otp_verified_at?: string | null
+          quoted_fee?: number | null
+          rate_vehicle_class?: string | null
           repair_job_id: string
           required_capability?: string
           rider_earning?: number | null
@@ -1536,6 +1546,8 @@ export type Database = {
           pickup_lng?: number | null
           pickup_otp?: string | null
           pickup_otp_verified_at?: string | null
+          quoted_fee?: number | null
+          rate_vehicle_class?: string | null
           repair_job_id?: string
           required_capability?: string
           rider_earning?: number | null
@@ -1575,6 +1587,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      overpass_vehicle_rates: {
+        Row: {
+          active: boolean
+          base_fare: number
+          city: string
+          created_at: string
+          id: string
+          min_fare: number
+          per_km: number
+          updated_at: string
+          vehicle_class: string
+        }
+        Insert: {
+          active?: boolean
+          base_fare?: number
+          city?: string
+          created_at?: string
+          id?: string
+          min_fare?: number
+          per_km?: number
+          updated_at?: string
+          vehicle_class: string
+        }
+        Update: {
+          active?: boolean
+          base_fare?: number
+          city?: string
+          created_at?: string
+          id?: string
+          min_fare?: number
+          per_km?: number
+          updated_at?: string
+          vehicle_class?: string
+        }
+        Relationships: []
       }
       partner_agreement_acceptances: {
         Row: {

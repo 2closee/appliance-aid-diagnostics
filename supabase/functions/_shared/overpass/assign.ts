@@ -2,7 +2,7 @@
 // Ranks online, approved, available riders by distance from the pickup point
 // and offers the trip to the closest one who has not declined it.
 
-import { haversineKm, PricingConfig } from "./geo.ts";
+import { haversineKm, PricingConfig, VehicleClass, VehicleRate } from "./geo.ts";
 import { sendSms } from "../sms/dispatcher.ts";
 import { normalizeNigerianPhone } from "../sms/types.ts";
 
@@ -40,6 +40,35 @@ export async function getPricing(supabase: Client, city = "Port Harcourt"): Prom
   if (error) throw new Error(`Pricing lookup failed: ${error.message}`);
   if (!data) throw new Error(`No pricing configured for ${city}`);
   return data as PricingConfig;
+}
+
+// How far a rider may be from the pickup before they stop being eligible.
+// Nothing beyond this is offered the trip; the trip simply keeps searching.
+export function searchRadiusKm(pricing: PricingConfig): number {
+  const configured = Number(pricing.max_search_radius_km ?? 0);
+  return configured > 0 ? configured : 58;
+}
+
+// The vehicle class we price a trip with before a rider is known: gadgets are
+// quoted at the bike rate, bulky appliances at the van rate.
+export function quoteVehicleClass(requiredCapability: "gadget" | "bulky"): VehicleClass {
+  return requiredCapability === "bulky" ? "van" : "bike";
+}
+
+export async function getVehicleRate(
+  supabase: Client,
+  vehicleClass: string | null | undefined,
+  city = "Port Harcourt",
+): Promise<VehicleRate | null> {
+  if (!vehicleClass) return null;
+  const { data } = await supabase
+    .from("overpass_vehicle_rates")
+    .select("vehicle_class, per_km, base_fare, min_fare")
+    .eq("city", city)
+    .eq("vehicle_class", vehicleClass)
+    .eq("active", true)
+    .maybeSingle();
+  return (data as VehicleRate | null) ?? null;
 }
 
 export async function assignNextRider(

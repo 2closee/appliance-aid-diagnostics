@@ -19,6 +19,10 @@ export interface PricingConfig {
   payout_day: number;
   min_withdrawal: number;
   max_radius_km: number;
+  // Hard cut-off for how far a rider may be from the pickup (default 58 km).
+  max_search_radius_km?: number;
+  // Reporting only: the radius we would like trips to be served within.
+  preferred_radius_km?: number;
   offer_timeout_seconds: number;
   max_assignment_attempts: number;
   active: boolean;
@@ -96,6 +100,17 @@ export async function roadDistanceKm(
   }
 }
 
+export type VehicleClass = "bike" | "e_bike" | "car" | "suv" | "van" | "truck";
+
+// Per-kilometre economics differ by vehicle: an e-bike, a car and a van have
+// very different fuel and maintenance costs, so each class has its own rate.
+export interface VehicleRate {
+  vehicle_class: VehicleClass;
+  per_km: number;
+  base_fare: number;
+  min_fare: number;
+}
+
 export interface FeeBreakdown {
   distance_km: number;
   base_fare: number;
@@ -107,12 +122,14 @@ export interface FeeBreakdown {
   commission_rate: number;
   commission_amount: number;
   rider_earning: number;
+  vehicle_class: VehicleClass | null;
+  per_km: number;
 }
 
 export function calculateFee(
   pricing: PricingConfig,
   distanceKm: number,
-  opts: { isBulky?: boolean; fleetType?: string; at?: Date } = {},
+  opts: { isBulky?: boolean; fleetType?: string; at?: Date; rate?: VehicleRate | null } = {},
 ): FeeBreakdown {
   const at = opts.at ?? new Date();
   const hour = at.getUTCHours() + 1; // Lagos time (UTC+1), no DST
@@ -123,12 +140,17 @@ export function calculateFee(
       ? localHour >= pricing.after_hours_start && localHour < pricing.after_hours_end
       : localHour >= pricing.after_hours_start || localHour < pricing.after_hours_end;
 
-  const distanceCharge = round2(pricing.per_km * distanceKm);
+  // A vehicle-class rate overrides the city defaults when one is configured.
+  const perKm = Number(opts.rate?.per_km ?? pricing.per_km);
+  const baseFare = Number(opts.rate?.base_fare ?? pricing.base_fare);
+  const minFare = Number(opts.rate?.min_fare ?? pricing.min_fare);
+
+  const distanceCharge = round2(perKm * distanceKm);
   const bulky = opts.isBulky ? Number(pricing.bulky_surcharge) : 0;
   const afterHours = isAfterHours ? Number(pricing.after_hours_surcharge) : 0;
 
-  const raw = Number(pricing.base_fare) + distanceCharge + bulky + afterHours;
-  const fee = round2(Math.max(raw, Number(pricing.min_fare)));
+  const raw = baseFare + distanceCharge + bulky + afterHours;
+  const fee = round2(Math.max(raw, minFare));
 
   // Company (FixBudi-owned bike) riders keep a share of the in-app fee; the rest
   // stays with FixBudi. Partner riders collect cash and owe FixBudi a commission.
@@ -142,7 +164,7 @@ export function calculateFee(
 
   return {
     distance_km: distanceKm,
-    base_fare: Number(pricing.base_fare),
+    base_fare: baseFare,
     distance_charge: distanceCharge,
     bulky_surcharge: bulky,
     after_hours_surcharge: afterHours,
@@ -151,6 +173,8 @@ export function calculateFee(
     commission_rate: commissionRate,
     commission_amount: commissionAmount,
     rider_earning: riderEarning,
+    vehicle_class: opts.rate?.vehicle_class ?? null,
+    per_km: perKm,
   };
 }
 
