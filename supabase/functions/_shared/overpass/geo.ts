@@ -19,6 +19,10 @@ export interface PricingConfig {
   payout_day: number;
   min_withdrawal: number;
   max_radius_km: number;
+  // Hard cut-off for how far a rider may be from the pickup (default 58 km).
+  max_search_radius_km?: number;
+  // Reporting only: the radius we would like trips to be served within.
+  preferred_radius_km?: number;
   offer_timeout_seconds: number;
   max_assignment_attempts: number;
   active: boolean;
