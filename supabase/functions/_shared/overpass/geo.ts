@@ -140,12 +140,17 @@ export function calculateFee(
       ? localHour >= pricing.after_hours_start && localHour < pricing.after_hours_end
       : localHour >= pricing.after_hours_start || localHour < pricing.after_hours_end;
 
-  const distanceCharge = round2(pricing.per_km * distanceKm);
+  // A vehicle-class rate overrides the city defaults when one is configured.
+  const perKm = Number(opts.rate?.per_km ?? pricing.per_km);
+  const baseFare = Number(opts.rate?.base_fare ?? pricing.base_fare);
+  const minFare = Number(opts.rate?.min_fare ?? pricing.min_fare);
+
+  const distanceCharge = round2(perKm * distanceKm);
   const bulky = opts.isBulky ? Number(pricing.bulky_surcharge) : 0;
   const afterHours = isAfterHours ? Number(pricing.after_hours_surcharge) : 0;
 
-  const raw = Number(pricing.base_fare) + distanceCharge + bulky + afterHours;
-  const fee = round2(Math.max(raw, Number(pricing.min_fare)));
+  const raw = baseFare + distanceCharge + bulky + afterHours;
+  const fee = round2(Math.max(raw, minFare));
 
   // Company (FixBudi-owned bike) riders keep a share of the in-app fee; the rest
   // stays with FixBudi. Partner riders collect cash and owe FixBudi a commission.
