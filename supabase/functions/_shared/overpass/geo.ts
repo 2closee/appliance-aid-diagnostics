@@ -100,6 +100,17 @@ export async function roadDistanceKm(
   }
 }
 
+export type VehicleClass = "bike" | "e_bike" | "car" | "suv" | "van" | "truck";
+
+// Per-kilometre economics differ by vehicle: an e-bike, a car and a van have
+// very different fuel and maintenance costs, so each class has its own rate.
+export interface VehicleRate {
+  vehicle_class: VehicleClass;
+  per_km: number;
+  base_fare: number;
+  min_fare: number;
+}
+
 export interface FeeBreakdown {
   distance_km: number;
   base_fare: number;
@@ -111,12 +122,14 @@ export interface FeeBreakdown {
   commission_rate: number;
   commission_amount: number;
   rider_earning: number;
+  vehicle_class: VehicleClass | null;
+  per_km: number;
 }
 
 export function calculateFee(
   pricing: PricingConfig,
   distanceKm: number,
-  opts: { isBulky?: boolean; fleetType?: string; at?: Date } = {},
+  opts: { isBulky?: boolean; fleetType?: string; at?: Date; rate?: VehicleRate | null } = {},
 ): FeeBreakdown {
   const at = opts.at ?? new Date();
   const hour = at.getUTCHours() + 1; // Lagos time (UTC+1), no DST
