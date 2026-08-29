@@ -2,7 +2,7 @@
 // Ranks online, approved, available riders by distance from the pickup point
 // and offers the trip to the closest one who has not declined it.
 
-import { haversineKm, PricingConfig } from "./geo.ts";
+import { haversineKm, PricingConfig, VehicleClass, VehicleRate } from "./geo.ts";
 import { sendSms } from "../sms/dispatcher.ts";
 import { normalizeNigerianPhone } from "../sms/types.ts";
 
