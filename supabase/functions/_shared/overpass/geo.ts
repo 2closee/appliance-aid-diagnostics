@@ -173,6 +173,8 @@ export function calculateFee(
     commission_rate: commissionRate,
     commission_amount: commissionAmount,
     rider_earning: riderEarning,
+    vehicle_class: opts.rate?.vehicle_class ?? null,
+    per_km: perKm,
   };
 }
 
