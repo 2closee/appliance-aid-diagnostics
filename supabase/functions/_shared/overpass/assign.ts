@@ -20,7 +20,7 @@ export interface AssignResult {
 }
 
 
-const STALE_PING_MINUTES = 10;
+
 const REOFFER_COOLDOWN_SECONDS = 90;
 
 export async function expireStaleOffers(supabase: Client): Promise<void> {
