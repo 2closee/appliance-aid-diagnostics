@@ -12,7 +12,12 @@ import {
   haversineKm,
   geocodeAddress,
 } from "../_shared/overpass/geo.ts";
-import { assignNextRider, getPricing } from "../_shared/overpass/assign.ts";
+import {
+  assignNextRider,
+  getPricing,
+  getVehicleRate,
+  quoteVehicleClass,
+} from "../_shared/overpass/assign.ts";
 
 interface Body {
   repair_job_id: string;
@@ -123,8 +128,12 @@ serve(async (req) => {
 
 
     const isBulky = job.logistics_category === "bulky";
-    const requiredCapability = isBulky ? "bulky" : "gadget";
-    const breakdown = calculateFee(pricing, distanceKm, { isBulky });
+    const requiredCapability: "gadget" | "bulky" = isBulky ? "bulky" : "gadget";
+    // Quote with the vehicle class this category normally needs; the fare is
+    // recalculated from the accepting rider's actual vehicle.
+    const quoteClass = quoteVehicleClass(requiredCapability);
+    const quoteRate = await getVehicleRate(supabase, quoteClass, pricing.city);
+    const breakdown = calculateFee(pricing, distanceKm, { isBulky, rate: quoteRate });
 
 
     // Match the pickup point to a service zone.
@@ -167,6 +176,8 @@ serve(async (req) => {
         commission_rate: breakdown.commission_rate,
         commission_amount: breakdown.commission_amount,
         rider_earning: breakdown.rider_earning,
+        quoted_fee: breakdown.fee,
+        rate_vehicle_class: quoteClass,
         pickup_otp: generateOtp(),
         dropoff_otp: generateOtp(),
         notes: body.notes ?? null,

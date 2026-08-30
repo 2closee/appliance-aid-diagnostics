@@ -3,8 +3,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, jsonResponse } from "../_shared/overpass/geo.ts";
-import { assignNextRider } from "../_shared/overpass/assign.ts";
+import { calculateFee, corsHeaders, jsonResponse } from "../_shared/overpass/geo.ts";
+import { assignNextRider, getPricing, getVehicleRate } from "../_shared/overpass/assign.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -88,9 +88,40 @@ serve(async (req) => {
 
     const { data: riderProfile } = await supabase
       .from("riders")
-      .select("full_name, phone, bike_make, plate_number")
+      .select("full_name, phone, bike_make, plate_number, vehicle_class, fleet_type")
       .eq("id", rider.id)
       .maybeSingle();
+
+    // The trip was quoted with the category's default vehicle. Now that we know
+    // the accepting rider's vehicle, reprice with that class's per-km rate.
+    let priced = claimed;
+    try {
+      const pricing = await getPricing(supabase);
+      const rate = await getVehicleRate(supabase, riderProfile?.vehicle_class, pricing.city);
+      if (rate) {
+        const breakdown = calculateFee(pricing, Number(claimed.distance_km ?? 0), {
+          isBulky: claimed.required_capability === "bulky",
+          fleetType: riderProfile?.fleet_type,
+          rate,
+        });
+        const { data: repriced } = await supabase
+          .from("overpass_trips")
+          .update({
+            quoted_fee: claimed.quoted_fee ?? claimed.fee,
+            fee: breakdown.fee,
+            commission_rate: breakdown.commission_rate,
+            commission_amount: breakdown.commission_amount,
+            rider_earning: breakdown.rider_earning,
+            rate_vehicle_class: rate.vehicle_class,
+          })
+          .eq("id", claimed.id)
+          .select()
+          .maybeSingle();
+        if (repriced) priced = repriced;
+      }
+    } catch (e) {
+      console.error(`[ovapass-respond-offer] repricing skipped: ${(e as Error).message}`);
+    }
 
     if (claimed.delivery_request_id) {
       await supabase
@@ -102,11 +133,13 @@ serve(async (req) => {
           rider_vehicle: [riderProfile?.bike_make, riderProfile?.plate_number].filter(Boolean).join(" • ") || "Electric bike",
           driver_name: riderProfile?.full_name ?? null,
           driver_phone: riderProfile?.phone ?? null,
+          estimated_cost: priced.fee,
+          app_delivery_commission: priced.commission_amount,
         })
         .eq("id", claimed.delivery_request_id);
     }
 
-    return jsonResponse({ success: true, outcome: "accepted", trip: claimed });
+    return jsonResponse({ success: true, outcome: "accepted", trip: priced });
   } catch (error) {
     console.error("[ovapass-respond-offer]", error);
     return jsonResponse({ error: (error as Error).message }, 500);

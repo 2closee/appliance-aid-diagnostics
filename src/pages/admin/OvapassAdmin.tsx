@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Bike, Loader2, RefreshCw } from "lucide-react";
 import OvapassPaymentsAdmin from "@/components/ovapass/OvapassPaymentsAdmin";
+import OvapassPricingAdmin from "@/components/ovapass/OvapassPricingAdmin";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Rider {
   id: string;
@@ -46,6 +48,7 @@ const money = (n: number | null) => `₦${Number(n ?? 0).toLocaleString()}`;
 
 const OvapassAdmin = () => {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const [riders, setRiders] = useState<Rider[]>([]);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,6 +144,7 @@ const OvapassAdmin = () => {
           <TabsTrigger value="riders">Riders</TabsTrigger>
           <TabsTrigger value="trips">Trips</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
+          {isAdmin && <TabsTrigger value="pricing">Pricing</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="riders">
@@ -314,6 +318,12 @@ const OvapassAdmin = () => {
         <TabsContent value="payments">
           <OvapassPaymentsAdmin />
         </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="pricing">
+            <OvapassPricingAdmin />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

@@ -20,7 +20,7 @@ export interface AssignResult {
 }
 
 
-const STALE_PING_MINUTES = 10;
+
 const REOFFER_COOLDOWN_SECONDS = 90;
 
 export async function expireStaleOffers(supabase: Client): Promise<void> {
@@ -120,7 +120,7 @@ export async function assignNextRider(
       .map((o: { rider_id: string }) => o.rider_id),
   );
 
-  const staleBefore = new Date(Date.now() - STALE_PING_MINUTES * 60 * 1000).toISOString();
+  
 
   // What this package needs: bulky appliances (TV, AC, washing machine, fridge)
   // require a bulky-capable vehicle; gadgets can go on a bike or any vehicle.
@@ -136,8 +136,7 @@ export async function assignNextRider(
     .eq("is_online", true)
     .eq("is_available", true)
     .eq("kyc_status", "approved")
-    .in("carry_capability", allowedCapabilities)
-    .gte("last_ping_at", staleBefore);
+    .in("carry_capability", allowedCapabilities);
 
   if (ridersError) throw new Error(`Rider lookup failed: ${ridersError.message}`);
 
@@ -155,10 +154,11 @@ export async function assignNextRider(
       return { ...r, distance_to_pickup_km: distance };
     })
     .filter((r: { distance_to_pickup_km: number | null; home_zone_id: string | null }) => {
-      // Outside the service radius riders are skipped; riders without a known
-      // position still qualify when they belong to the trip's zone.
+      // The search widens all the way to the maximum radius (58 km by default)
+      // rather than failing when nobody is close; ranking still favours the
+      // nearest rider. Riders without a known position qualify via their zone.
       if (r.distance_to_pickup_km != null) {
-        return r.distance_to_pickup_km <= Number(config.max_radius_km);
+        return r.distance_to_pickup_km <= searchRadiusKm(config);
       }
       return trip.zone_id != null && r.home_zone_id === trip.zone_id;
     })
@@ -185,8 +185,8 @@ export async function assignNextRider(
     return {
       assigned: false,
       reason: requiredCapability === "bulky"
-        ? "No bulky-capable vehicle online nearby"
-        : "No rider online nearby",
+        ? `No bulky-capable vehicle available within ${searchRadiusKm(config)} km yet — still searching`
+        : `No rider available within ${searchRadiusKm(config)} km yet — still searching`,
       required_capability: requiredCapability,
       candidates_considered: 0,
     };
