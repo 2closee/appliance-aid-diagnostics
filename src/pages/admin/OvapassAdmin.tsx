@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Bike, Loader2, RefreshCw } from "lucide-react";
 import OvapassPaymentsAdmin from "@/components/ovapass/OvapassPaymentsAdmin";
+import OvapassPricingAdmin from "@/components/ovapass/OvapassPricingAdmin";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Rider {
   id: string;
