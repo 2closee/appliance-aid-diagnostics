@@ -48,6 +48,7 @@ const money = (n: number | null) => `₦${Number(n ?? 0).toLocaleString()}`;
 
 const OvapassAdmin = () => {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const [riders, setRiders] = useState<Rider[]>([]);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
