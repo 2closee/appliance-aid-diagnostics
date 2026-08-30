@@ -315,6 +315,12 @@ const OvapassAdmin = () => {
         <TabsContent value="payments">
           <OvapassPaymentsAdmin />
         </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="pricing">
+            <OvapassPricingAdmin />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
