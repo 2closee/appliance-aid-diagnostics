@@ -185,8 +185,8 @@ export async function assignNextRider(
     return {
       assigned: false,
       reason: requiredCapability === "bulky"
-        ? "No bulky-capable vehicle online nearby"
-        : "No rider online nearby",
+        ? `No bulky-capable vehicle available within ${searchRadiusKm(config)} km yet — still searching`
+        : `No rider available within ${searchRadiusKm(config)} km yet — still searching`,
       required_capability: requiredCapability,
       candidates_considered: 0,
     };
