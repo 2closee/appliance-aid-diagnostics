@@ -136,8 +136,7 @@ export async function assignNextRider(
     .eq("is_online", true)
     .eq("is_available", true)
     .eq("kyc_status", "approved")
-    .in("carry_capability", allowedCapabilities)
-    .gte("last_ping_at", staleBefore);
+    .in("carry_capability", allowedCapabilities);
 
   if (ridersError) throw new Error(`Rider lookup failed: ${ridersError.message}`);
 
