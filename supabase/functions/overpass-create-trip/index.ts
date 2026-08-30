@@ -176,6 +176,8 @@ serve(async (req) => {
         commission_rate: breakdown.commission_rate,
         commission_amount: breakdown.commission_amount,
         rider_earning: breakdown.rider_earning,
+        quoted_fee: breakdown.fee,
+        rate_vehicle_class: quoteClass,
         pickup_otp: generateOtp(),
         dropoff_otp: generateOtp(),
         notes: body.notes ?? null,
