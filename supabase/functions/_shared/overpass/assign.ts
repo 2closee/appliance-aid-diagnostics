@@ -154,10 +154,11 @@ export async function assignNextRider(
       return { ...r, distance_to_pickup_km: distance };
     })
     .filter((r: { distance_to_pickup_km: number | null; home_zone_id: string | null }) => {
-      // Outside the service radius riders are skipped; riders without a known
-      // position still qualify when they belong to the trip's zone.
+      // The search widens all the way to the maximum radius (58 km by default)
+      // rather than failing when nobody is close; ranking still favours the
+      // nearest rider. Riders without a known position qualify via their zone.
       if (r.distance_to_pickup_km != null) {
-        return r.distance_to_pickup_km <= Number(config.max_radius_km);
+        return r.distance_to_pickup_km <= searchRadiusKm(config);
       }
       return trip.zone_id != null && r.home_zone_id === trip.zone_id;
     })
