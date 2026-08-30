@@ -141,6 +141,7 @@ const OvapassAdmin = () => {
           <TabsTrigger value="riders">Riders</TabsTrigger>
           <TabsTrigger value="trips">Trips</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
+          {isAdmin && <TabsTrigger value="pricing">Pricing</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="riders">
