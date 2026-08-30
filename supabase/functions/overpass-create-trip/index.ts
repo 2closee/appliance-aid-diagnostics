@@ -128,8 +128,12 @@ serve(async (req) => {
 
 
     const isBulky = job.logistics_category === "bulky";
-    const requiredCapability = isBulky ? "bulky" : "gadget";
-    const breakdown = calculateFee(pricing, distanceKm, { isBulky });
+    const requiredCapability: "gadget" | "bulky" = isBulky ? "bulky" : "gadget";
+    // Quote with the vehicle class this category normally needs; the fare is
+    // recalculated from the accepting rider's actual vehicle.
+    const quoteClass = quoteVehicleClass(requiredCapability);
+    const quoteRate = await getVehicleRate(supabase, quoteClass, pricing.city);
+    const breakdown = calculateFee(pricing, distanceKm, { isBulky, rate: quoteRate });
 
 
     // Match the pickup point to a service zone.
