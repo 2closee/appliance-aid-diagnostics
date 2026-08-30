@@ -120,7 +120,7 @@ export async function assignNextRider(
       .map((o: { rider_id: string }) => o.rider_id),
   );
 
-  const staleBefore = new Date(Date.now() - STALE_PING_MINUTES * 60 * 1000).toISOString();
+  
 
   // What this package needs: bulky appliances (TV, AC, washing machine, fridge)
   // require a bulky-capable vehicle; gadgets can go on a bike or any vehicle.
