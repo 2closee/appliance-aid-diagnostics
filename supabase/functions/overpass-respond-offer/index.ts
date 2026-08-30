@@ -133,11 +133,13 @@ serve(async (req) => {
           rider_vehicle: [riderProfile?.bike_make, riderProfile?.plate_number].filter(Boolean).join(" • ") || "Electric bike",
           driver_name: riderProfile?.full_name ?? null,
           driver_phone: riderProfile?.phone ?? null,
+          estimated_cost: priced.fee,
+          app_delivery_commission: priced.commission_amount,
         })
         .eq("id", claimed.delivery_request_id);
     }
 
-    return jsonResponse({ success: true, outcome: "accepted", trip: claimed });
+    return jsonResponse({ success: true, outcome: "accepted", trip: priced });
   } catch (error) {
     console.error("[ovapass-respond-offer]", error);
     return jsonResponse({ error: (error as Error).message }, 500);
