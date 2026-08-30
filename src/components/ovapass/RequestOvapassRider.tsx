@@ -165,8 +165,8 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
                     : trip.assignment_attempts
                       ? "The previous offer expired. Ovapass is retrying automatically."
                       : trip.required_capability === "bulky"
-                        ? "Waiting for an approved bulky-capable vehicle nearby. Ovapass will alert the closest match automatically."
-                        : "Waiting for an available nearby rider. Ovapass will alert the closest match automatically."}
+                        ? "No bulky-capable vehicle near this pickup yet — still searching. Ovapass keeps widening the search and alerts the closest match the moment one is available."
+                        : "No rider near this pickup yet — still searching. Ovapass keeps widening the search and alerts the closest match the moment one is available."}
                 </p>
                 <Button variant="outline" size="sm" className="w-full" onClick={retryDispatch} disabled={busy}>
                   {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
