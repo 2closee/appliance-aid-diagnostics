@@ -12,7 +12,12 @@ import {
   haversineKm,
   geocodeAddress,
 } from "../_shared/overpass/geo.ts";
-import { assignNextRider, getPricing } from "../_shared/overpass/assign.ts";
+import {
+  assignNextRider,
+  getPricing,
+  getVehicleRate,
+  quoteVehicleClass,
+} from "../_shared/overpass/assign.ts";
 
 interface Body {
   repair_job_id: string;
