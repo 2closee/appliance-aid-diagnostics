@@ -65,23 +65,27 @@ const Navigation = () => {
       { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },
       { path: "/payment-history", label: "Payment History", icon: CreditCard },
       { path: "/ovapass", label: "Ride with Ovapass", icon: Bike },
+      { path: "/notifications", label: "Notifications & Guide", icon: Bell },
     ],
     repair_center: [
       { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { path: "/repair-jobs", label: "Repair Jobs", icon: Stethoscope },
       { path: "/center-earnings", label: "Earnings", icon: CreditCard },
       { path: "/repair-center-admin", label: "Center Settings", icon: Settings },
+      { path: "/notifications", label: "Notifications & Guide", icon: Bell },
     ],
     rider: [
       { path: "/rider", label: "Dashboard", icon: Bike },
       { path: "/rider/earnings", label: "Earnings", icon: CreditCard },
       { path: "/contact-support", label: "Support", icon: Mail },
+      { path: "/notifications", label: "Notifications & Guide", icon: Bell },
     ],
     admin: [
       { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { path: "/super-admin", label: "Super Admin", icon: Settings },
       { path: "/strategic-analytics", label: "Strategic Planning", icon: Target },
       { path: "/payout-management", label: "Payout Management", icon: CreditCard },
+      { path: "/notifications", label: "Notifications & Guide", icon: Bell },
     ],
   };
 
