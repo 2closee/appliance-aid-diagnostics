@@ -18,7 +18,8 @@ import {
   CreditCard,
   Target,
   Stethoscope,
-  Bike
+  Bike,
+  Bell
 } from "lucide-react";
 import { ChevronDown } from "lucide-react";
 import {
@@ -128,6 +129,7 @@ const Navigation = () => {
               <Link
                 key={item.path}
                 to={item.path}
+                data-tour={item.path === "/notifications" ? "notifications-link" : `nav-${item.path}`}
                 className={index >= 4 ? "hidden xl:block" : undefined}
               >
                 <Button
@@ -163,7 +165,11 @@ const Navigation = () => {
                   ))}
                   {overflowItems.map((item) => (
                     <DropdownMenuItem key={item.path} asChild>
-                      <Link to={item.path} className="flex items-center gap-2">
+                      <Link
+                        to={item.path}
+                        data-tour={item.path === "/notifications" ? "notifications-link" : `nav-${item.path}`}
+                        className="flex items-center gap-2"
+                      >
                         <item.icon className="h-4 w-4" />
                         <span>{item.label}</span>
                       </Link>
@@ -235,7 +241,12 @@ const Navigation = () => {
         {isMenuOpen && (
           <div className="lg:hidden py-4 space-y-2">
             {navItems.map((item) => (
-              <Link key={item.path} to={item.path} onClick={() => setIsMenuOpen(false)}>
+              <Link
+                key={item.path}
+                to={item.path}
+                data-tour={item.path === "/notifications" ? "notifications-link-mobile" : `nav-mobile-${item.path}`}
+                onClick={() => setIsMenuOpen(false)}
+              >
                 <Button
                   variant={isActive(item.path) ? "default" : "ghost"}
                   className="w-full justify-start flex items-center space-x-2"
