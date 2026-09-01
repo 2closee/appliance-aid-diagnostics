@@ -52,13 +52,11 @@ Deno.serve(async (req) => {
     let callerId: string | null = null;
 
     if (providedSecret) {
-      const { data: secretRow } = await supabase
-        .schema("vault")
-        .from("decrypted_secrets")
-        .select("decrypted_secret")
-        .eq("name", "push_dispatch_secret")
-        .maybeSingle();
-      authorized = !!secretRow?.decrypted_secret && secretRow.decrypted_secret === providedSecret;
+      const { data: valid, error: secretError } = await supabase.rpc("verify_push_secret", {
+        _secret: providedSecret,
+      });
+      if (secretError) console.error(`[send-push] secret check failed: ${secretError.message}`);
+      authorized = valid === true;
     }
 
     if (!authorized) {

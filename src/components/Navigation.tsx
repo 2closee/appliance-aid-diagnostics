@@ -18,7 +18,8 @@ import {
   CreditCard,
   Target,
   Stethoscope,
-  Bike
+  Bike,
+  Bell
 } from "lucide-react";
 import { ChevronDown } from "lucide-react";
 import {
@@ -65,23 +66,27 @@ const Navigation = () => {
       { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },
       { path: "/payment-history", label: "Payment History", icon: CreditCard },
       { path: "/ovapass", label: "Ride with Ovapass", icon: Bike },
+      { path: "/notifications", label: "Notifications & Guide", icon: Bell },
     ],
     repair_center: [
       { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { path: "/repair-jobs", label: "Repair Jobs", icon: Stethoscope },
       { path: "/center-earnings", label: "Earnings", icon: CreditCard },
       { path: "/repair-center-admin", label: "Center Settings", icon: Settings },
+      { path: "/notifications", label: "Notifications & Guide", icon: Bell },
     ],
     rider: [
       { path: "/rider", label: "Dashboard", icon: Bike },
       { path: "/rider/earnings", label: "Earnings", icon: CreditCard },
       { path: "/contact-support", label: "Support", icon: Mail },
+      { path: "/notifications", label: "Notifications & Guide", icon: Bell },
     ],
     admin: [
       { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { path: "/super-admin", label: "Super Admin", icon: Settings },
       { path: "/strategic-analytics", label: "Strategic Planning", icon: Target },
       { path: "/payout-management", label: "Payout Management", icon: CreditCard },
+      { path: "/notifications", label: "Notifications & Guide", icon: Bell },
     ],
   };
 
@@ -124,6 +129,7 @@ const Navigation = () => {
               <Link
                 key={item.path}
                 to={item.path}
+                data-tour={item.path === "/notifications" ? "notifications-link" : `nav-${item.path}`}
                 className={index >= 4 ? "hidden xl:block" : undefined}
               >
                 <Button
@@ -159,7 +165,11 @@ const Navigation = () => {
                   ))}
                   {overflowItems.map((item) => (
                     <DropdownMenuItem key={item.path} asChild>
-                      <Link to={item.path} className="flex items-center gap-2">
+                      <Link
+                        to={item.path}
+                        data-tour={item.path === "/notifications" ? "notifications-link" : `nav-${item.path}`}
+                        className="flex items-center gap-2"
+                      >
                         <item.icon className="h-4 w-4" />
                         <span>{item.label}</span>
                       </Link>
@@ -231,7 +241,12 @@ const Navigation = () => {
         {isMenuOpen && (
           <div className="lg:hidden py-4 space-y-2">
             {navItems.map((item) => (
-              <Link key={item.path} to={item.path} onClick={() => setIsMenuOpen(false)}>
+              <Link
+                key={item.path}
+                to={item.path}
+                data-tour={item.path === "/notifications" ? "notifications-link-mobile" : `nav-mobile-${item.path}`}
+                onClick={() => setIsMenuOpen(false)}
+              >
                 <Button
                   variant={isActive(item.path) ? "default" : "ghost"}
                   className="w-full justify-start flex items-center space-x-2"

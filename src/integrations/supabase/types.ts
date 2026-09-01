@@ -4144,6 +4144,7 @@ export type Database = {
         Args: { _center_id: number; _user_id: string }
         Returns: boolean
       }
+      verify_push_secret: { Args: { _secret: string }; Returns: boolean }
     }
     Enums: {
       app_role:

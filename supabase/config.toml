@@ -101,3 +101,6 @@ verify_jwt = true
 
 [functions.overpass-assign]
 verify_jwt = false
+
+[functions.send-push]
+verify_jwt = false

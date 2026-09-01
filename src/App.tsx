@@ -58,6 +58,8 @@ import RepairProtectionTerms from "./pages/legal/RepairProtectionTerms";
 import ProtectionAdmin from "./pages/admin/ProtectionAdmin";
 
 import AppBackButton from "./components/AppBackButton";
+import WalkthroughTour from "./components/tour/WalkthroughTour";
+import Notifications from "./pages/Notifications";
 
 import { trackPageView } from "./lib/analytics";
 
@@ -111,6 +113,7 @@ const App = () => (
           <BrowserRouter>
             <RouteHandler>
               <AppBackButton />
+              <WalkthroughTour />
               <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -155,6 +158,7 @@ const App = () => (
             <Route path="/admin/support-tickets" element={<AdminSupportTickets />} />
             <Route path="/strategic-analytics" element={<StrategicAnalytics />} />
             <Route path="/super-admin" element={<SuperAdmin />} />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/join" element={<JoinRepairCenter />} />
             <Route path="/self-test" element={<SelfTest />} />
