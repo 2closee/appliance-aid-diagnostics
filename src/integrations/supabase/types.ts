@@ -101,6 +101,186 @@ export type Database = {
           },
         ]
       }
+      blog_agent_runs: {
+        Row: {
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          notes: string | null
+          post_id: string | null
+          started_at: string
+          status: string
+          topic_id: string | null
+          trigger_source: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          notes?: string | null
+          post_id?: string | null
+          started_at?: string
+          status?: string
+          topic_id?: string | null
+          trigger_source?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          notes?: string | null
+          post_id?: string | null
+          started_at?: string
+          status?: string
+          topic_id?: string | null
+          trigger_source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      blog_posts: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          excerpt: string | null
+          generated_by: string
+          hero_image_alt: string | null
+          hero_image_url: string | null
+          id: string
+          keywords: string[]
+          meta_description: string | null
+          meta_title: string | null
+          published_at: string | null
+          reading_minutes: number
+          slug: string
+          status: string
+          tags: string[]
+          title: string
+          topic_id: string | null
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          body: string
+          category?: string
+          created_at?: string
+          excerpt?: string | null
+          generated_by?: string
+          hero_image_alt?: string | null
+          hero_image_url?: string | null
+          id?: string
+          keywords?: string[]
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          reading_minutes?: number
+          slug: string
+          status?: string
+          tags?: string[]
+          title: string
+          topic_id?: string | null
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          excerpt?: string | null
+          generated_by?: string
+          hero_image_alt?: string | null
+          hero_image_url?: string | null
+          id?: string
+          keywords?: string[]
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          reading_minutes?: number
+          slug?: string
+          status?: string
+          tags?: string[]
+          title?: string
+          topic_id?: string | null
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
+      blog_settings: {
+        Row: {
+          auto_publish: boolean
+          automation_enabled: boolean
+          created_at: string
+          id: string
+          posts_per_week: number
+          tone: string
+          updated_at: string
+        }
+        Insert: {
+          auto_publish?: boolean
+          automation_enabled?: boolean
+          created_at?: string
+          id?: string
+          posts_per_week?: number
+          tone?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_publish?: boolean
+          automation_enabled?: boolean
+          created_at?: string
+          id?: string
+          posts_per_week?: number
+          tone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      blog_topics: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          id: string
+          keyword: string
+          last_used_at: string | null
+          priority: number
+          region: string
+          times_used: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          id?: string
+          keyword: string
+          last_used_at?: string | null
+          priority?: number
+          region?: string
+          times_used?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          id?: string
+          keyword?: string
+          last_used_at?: string | null
+          priority?: number
+          region?: string
+          times_used?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       center_referral_rewards: {
         Row: {
           amount: number
@@ -4123,6 +4303,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_blog_view: { Args: { _slug: string }; Returns: undefined }
       is_repair_center_admin: {
         Args: { _repair_center_id: number; _user_id: string }
         Returns: boolean
