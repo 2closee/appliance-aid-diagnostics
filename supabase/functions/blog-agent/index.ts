@@ -155,11 +155,11 @@ Deno.serve(async (req) => {
     }
 
     // Pick a topic: explicit request wins, otherwise least-recently-used high-priority topic.
-    let topic: { id: string; keyword: string; region: string; category: string } | null = null;
+    let topic: { id: string; keyword: string; region: string; category: string; times_used: number } | null = null;
     if (typeof body?.topic_id === "string") {
       const { data } = await supabase
         .from("blog_topics")
-        .select("id, keyword, region, category")
+        .select("id, keyword, region, category, times_used")
         .eq("id", body.topic_id)
         .maybeSingle();
       topic = data ?? null;
@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
     if (!topic) {
       const { data } = await supabase
         .from("blog_topics")
-        .select("id, keyword, region, category")
+        .select("id, keyword, region, category, times_used")
         .eq("active", true)
         .order("last_used_at", { ascending: true, nullsFirst: true })
         .order("priority", { ascending: false })
@@ -286,7 +286,7 @@ Return JSON with exactly these keys:
 
     await supabase
       .from("blog_topics")
-      .update({ last_used_at: new Date().toISOString(), times_used: (topicUses ?? 0) + 1 })
+      .update({ last_used_at: new Date().toISOString(), times_used: (topic.times_used ?? 0) + 1 })
       .eq("id", topic.id);
 
     await finish("success", {
