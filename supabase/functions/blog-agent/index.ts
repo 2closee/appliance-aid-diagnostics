@@ -286,9 +286,8 @@ Return JSON with exactly these keys:
 
     await supabase
       .from("blog_topics")
-      .update({ last_used_at: new Date().toISOString() })
+      .update({ last_used_at: new Date().toISOString(), times_used: (topicUses ?? 0) + 1 })
       .eq("id", topic.id);
-    await supabase.rpc("bump_blog_topic_usage", { _topic_id: topic.id }).catch(() => undefined);
 
     await finish("success", {
       post_id: created.id,
