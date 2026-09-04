@@ -165,7 +165,9 @@ const App = () => (
             <Route path="/faq" element={<FAQ />} />
             <Route path="/join" element={<JoinRepairCenter />} />
             <Route path="/self-test" element={<SelfTest />} />
-            <Route path="/admin/traffic-analytics" element={<TrafficAnalytics />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
+
             <Route path="/admin/logistics-zones" element={<LogisticsZones />} />
             <Route path="/admin/logistics-analytics" element={<LogisticsAnalytics />} />
             <Route path="/repair-center-onboarding" element={<RepairCenterOnboarding />} />
