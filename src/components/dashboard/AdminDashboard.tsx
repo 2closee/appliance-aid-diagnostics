@@ -536,7 +536,12 @@ const AdminDashboard = () => {
           <TabsContent value="center-management">
             <RepairCenterManagement />
           </TabsContent>
+
+          <TabsContent value="blog">
+            <BlogAgentAdmin />
+          </TabsContent>
         </Tabs>
+
       </main>
       
       <EmailComposerDialog
