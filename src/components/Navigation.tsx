@@ -19,7 +19,8 @@ import {
   Target,
   Stethoscope,
   Bike,
-  Bell
+  Bell,
+  BookOpen
 } from "lucide-react";
 import { ChevronDown } from "lucide-react";
 import {
@@ -56,6 +57,7 @@ const Navigation = () => {
       { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
       { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },
       { path: "/ovapass", label: "Ride with Ovapass", icon: Bike },
+      { path: "/blog", label: "Blog", icon: BookOpen },
     ],
     customer: [
       { path: "/", label: "Home", icon: Home },
@@ -66,6 +68,7 @@ const Navigation = () => {
       { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },
       { path: "/payment-history", label: "Payment History", icon: CreditCard },
       { path: "/ovapass", label: "Ride with Ovapass", icon: Bike },
+      { path: "/blog", label: "Blog", icon: BookOpen },
       { path: "/notifications", label: "Notifications & Guide", icon: Bell },
     ],
     repair_center: [
