@@ -4313,6 +4313,7 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      run_blog_agent_job: { Args: never; Returns: undefined }
       toggle_user_suspension: {
         Args: { suspend: boolean; target_user_id: string }
         Returns: undefined
@@ -4325,6 +4326,7 @@ export type Database = {
         Args: { _center_id: number; _user_id: string }
         Returns: boolean
       }
+      verify_blog_secret: { Args: { _secret: string }; Returns: boolean }
       verify_push_secret: { Args: { _secret: string }; Returns: boolean }
     }
     Enums: {
