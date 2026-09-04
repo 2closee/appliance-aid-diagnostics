@@ -98,7 +98,6 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  const cronSecret = Deno.env.get("BLOG_CRON_SECRET");
 
   if (!supabaseUrl || !serviceKey) return json({ error: "Supabase env missing" }, 500);
   if (!lovableKey) return json({ error: "LOVABLE_API_KEY is not configured" }, 500);
@@ -110,9 +109,13 @@ Deno.serve(async (req) => {
   let source = "manual";
   let authorized = false;
   const provided = req.headers.get("x-blog-secret");
-  if (cronSecret && provided && provided === cronSecret) {
-    authorized = true;
-    source = "cron";
+  if (provided) {
+    const { data: valid, error: secretError } = await supabase.rpc("verify_blog_secret", { _secret: provided });
+    if (secretError) console.error(`[blog-agent] secret check failed: ${secretError.message}`);
+    if (valid === true) {
+      authorized = true;
+      source = "cron";
+    }
   }
   if (!authorized) {
     const token = req.headers.get("Authorization")?.replace("Bearer ", "");
