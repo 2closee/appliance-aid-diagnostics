@@ -167,8 +167,9 @@ const App = () => (
             <Route path="/self-test" element={<SelfTest />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
-
+            <Route path="/admin/traffic-analytics" element={<TrafficAnalytics />} />
             <Route path="/admin/logistics-zones" element={<LogisticsZones />} />
+
             <Route path="/admin/logistics-analytics" element={<LogisticsAnalytics />} />
             <Route path="/repair-center-onboarding" element={<RepairCenterOnboarding />} />
             <Route path="/legal/repair-protection" element={<RepairProtectionTerms />} />
