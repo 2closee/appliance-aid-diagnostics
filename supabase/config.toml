@@ -104,3 +104,10 @@ verify_jwt = false
 
 [functions.send-push]
 verify_jwt = false
+
+[functions.blog-agent]
+verify_jwt = false
+
+[functions.blog-sitemap]
+verify_jwt = false
+

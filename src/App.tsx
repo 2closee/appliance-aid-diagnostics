@@ -60,6 +60,9 @@ import ProtectionAdmin from "./pages/admin/ProtectionAdmin";
 import AppBackButton from "./components/AppBackButton";
 import WalkthroughTour from "./components/tour/WalkthroughTour";
 import Notifications from "./pages/Notifications";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+
 
 import { trackPageView } from "./lib/analytics";
 
@@ -162,8 +165,11 @@ const App = () => (
             <Route path="/faq" element={<FAQ />} />
             <Route path="/join" element={<JoinRepairCenter />} />
             <Route path="/self-test" element={<SelfTest />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/admin/traffic-analytics" element={<TrafficAnalytics />} />
             <Route path="/admin/logistics-zones" element={<LogisticsZones />} />
+
             <Route path="/admin/logistics-analytics" element={<LogisticsAnalytics />} />
             <Route path="/repair-center-onboarding" element={<RepairCenterOnboarding />} />
             <Route path="/legal/repair-protection" element={<RepairProtectionTerms />} />

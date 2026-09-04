@@ -27,6 +27,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import RepairCenterManagement from "./RepairCenterManagement";
+import BlogAgentAdmin from "@/components/blog/BlogAgentAdmin";
+
 import { useToast } from "@/hooks/use-toast";
 import EmailComposerDialog from "@/components/EmailComposerDialog";
 
@@ -305,11 +307,13 @@ const AdminDashboard = () => {
 
         {/* Tabs for detailed views */}
         <Tabs defaultValue="recent-jobs" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
             <TabsTrigger value="recent-jobs">Recent Jobs</TabsTrigger>
             <TabsTrigger value="repair-centers">Repair Centers</TabsTrigger>
             <TabsTrigger value="center-management">Center Management</TabsTrigger>
+            <TabsTrigger value="blog">Blog</TabsTrigger>
           </TabsList>
+
           
           <TabsContent value="recent-jobs">
             <Card>
@@ -534,7 +538,12 @@ const AdminDashboard = () => {
           <TabsContent value="center-management">
             <RepairCenterManagement />
           </TabsContent>
+
+          <TabsContent value="blog">
+            <BlogAgentAdmin />
+          </TabsContent>
         </Tabs>
+
       </main>
       
       <EmailComposerDialog
