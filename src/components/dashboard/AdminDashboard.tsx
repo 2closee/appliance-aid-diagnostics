@@ -305,11 +305,13 @@ const AdminDashboard = () => {
 
         {/* Tabs for detailed views */}
         <Tabs defaultValue="recent-jobs" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
             <TabsTrigger value="recent-jobs">Recent Jobs</TabsTrigger>
             <TabsTrigger value="repair-centers">Repair Centers</TabsTrigger>
             <TabsTrigger value="center-management">Center Management</TabsTrigger>
+            <TabsTrigger value="blog">Blog</TabsTrigger>
           </TabsList>
+
           
           <TabsContent value="recent-jobs">
             <Card>
