@@ -27,6 +27,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import RepairCenterManagement from "./RepairCenterManagement";
+import BlogAgentAdmin from "@/components/blog/BlogAgentAdmin";
+
 import { useToast } from "@/hooks/use-toast";
 import EmailComposerDialog from "@/components/EmailComposerDialog";
 
