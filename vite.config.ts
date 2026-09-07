@@ -60,7 +60,7 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB limit for Nigerian market apps
+        maximumFileSizeToCacheInBytes: 12 * 1024 * 1024, // headroom for the unminified dev bundle
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         additionalManifestEntries: [
           { url: '/splash-1125x2436.png', revision: null },
