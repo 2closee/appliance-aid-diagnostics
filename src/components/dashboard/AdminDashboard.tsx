@@ -197,17 +197,18 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+    <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="container mx-auto px-4 py-8 space-y-8">
+      <main className="native-page container mx-auto max-w-7xl px-4 py-8 space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Platform operations</p>
+            <h1 className="native-title text-3xl font-bold text-foreground flex items-center gap-3">
               <Shield className="h-8 w-8 text-primary" />
               Super Admin Dashboard
             </h1>
-            <p className="text-muted-foreground mt-2">Full platform control - Monitor and manage the entire repair ecosystem</p>
+            <p className="text-muted-foreground mt-1">Monitor FixBudi at a glance</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link to="/revenue-analytics">
@@ -220,7 +221,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="native-stats grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
@@ -273,7 +274,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Job Status Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="native-stats grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending Jobs</CardTitle>
@@ -307,7 +308,7 @@ const AdminDashboard = () => {
 
         {/* Tabs for detailed views */}
         <Tabs defaultValue="recent-jobs" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-4">
             <TabsTrigger value="recent-jobs">Recent Jobs</TabsTrigger>
             <TabsTrigger value="repair-centers">Repair Centers</TabsTrigger>
             <TabsTrigger value="center-management">Center Management</TabsTrigger>

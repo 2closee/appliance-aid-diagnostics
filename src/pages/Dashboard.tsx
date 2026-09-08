@@ -10,8 +10,8 @@ const Dashboard = () => {
 
   if (isLoading || (user && !rolesLoaded)) {
     return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="container mx-auto space-y-6">
+      <div className="min-h-screen bg-background p-4 sm:p-6">
+        <div className="container mx-auto max-w-6xl space-y-4 sm:space-y-6">
           <Skeleton className="h-8 w-64" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Skeleton className="h-32" />

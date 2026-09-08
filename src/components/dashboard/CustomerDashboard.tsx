@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Wrench, CheckCircle, Clock, FileText, Plus, AlertCircle, MessageCircle, CreditCard, Loader2, ShieldCheck } from "lucide-react";
+import { Wrench, CheckCircle, Clock, FileText, Plus, AlertCircle, CreditCard, Loader2, ShieldCheck, Sparkles, MapPin, Truck, ChevronRight } from "lucide-react";
 import { isProtectionEligible } from "@/lib/protection/pricing";
 
 import { Link, useNavigate } from "react-router-dom";
@@ -158,22 +158,35 @@ const CustomerDashboard = () => {
   } : { total: 0, completed: 0, inProgress: 0, pending: 0 };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+    <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="container mx-auto px-4 py-8 space-y-8">
+      <main className="native-page container mx-auto max-w-6xl px-4 py-8 space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Welcome back!</h1>
-            <p className="text-muted-foreground mt-2">Manage your appliance repairs and track their progress</p>
+            <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Your FixBudi</p>
+            <h1 className="native-title text-3xl font-bold text-foreground">Welcome back</h1>
+            <p className="text-muted-foreground mt-1">What needs fixing today?</p>
           </div>
-          <Link to="/diagnostic">
-            <Button className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              New Repair Request
+          <Link to="/diagnostic" className="w-full sm:w-auto">
+            <Button size="lg" className="w-full flex items-center gap-2 sm:w-auto">
+              <Sparkles className="w-4 h-4" />
+              Start Diagnosis
             </Button>
           </Link>
         </div>
+
+        <section className="grid grid-cols-3 gap-2 sm:gap-3" aria-label="Quick actions">
+          <Link to="/diagnostic" className="flex min-h-24 flex-col justify-between rounded-lg bg-primary p-3 text-primary-foreground transition-transform active:scale-[0.98] sm:p-4">
+            <BotIcon /><span className="text-sm font-semibold">AI diagnosis</span>
+          </Link>
+          <Link to="/repair-centers" className="flex min-h-24 flex-col justify-between rounded-lg border bg-card p-3 transition-colors hover:bg-accent sm:p-4">
+            <MapPin className="h-5 w-5" /><span className="text-sm font-semibold">Find a center</span>
+          </Link>
+          <Link to="/pickup-selection" className="flex min-h-24 flex-col justify-between rounded-lg border bg-card p-3 transition-colors hover:bg-accent sm:p-4">
+            <Truck className="h-5 w-5" /><span className="text-sm font-semibold">Book pickup</span>
+          </Link>
+        </section>
 
         {/* Quote Alert Banner */}
         {pendingQuotes.length > 0 && (
@@ -237,7 +250,7 @@ const CustomerDashboard = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="native-stats grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Repairs</CardTitle>
@@ -281,9 +294,10 @@ const CustomerDashboard = () => {
 
         {/* Recent Repair Jobs */}
         <Card>
-          <CardHeader>
-            <CardTitle>Your Repair Jobs</CardTitle>
+            <CardHeader className="flex-row items-center justify-between space-y-0">
+              <div><CardTitle>Your Repair Jobs</CardTitle>
             <CardDescription>Track the status of your appliance repairs</CardDescription>
+              </div><Button asChild variant="ghost" size="sm"><Link to="/repair-jobs">View all <ChevronRight /></Link></Button>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -414,3 +428,5 @@ const CustomerDashboard = () => {
 };
 
 export default CustomerDashboard;
+
+const BotIcon = () => <Sparkles className="h-5 w-5" />;

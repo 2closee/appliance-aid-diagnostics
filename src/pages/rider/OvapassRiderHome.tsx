@@ -142,13 +142,13 @@ const OvapassRiderHome = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 px-4 pb-6 pt-20">
+    <div className="min-h-screen bg-background">
       <AppNavigation />
-      <div className="mx-auto max-w-lg space-y-4">
+      <main className="native-page mx-auto max-w-lg space-y-4 px-4 py-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">Ovapass rider</p>
-            <h1 className="text-xl font-bold">{rider.full_name}</h1>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Ovapass rider</p>
+            <h1 className="native-title text-2xl font-bold">Hello, {rider.full_name.split(" ")[0]}</h1>
           </div>
           <Button variant="outline" size="sm" asChild>
             <Link to="/rider/earnings">
@@ -157,7 +157,7 @@ const OvapassRiderHome = () => {
           </Button>
         </div>
 
-        <Card>
+        <Card className={rider.is_online ? "border-success/40 bg-success/5" : ""}>
           <CardContent className="flex items-center justify-between py-4">
             <div>
               <p className="font-medium">{rider.is_online ? "You're online" : "You're offline"}</p>
@@ -325,7 +325,7 @@ const OvapassRiderHome = () => {
         {!offer && !activeTrip && (
           <Card>
             <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              {rider.is_online ? "Waiting for the next pickup near you…" : "You're offline. Flip the switch to start earning."}
+               {rider.is_online ? "You're ready. Waiting for a pickup within your area…" : "You're offline. Go online to start earning."}
             </CardContent>
           </Card>
         )}
@@ -344,7 +344,7 @@ const OvapassRiderHome = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

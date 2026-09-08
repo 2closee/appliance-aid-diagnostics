@@ -278,10 +278,10 @@ const RepairCenterDashboard = () => {
   } : { total: 0, completed: 0, inProgress: 0, pending: 0, quoteRequests: 0, totalRevenue: 0 };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+    <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="container mx-auto px-4 py-8 space-y-8">
+      <main className="native-page container mx-auto max-w-7xl px-4 py-8 space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="relative">
             {repairCenter?.cover_image_url && (
@@ -302,16 +302,17 @@ const RepairCenterDashboard = () => {
                 />
               )}
               <div>
-                <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+                <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Partner workspace</p>
+                <h1 className="native-title text-3xl font-bold text-foreground flex items-center gap-3">
                   {!repairCenter?.logo_url && <Wrench className="h-7 w-7 text-primary" />}
                   {repairCenter?.name || 'Repair Center'} Portal
                 </h1>
-                <p className="text-muted-foreground mt-2">Repair Center Admin - Manage your repair jobs and track performance</p>
+                <p className="text-muted-foreground mt-1">Manage jobs, conversations and pickups</p>
               </div>
             </div>
           </div>
           <div className="flex gap-2">
-            <Card className="p-4">
+            <Card className="p-3">
               <div className="flex items-center gap-3">
                 <Label htmlFor="online-status" className="text-sm font-medium">
                   Online Status
@@ -403,12 +404,12 @@ const RepairCenterDashboard = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           <Card className="hover:shadow-medium transition-all cursor-pointer bg-gradient-to-br from-card to-secondary/30 border-primary/10" onClick={() => setShowBankAccount(true)}>
-            <CardContent className="flex items-center justify-between p-6">
+            <CardContent className="flex items-center justify-between p-4 sm:p-6">
               <div>
                 <h3 className="font-semibold text-lg">Bank Information</h3>
-                <p className="text-sm text-muted-foreground">Add or update your bank details</p>
+                <p className="hidden text-sm text-muted-foreground sm:block">Add or update your bank details</p>
               </div>
               <CreditCard className="h-8 w-8 text-primary" />
             </CardContent>
@@ -416,10 +417,10 @@ const RepairCenterDashboard = () => {
 
           <Link to="/center-earnings" className="block">
             <Card className="hover:shadow-medium hover:scale-[1.02] transition-all cursor-pointer bg-gradient-to-br from-success/90 to-success border-success/20">
-              <CardContent className="flex items-center justify-between p-6">
+              <CardContent className="flex items-center justify-between p-4 sm:p-6">
                 <div>
                   <h3 className="font-semibold text-lg text-success-foreground">Request Payout</h3>
-                  <p className="text-sm text-success-foreground/80">View earnings & request payouts</p>
+                  <p className="hidden text-sm text-success-foreground/80 sm:block">View earnings & request payouts</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-success-foreground" />
               </CardContent>
@@ -443,7 +444,7 @@ const RepairCenterDashboard = () => {
 
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="native-stats grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
