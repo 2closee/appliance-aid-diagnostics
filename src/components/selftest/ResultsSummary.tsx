@@ -20,6 +20,15 @@ const statusIcon = (s: TestResult["status"]) => {
   return <MinusCircle className="h-5 w-5 text-muted-foreground" />;
 };
 
+const statusLabel = (s: TestResult["status"]) => {
+  if (s === "unsupported") return "Not supported on this phone";
+  if (s === "inconclusive") return "Needs a closer look";
+  if (s === "skipped") return "Skipped";
+  if (s === "pass") return "Passed";
+  if (s === "fail") return "Failed";
+  return s;
+};
+
 export const ResultsSummary = ({ results, onTalkToAI, onFindCenter, onRestart }: Props) => {
   const counts = summarizeCounts(results);
   useEffect(() => {
@@ -27,6 +36,8 @@ export const ResultsSummary = ({ results, onTalkToAI, onFindCenter, onRestart }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const hasFailures = counts.fail > 0;
+  const unsupported = results.filter((r) => r.status === "unsupported");
+  const skippedOnly = results.filter((r) => r.status === "skipped");
 
   return (
     <div className="space-y-6">
@@ -37,8 +48,19 @@ export const ResultsSummary = ({ results, onTalkToAI, onFindCenter, onRestart }:
         <Badge variant={hasFailures ? "destructive" : "outline"}>
           {counts.fail} failed
         </Badge>
-        <Badge variant="outline">{counts.skipped} skipped</Badge>
+        {unsupported.length > 0 && (
+          <Badge variant="outline">{unsupported.length} not supported</Badge>
+        )}
+        {skippedOnly.length > 0 && <Badge variant="outline">{skippedOnly.length} skipped</Badge>}
       </div>
+
+      {unsupported.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          Your browser couldn't run these checks on this phone: {unsupported.map((r) => r.label).join(", ")}. That's a
+          browser limitation (common on iPhone), not a sign of damage — the assistant or a repair center can check them
+          properly.
+        </p>
+      )}
 
       <Card>
         <CardContent className="p-0 divide-y">
@@ -47,8 +69,8 @@ export const ResultsSummary = ({ results, onTalkToAI, onFindCenter, onRestart }:
               {statusIcon(r.status)}
               <div className="flex-1">
                 <div className="font-medium">{r.label}</div>
-                <div className="text-sm text-muted-foreground capitalize">
-                  {r.status}{r.detail ? ` — ${r.detail}` : ""}
+                <div className="text-sm text-muted-foreground">
+                  {statusLabel(r.status)}{r.detail ? ` — ${r.detail}` : ""}
                 </div>
               </div>
             </div>

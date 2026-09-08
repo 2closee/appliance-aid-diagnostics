@@ -75,8 +75,17 @@ export const buildAIHandoffSummary = (results: TestResult[]): string => {
     lines.push("");
     lines.push(`Passed: ${passed.map((r) => r.label).join(", ")}.`);
   }
-  if (skipped.length) {
-    lines.push(`Skipped/unsupported: ${skipped.map((r) => r.label).join(", ")}.`);
+  const unsupported = results.filter((r) => r.status === "unsupported");
+  const userSkipped = results.filter((r) => r.status === "skipped");
+  if (userSkipped.length) {
+    lines.push(`Skipped by me: ${userSkipped.map((r) => r.label).join(", ")}.`);
+  }
+  if (unsupported.length) {
+    lines.push(
+      `Could not be tested because my browser does not expose these APIs (a browser limitation, not proof of a fault): ${unsupported
+        .map((r) => `${r.label}${r.detail ? ` — ${r.detail}` : ""}`)
+        .join("; ")}.`
+    );
   }
 
   if (needsClarification.length) {
