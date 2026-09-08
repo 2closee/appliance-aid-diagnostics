@@ -36,6 +36,8 @@ export const ResultsSummary = ({ results, onTalkToAI, onFindCenter, onRestart }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const hasFailures = counts.fail > 0;
+  const unsupported = results.filter((r) => r.status === "unsupported");
+  const skippedOnly = results.filter((r) => r.status === "skipped");
 
   return (
     <div className="space-y-6">
@@ -46,8 +48,19 @@ export const ResultsSummary = ({ results, onTalkToAI, onFindCenter, onRestart }:
         <Badge variant={hasFailures ? "destructive" : "outline"}>
           {counts.fail} failed
         </Badge>
-        <Badge variant="outline">{counts.skipped} skipped</Badge>
+        {unsupported.length > 0 && (
+          <Badge variant="outline">{unsupported.length} not supported</Badge>
+        )}
+        {skippedOnly.length > 0 && <Badge variant="outline">{skippedOnly.length} skipped</Badge>}
       </div>
+
+      {unsupported.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          Your browser couldn't run these checks on this phone: {unsupported.map((r) => r.label).join(", ")}. That's a
+          browser limitation (common on iPhone), not a sign of damage — the assistant or a repair center can check them
+          properly.
+        </p>
+      )}
 
       <Card>
         <CardContent className="p-0 divide-y">
