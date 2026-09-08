@@ -69,8 +69,8 @@ export const ResultsSummary = ({ results, onTalkToAI, onFindCenter, onRestart }:
               {statusIcon(r.status)}
               <div className="flex-1">
                 <div className="font-medium">{r.label}</div>
-                <div className="text-sm text-muted-foreground capitalize">
-                  {r.status}{r.detail ? ` — ${r.detail}` : ""}
+                <div className="text-sm text-muted-foreground">
+                  {statusLabel(r.status)}{r.detail ? ` — ${r.detail}` : ""}
                 </div>
               </div>
             </div>
