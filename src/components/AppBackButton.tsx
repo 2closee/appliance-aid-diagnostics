@@ -19,7 +19,7 @@ const isStandaloneDisplay = () => {
 const AppBackButton = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const [isStandalone, setIsStandalone] = useState(isStandaloneDisplay);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ const AppBackButton = () => {
     return () => queries.forEach((q) => q.removeEventListener("change", update));
   }, []);
 
-  const homePath = user ? "/dashboard" : "/";
+  const homePath = !user ? "/" : userRole === "rider" ? "/rider" : "/dashboard";
   if (!isStandalone || location.pathname === homePath || location.pathname === "/") return null;
 
   const handleBack = () => {
@@ -47,7 +47,7 @@ const AppBackButton = () => {
       type="button"
       onClick={handleBack}
       aria-label="Go back"
-      className="fixed left-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full border bg-background/90 text-foreground shadow-md backdrop-blur transition-colors hover:bg-accent active:scale-95"
+      className="fixed left-2 z-[60] flex h-11 w-11 items-center justify-center rounded-full bg-background/90 text-foreground shadow-none backdrop-blur transition-colors hover:bg-accent active:scale-95 lg:hidden"
       style={{ top: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}
     >
       <ChevronLeft className="h-5 w-5" />
