@@ -22,7 +22,6 @@ import {
   Target,
   Wrench,
 } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { useConversationNotifications } from "@/hooks/useConversationNotifications";
@@ -88,7 +87,6 @@ const roleMenus: Record<string, NavItem[]> = {
 
 const Navigation = () => {
   const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, signOut, userRole, isRepairCenterStaff, repairCenterId } = useAuth();
   const { theme, setTheme } = useTheme();
   const { totalUnread } = useConversationNotifications(
@@ -99,8 +97,6 @@ const Navigation = () => {
   const navItems = !user ? roleMenus.guest : roleMenus[userRole ?? "customer"] ?? roleMenus.customer;
   const mobilePrimary = user ? navItems.slice(0, 4) : [];
   const mobileOverflow = user ? navItems.slice(4) : navItems;
-
-  useEffect(() => setIsMenuOpen(false), [location.pathname]);
 
   const isActive = (path: string) =>
     location.pathname === path || (path !== "/" && location.pathname.startsWith(`${path}/`));
@@ -130,7 +126,7 @@ const Navigation = () => {
               </Button>
             ))}
             {navItems.length > 6 && (
-              <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+              <Sheet>
                 <SheetTrigger asChild><Button variant="ghost"><Menu className="h-4 w-4" />More</Button></SheetTrigger>
                 <SheetContent className="w-full max-w-sm"><NavSheet items={navItems.slice(6)} isActive={isActive} theme={theme} setTheme={setTheme} signOut={user ? signOut : undefined} /></SheetContent>
               </Sheet>
@@ -147,7 +143,7 @@ const Navigation = () => {
             )}
             {!user && <Button asChild size="sm"><Link to="/auth">Sign in</Link></Button>}
             {!user && (
-              <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+              <Sheet>
                 <SheetTrigger asChild><Button variant="ghost" size="icon" aria-label="Open menu"><Menu className="h-5 w-5" /></Button></SheetTrigger>
                 <SheetContent side="bottom" className="max-h-[85dvh] rounded-t-lg pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]">
                   <NavSheet items={mobileOverflow} isActive={isActive} theme={theme} setTheme={setTheme} />
@@ -170,7 +166,7 @@ const Navigation = () => {
                 {unreadBadge(item.path)}
               </Link>
             ))}
-            <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+            <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" className="h-full min-w-0 flex-col gap-1 rounded-none px-1 text-[11px] text-muted-foreground shadow-none hover:scale-100">
                   <span className="flex h-7 min-w-10 items-center justify-center rounded-full px-3"><Menu className="h-[18px] w-[18px]" /></span>
