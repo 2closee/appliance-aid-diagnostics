@@ -20,6 +20,15 @@ const statusIcon = (s: TestResult["status"]) => {
   return <MinusCircle className="h-5 w-5 text-muted-foreground" />;
 };
 
+const statusLabel = (s: TestResult["status"]) => {
+  if (s === "unsupported") return "Not supported on this phone";
+  if (s === "inconclusive") return "Needs a closer look";
+  if (s === "skipped") return "Skipped";
+  if (s === "pass") return "Passed";
+  if (s === "fail") return "Failed";
+  return s;
+};
+
 export const ResultsSummary = ({ results, onTalkToAI, onFindCenter, onRestart }: Props) => {
   const counts = summarizeCounts(results);
   useEffect(() => {
