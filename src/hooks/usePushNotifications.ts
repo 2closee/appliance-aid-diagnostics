@@ -25,6 +25,21 @@ export type PushStatus =
   | "off"
   | "on";
 
+export type PushDiagnostic = {
+  missingFields: string[];
+  error: string | null;
+};
+
+const configFields = [
+  ["Web API key", firebaseConfig.apiKey],
+  ["Firebase project ID", firebaseConfig.projectId],
+  ["Web App ID", appId],
+  ["messaging sender ID", firebaseConfig.messagingSenderId],
+  ["public VAPID key", vapidKey],
+] as const;
+
+const missingConfigFields = () => configFields.filter(([, value]) => !value).map(([label]) => label);
+
 const isConfigured = () =>
   !!firebaseConfig.apiKey && !!firebaseConfig.projectId && !!appId && !!vapidKey && !!firebaseConfig.messagingSenderId;
 
@@ -36,12 +51,19 @@ export const usePushNotifications = () => {
   const { user } = useAuth();
   const [status, setStatus] = useState<PushStatus>("loading");
   const [busy, setBusy] = useState(false);
+  const [diagnostic, setDiagnostic] = useState<PushDiagnostic>({
+    missingFields: missingConfigFields(),
+    error: null,
+  });
 
   useEffect(() => {
     let active = true;
 
     const resolve = async () => {
-      if (!isConfigured()) return setStatus("not-configured");
+      if (!isConfigured()) {
+        setDiagnostic({ missingFields: missingConfigFields(), error: null });
+        return setStatus("not-configured");
+      }
       if (typeof window === "undefined" || !("Notification" in window)) return setStatus("unsupported");
       if (!(await isSupported())) return setStatus("unsupported");
       if (window.top !== window.self) return setStatus("open-in-new-tab");
@@ -91,6 +113,7 @@ export const usePushNotifications = () => {
     if (window.top !== window.self) return setStatus("open-in-new-tab");
 
     setBusy(true);
+    setDiagnostic({ missingFields: [], error: null });
     try {
       const permission =
         Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
@@ -111,23 +134,20 @@ export const usePushNotifications = () => {
         return;
       }
 
-      const { error } = await supabase.from("push_subscriptions").upsert(
-        {
-          user_id: user.id,
-          token,
-          platform: "web",
-          device_label: navigator.userAgent.slice(0, 120),
-          last_seen_at: new Date().toISOString(),
-        },
-        { onConflict: "token" },
-      );
+      const { error } = await supabase.rpc("register_push_subscription", {
+        _token: token,
+        _platform: "web",
+        _device_label: navigator.userAgent.slice(0, 120),
+      });
       if (error) throw error;
 
       setStatus("on");
       toast.success("Push notifications enabled");
     } catch (e) {
       console.error("Push enable failed:", e);
-      toast.error("Could not enable push notifications. Please try again.");
+      const message = e instanceof Error ? e.message : "Unknown registration error";
+      setDiagnostic({ missingFields: [], error: message });
+      toast.error("Could not enable push notifications. See the details below.");
     } finally {
       setBusy(false);
     }
@@ -159,5 +179,5 @@ export const usePushNotifications = () => {
     }
   }, []);
 
-  return { status, busy, enable, disable, sendTest };
+  return { status, busy, diagnostic, enable, disable, sendTest };
 };

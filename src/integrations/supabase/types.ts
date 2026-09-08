@@ -4313,6 +4313,25 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      register_push_subscription: {
+        Args: { _device_label?: string; _platform?: string; _token: string }
+        Returns: {
+          created_at: string
+          device_label: string | null
+          id: string
+          last_seen_at: string
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "push_subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       run_blog_agent_job: { Args: never; Returns: undefined }
       toggle_user_suspension: {
         Args: { suspend: boolean; target_user_id: string }
