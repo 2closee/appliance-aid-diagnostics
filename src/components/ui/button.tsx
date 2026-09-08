@@ -5,18 +5,18 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary-glow hover:scale-[1.02] shadow-soft hover:shadow-medium",
+        default: "bg-primary text-primary-foreground hover:bg-primary-glow shadow-soft hover:shadow-medium",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:scale-[1.02] shadow-soft hover:shadow-medium",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-soft hover:shadow-medium",
         outline:
-          "border border-border bg-background/50 backdrop-blur-sm text-foreground hover:bg-accent hover:text-accent-foreground hover:scale-[1.02] shadow-soft hover:shadow-medium",
+          "border border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground shadow-none",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:scale-[1.02] shadow-soft hover:shadow-medium backdrop-blur-sm",
-        ghost: "hover:bg-accent hover:text-accent-foreground hover:scale-[1.02] transition-all duration-200",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-none",
+        ghost: "hover:bg-accent hover:text-accent-foreground transition-colors duration-200",
         link: "text-primary underline-offset-4 hover:underline hover:scale-[1.02]",
         sparkly: "bg-gradient-to-r from-primary to-primary-glow text-primary-foreground hover:from-primary-glow hover:to-primary hover:scale-[1.05] shadow-medium hover:shadow-strong backdrop-blur-sm",
       },

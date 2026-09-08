@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Smartphone, Download, CheckCircle, Wifi, Zap, Shield } from "lucide-react";
+import { Smartphone, Download, CheckCircle, Bell, Zap, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -86,11 +86,11 @@ const Install = () => {
                 </CardHeader>
                 <CardContent className="grid gap-4">
                   <div className="flex items-start gap-3">
-                    <Wifi className="h-5 w-5 text-primary mt-0.5" />
+                    <Bell className="h-5 w-5 text-primary mt-0.5" />
                     <div>
-                      <h3 className="font-semibold mb-1">Works Offline</h3>
+                      <h3 className="font-semibold mb-1">Helpful Notifications</h3>
                       <p className="text-sm text-muted-foreground">
-                        Access your diagnostics even without internet connection
+                        Receive repair, quote, pickup and message updates
                       </p>
                     </div>
                   </div>
@@ -99,7 +99,7 @@ const Install = () => {
                     <div>
                       <h3 className="font-semibold mb-1">Lightning Fast</h3>
                       <p className="text-sm text-muted-foreground">
-                        Instant loading with cached content for Nigerian networks
+                        Open FixBudi directly without searching for it in your browser
                       </p>
                     </div>
                   </div>

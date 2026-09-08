@@ -142,7 +142,8 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    min-height: 100dvh;
   }
 }
 
@@ -173,6 +174,44 @@ All colors MUST be HSL.
 /* Account for fixed navigation height on main content */
 #root {
   padding-top: calc(4rem + env(safe-area-inset-top, 0px));
+  min-height: 100dvh;
+}
+
+@media (max-width: 1023px) {
+  #root {
+    padding-bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .native-page {
+    padding: 1rem 1rem 1.5rem;
+  }
+
+  .native-page > * + * {
+    margin-top: 1rem;
+  }
+
+  .native-page .native-title {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  .native-page .native-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .native-page .native-stats > * {
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Delivery map marker animations */

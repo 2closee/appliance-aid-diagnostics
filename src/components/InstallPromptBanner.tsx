@@ -64,14 +64,14 @@ export const InstallPromptBanner = () => {
   if (!showBanner) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-primary text-primary-foreground shadow-lg animate-in slide-in-from-bottom duration-300">
+    <div className="fixed bottom-0 left-0 right-0 z-[70] bg-primary pb-[env(safe-area-inset-bottom,0px)] text-primary-foreground shadow-lg animate-in slide-in-from-bottom duration-300">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 flex-1">
             <Smartphone className="h-5 w-5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm">Install Fixbudi App</p>
-              <p className="text-xs opacity-90">Get faster access & work offline</p>
+              <p className="text-xs opacity-90">Home-screen access and device notifications</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
