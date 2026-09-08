@@ -119,7 +119,7 @@ const Navigation = () => {
     <>
       <nav className="native-top-bar fixed inset-x-0 top-0 z-50 border-b bg-background/95 pt-safe backdrop-blur-xl supports-[backdrop-filter]:bg-background/85">
         <div className="container mx-auto flex h-16 items-center justify-between px-safe-x">
-          <Link to={user ? (userRole === "rider" ? "/rider" : "/dashboard") : "/"} className="flex min-w-0 shrink-0 items-center">
+          <Link to={user ? (userRole === "rider" ? "/rider" : "/dashboard") : "/"} className="absolute left-1/2 flex min-w-0 shrink-0 -translate-x-1/2 items-center lg:static lg:translate-x-0">
             <img src={theme === "dark" ? logoDark : logoLight} alt="Fixbudi" className="h-8 w-auto" />
           </Link>
 
