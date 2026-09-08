@@ -57,7 +57,6 @@ import RepairCenterOnboarding from "./pages/RepairCenterOnboarding";
 import RepairProtectionTerms from "./pages/legal/RepairProtectionTerms";
 import ProtectionAdmin from "./pages/admin/ProtectionAdmin";
 
-import AppBackButton from "./components/AppBackButton";
 import WalkthroughTour from "./components/tour/WalkthroughTour";
 import Notifications from "./pages/Notifications";
 import Blog from "./pages/Blog";
@@ -115,7 +114,6 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <RouteHandler>
-              <AppBackButton />
               <WalkthroughTour />
               <Routes>
             <Route path="/" element={<Index />} />

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -20,6 +21,8 @@ import {
   Stethoscope,
   Sun,
   Target,
+  UserRound,
+  UserPlus,
   Wrench,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,9 +46,7 @@ const roleMenus: Record<string, NavItem[]> = {
   guest: [
     { path: "/", label: "Home", icon: Home },
     { path: "/diagnostic", label: "AI Diagnostic", shortLabel: "Diagnose", icon: Bot },
-    { path: "/self-test", label: "Phone Self-Test", shortLabel: "Self-Test", icon: Stethoscope },
     { path: "/repair-centers", label: "Repair Centers", shortLabel: "Centers", icon: MapPin },
-    { path: "/pickup-selection", label: "Schedule Pickup", shortLabel: "Pickup", icon: Mail },
     { path: "/ovapass", label: "Ride with Ovapass", shortLabel: "Ovapass", icon: Bike },
     { path: "/blog", label: "Blog", icon: BookOpen },
   ],
@@ -56,7 +57,6 @@ const roleMenus: Record<string, NavItem[]> = {
     { path: "/customer-conversations", label: "Conversations", shortLabel: "Chats", icon: MessageCircle },
     { path: "/self-test", label: "Phone Self-Test", icon: Stethoscope },
     { path: "/repair-centers", label: "Repair Centers", icon: MapPin },
-    { path: "/pickup-selection", label: "Schedule Pickup", icon: Mail },
     { path: "/payment-history", label: "Payment History", icon: CreditCard },
     { path: "/ovapass", label: "Ride with Ovapass", icon: Bike },
     { path: "/blog", label: "Blog", icon: BookOpen },
@@ -85,16 +85,38 @@ const roleMenus: Record<string, NavItem[]> = {
   ],
 };
 
+const isInstalledApp = () => {
+  if (typeof window === "undefined") return false;
+  const iosStandalone = (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+  return window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches ||
+    window.matchMedia("(display-mode: minimal-ui)").matches ||
+    iosStandalone;
+};
+
 const Navigation = () => {
   const location = useLocation();
   const { user, signOut, userRole, isRepairCenterStaff, repairCenterId } = useAuth();
   const { theme, setTheme } = useTheme();
+  const [isInstalled, setIsInstalled] = useState(isInstalledApp);
   const { totalUnread } = useConversationNotifications(
     isRepairCenterStaff ? repairCenterId : undefined,
     userRole === "customer" ? user?.id : undefined,
   );
 
-  const navItems = !user ? roleMenus.guest : roleMenus[userRole ?? "customer"] ?? roleMenus.customer;
+  useEffect(() => {
+    const queries = ["standalone", "fullscreen", "minimal-ui"].map((mode) =>
+      window.matchMedia(`(display-mode: ${mode})`)
+    );
+    const update = () => setIsInstalled(isInstalledApp());
+    queries.forEach((query) => query.addEventListener("change", update));
+    return () => queries.forEach((query) => query.removeEventListener("change", update));
+  }, []);
+
+  const roleNavItems = !user ? roleMenus.guest : roleMenus[userRole ?? "customer"] ?? roleMenus.customer;
+  const navItems = isInstalled
+    ? roleNavItems.filter((item) => item.path !== "/ovapass" && item.path !== "/blog")
+    : roleNavItems;
   const mobilePrimary = user ? navItems.slice(0, 4) : [];
   const mobileOverflow = user ? navItems.slice(4) : navItems;
 
@@ -135,7 +157,7 @@ const Navigation = () => {
             {user && <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign out"><LogOut /></Button>}
           </div>
 
-          <div className="flex items-center gap-1 lg:hidden">
+          <div className={`items-center gap-1 lg:hidden ${!user && isInstalled ? "hidden" : "flex"}`}>
             {user && (
               <Button asChild variant="ghost" size="icon" className="relative" aria-label="Notifications">
                 <Link to="/notifications"><Bell className="h-5 w-5" /></Link>
@@ -180,9 +202,51 @@ const Navigation = () => {
           </div>
         </nav>
       )}
+
+      {!user && isInstalled && (
+        <nav className="native-bottom-nav fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-xl lg:hidden" aria-label="Guest navigation">
+          <div className="mx-auto grid h-[4.25rem] max-w-lg grid-cols-5 px-1">
+            <GuestNavLink to="/" label="Home" icon={Home} active={isActive("/")} />
+            <GuestNavLink to="/diagnostic" label="Diagnose" icon={Bot} active={isActive("/diagnostic")} />
+            <GuestNavLink to="/repair-centers" label="Centers" icon={MapPin} active={isActive("/repair-centers")} />
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" className="h-full min-w-0 flex-col gap-1 rounded-none px-1 text-[11px] text-muted-foreground shadow-none hover:scale-100">
+                  <span className="flex h-7 min-w-10 items-center justify-center rounded-full px-3"><UserRound className="h-[18px] w-[18px]" /></span>
+                  <span>Sign in</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="rounded-t-lg pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]">
+                <SheetHeader className="mb-5 text-left">
+                  <SheetTitle>Choose how to sign in</SheetTitle>
+                  <SheetDescription>Open the right FixBudi portal for your account.</SheetDescription>
+                </SheetHeader>
+                <div className="space-y-2">
+                  <SheetClose asChild><Button asChild className="w-full justify-start"><Link to="/auth"><UserRound className="h-4 w-4" />User sign in</Link></Button></SheetClose>
+                  <SheetClose asChild><Button asChild variant="outline" className="w-full justify-start"><Link to="/auth"><Bike className="h-4 w-4" />Rider sign in</Link></Button></SheetClose>
+                  <SheetClose asChild><Button asChild variant="outline" className="w-full justify-start"><Link to="/partner-login"><Wrench className="h-4 w-4" />Repair center sign in</Link></Button></SheetClose>
+                </div>
+              </SheetContent>
+            </Sheet>
+            <GuestNavLink to="/rider/signup" label="Join Ovapass" icon={UserPlus} active={isActive("/rider/signup")} />
+          </div>
+        </nav>
+      )}
     </>
   );
 };
+
+const GuestNavLink = ({ to, label, icon: Icon, active }: {
+  to: string;
+  label: string;
+  icon: typeof Home;
+  active: boolean;
+}) => (
+  <Link to={to} className={`relative flex min-w-0 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors active:scale-95 ${active ? "text-foreground" : "text-muted-foreground"}`}>
+    <span className={`flex h-7 min-w-10 items-center justify-center rounded-full px-3 ${active ? "bg-primary text-primary-foreground" : ""}`}><Icon className="h-[18px] w-[18px]" /></span>
+    <span className="max-w-full truncate px-1">{label}</span>
+  </Link>
+);
 
 const NavSheet = ({ items, isActive, theme, setTheme, signOut }: {
   items: NavItem[];
