@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Bike, Loader2 } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 interface Props {
   repairJobId: string;
