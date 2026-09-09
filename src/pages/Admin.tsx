@@ -278,6 +278,12 @@ const Admin = () => {
               <Button onClick={() => navigate("/admin/traffic-analytics")} variant="outline" className="w-full">
                 Traffic Analytics (Visitors & Feature Usage)
               </Button>
+              <Button onClick={() => navigate("/admin/customer-insights")} variant="outline" className="w-full">
+                Customer Insights (Signups, Requests & Problems)
+              </Button>
+              <Button onClick={() => navigate("/admin/center-activity")} variant="outline" className="w-full">
+                Repair Centre Activity & Offline Reminders
+              </Button>
               <Button onClick={() => navigate("/admin/logistics-zones")} variant="outline" className="w-full">
                 Logistics Service Zones (Geofenced Pilot)
               </Button>
