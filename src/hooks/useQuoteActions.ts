@@ -30,6 +30,7 @@ export const useQuoteActions = () => {
       
       return { success: true };
     } catch (error: any) {
+      trackEvent('QuoteAcceptFailed', { job_id: jobId, message: error?.message });
       toast({
         title: "Error",
         description: error.message || "Failed to accept quote",
