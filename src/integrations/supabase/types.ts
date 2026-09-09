@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_alert_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          max_per_center_per_day: number
+          max_per_center_per_hour: number
+          message_wait_minutes: number
+          online_window_minutes: number
+          quote_wait_minutes: number
+          sms_template: string
+          updated_at: string
+          working_hours_end: number
+          working_hours_start: number
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          max_per_center_per_day?: number
+          max_per_center_per_hour?: number
+          message_wait_minutes?: number
+          online_window_minutes?: number
+          quote_wait_minutes?: number
+          sms_template?: string
+          updated_at?: string
+          working_hours_end?: number
+          working_hours_start?: number
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          max_per_center_per_day?: number
+          max_per_center_per_hour?: number
+          message_wait_minutes?: number
+          online_window_minutes?: number
+          quote_wait_minutes?: number
+          sms_template?: string
+          updated_at?: string
+          working_hours_end?: number
+          working_hours_start?: number
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           created_at: string
@@ -277,6 +322,87 @@ export type Database = {
           priority?: number
           region?: string
           times_used?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      center_activity: {
+        Row: {
+          context: string | null
+          created_at: string
+          id: string
+          last_seen_at: string
+          repair_center_id: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          repair_center_id: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          repair_center_id?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      center_nudges: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          id: string
+          message: string | null
+          outcome: string
+          phone: string | null
+          provider: string | null
+          provider_error: string | null
+          provider_ok: boolean
+          reason: string
+          repair_center_id: number
+          repair_job_id: string | null
+          sent_at: string
+          updated_at: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          outcome?: string
+          phone?: string | null
+          provider?: string | null
+          provider_error?: string | null
+          provider_ok?: boolean
+          reason: string
+          repair_center_id: number
+          repair_job_id?: string | null
+          sent_at?: string
+          updated_at?: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          outcome?: string
+          phone?: string | null
+          provider?: string | null
+          provider_error?: string | null
+          provider_ok?: boolean
+          reason?: string
+          repair_center_id?: number
+          repair_job_id?: string | null
+          sent_at?: string
           updated_at?: string
         }
         Relationships: []
@@ -4335,6 +4461,10 @@ export type Database = {
       run_blog_agent_job: { Args: never; Returns: undefined }
       toggle_user_suspension: {
         Args: { suspend: boolean; target_user_id: string }
+        Returns: undefined
+      }
+      touch_center_activity: {
+        Args: { _center_id: number; _context?: string }
         Returns: undefined
       }
       update_repair_center_branding: {

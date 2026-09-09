@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { trackEvent } from "@/lib/analytics";
 
 export const useQuoteActions = () => {
   const queryClient = useQueryClient();
@@ -16,16 +17,20 @@ export const useQuoteActions = () => {
       
       if (error) throw error;
       
+      trackEvent('QuoteAccepted', { job_id: jobId });
+
       toast({
         title: "Quote Accepted!",
         description: "The repair center will contact you to schedule pickup.",
       });
+      
       
       queryClient.invalidateQueries({ queryKey: ['repair-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['customer-repair-jobs'] });
       
       return { success: true };
     } catch (error: any) {
+      trackEvent('QuoteAcceptFailed', { job_id: jobId, message: error?.message });
       toast({
         title: "Error",
         description: error.message || "Failed to accept quote",
@@ -42,7 +47,9 @@ export const useQuoteActions = () => {
       });
       
       if (error) throw error;
-      
+
+      trackEvent('QuoteRejected', { job_id: jobId, reason: reason ?? null });
+
       toast({
         title: "Quote Declined",
         description: "You can browse other repair centers or request a new quote.",

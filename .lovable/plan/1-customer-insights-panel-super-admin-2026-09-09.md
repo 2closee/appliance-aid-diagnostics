@@ -1,4 +1,4 @@
-# Customer Intelligence + Repair Centre Responsiveness
+Customer Intelligence + Repair Centre Responsiveness
 
 Two connected goals: give super admin a real window into who signs up, what they try to do and where it breaks; and make sure a waiting customer never sits in front of an empty repair centre — nudge the centre by SMS when nobody is online.
 
@@ -16,7 +16,7 @@ New page in the admin panel with three views:
 
 ## 2. Customer detail view
 
-Click any customer and see one timeline: account and contact details, devices and problems described, diagnoses run and self-test results, which centres were recommended, which centre they engaged, whether that centre replied and how fast, quotes and negotiation, pickups and riders, payments, support tickets, and any step that stalled — with a "what's blocking this customer" line at the top.
+Click any customer and see one timeline: account and contact details, devices and problems described, diagnoses run and self-test results, which centres were recommended, which centre they engaged, whether that centre replied and how fast, quotes and negotiation, pickups and riders, payments, Live user Location, support tickets, and any step that stalled — with a "what's blocking this customer" line at the top.
 
 ## 3. Repair centre activity monitoring
 

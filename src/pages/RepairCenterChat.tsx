@@ -8,13 +8,15 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCenterHeartbeat } from "@/hooks/useCenterHeartbeat";
 import { toast } from "sonner";
 
 const RepairCenterChat = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { conversationId: routeConversationId } = useParams<{ conversationId: string }>();
-  const { isRepairCenterStaff } = useAuth();
+  const { isRepairCenterStaff, repairCenterId } = useAuth();
+  useCenterHeartbeat(isRepairCenterStaff ? repairCenterId : null, "chat");
   const { selectedCenter, repairJobId, conversationId: stateConversationId, diagnosticContext } = location.state || {};
   const passedConversationId = routeConversationId || stateConversationId;
   const [centerName, setCenterName] = useState<string>("");

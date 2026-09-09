@@ -49,6 +49,9 @@ import TrafficAnalytics from "./pages/TrafficAnalytics";
 import LogisticsZones from "./pages/admin/LogisticsZones";
 import LogisticsAnalytics from "./pages/admin/LogisticsAnalytics";
 import OvapassAdmin from "./pages/admin/OvapassAdmin";
+import CustomerInsights from "./pages/admin/CustomerInsights";
+import CustomerDetail from "./pages/admin/CustomerDetail";
+import CenterActivity from "./pages/admin/CenterActivity";
 import OvapassRiderHome from "./pages/rider/OvapassRiderHome";
 import Ovapass from "./pages/Ovapass";
 import OvapassRiderSignup from "./pages/rider/OvapassRiderSignup";
@@ -166,6 +169,9 @@ const App = () => (
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/admin/traffic-analytics" element={<TrafficAnalytics />} />
+            <Route path="/admin/customer-insights" element={<CustomerInsights />} />
+            <Route path="/admin/customers/:customerId" element={<CustomerDetail />} />
+            <Route path="/admin/center-activity" element={<CenterActivity />} />
             <Route path="/admin/logistics-zones" element={<LogisticsZones />} />
 
             <Route path="/admin/logistics-analytics" element={<LogisticsAnalytics />} />

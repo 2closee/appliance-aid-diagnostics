@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import RepairCenterSettings from "@/components/RepairCenterSettings";
 import { useConversationNotifications } from "@/hooks/useConversationNotifications";
+import { useCenterHeartbeat } from "@/hooks/useCenterHeartbeat";
 import { QuoteProvisionForm } from "@/components/QuoteProvisionForm";
 import BankAccountManager from "@/components/BankAccountManager";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -34,6 +35,7 @@ const RepairCenterDashboard = () => {
   const [showBankAccount, setShowBankAccount] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const { totalUnread } = useConversationNotifications(repairCenterId || undefined);
+  useCenterHeartbeat(repairCenterId, "dashboard");
 
   useEffect(() => {
     const hasSeenSettingsGuide = localStorage.getItem('hasSeenSettingsGuide');
