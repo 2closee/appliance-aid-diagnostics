@@ -97,9 +97,12 @@ const RequestOvapassRider = ({ repairJobId, tripType = "pickup" }: Props) => {
       });
       if (error) throw error;
       if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
+      const assigned = Boolean((data as { assignment?: { assigned?: boolean } })?.assignment?.assigned);
+      trackEvent("PickupRequested", { job_id: repairJobId, trip_type: tripType, assigned });
+      if (!assigned) trackEvent("NoRiderFound", { job_id: repairJobId, trip_type: tripType });
       toast({
         title: "Rider requested",
-         description: (data as { assignment?: { assigned?: boolean } })?.assignment?.assigned
+         description: assigned
           ? "A rider has been offered the trip."
           : "We're searching for the nearest available rider.",
       });
