@@ -47,7 +47,9 @@ export const useQuoteActions = () => {
       });
       
       if (error) throw error;
-      
+
+      trackEvent('QuoteRejected', { job_id: jobId, reason: reason ?? null });
+
       toast({
         title: "Quote Declined",
         description: "You can browse other repair centers or request a new quote.",
