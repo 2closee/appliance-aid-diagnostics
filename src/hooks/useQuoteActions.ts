@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { trackEvent } from "@/lib/analytics";
 
 export const useQuoteActions = () => {
   const queryClient = useQueryClient();
@@ -16,10 +17,13 @@ export const useQuoteActions = () => {
       
       if (error) throw error;
       
+      trackEvent('QuoteAccepted', { job_id: jobId });
+
       toast({
         title: "Quote Accepted!",
         description: "The repair center will contact you to schedule pickup.",
       });
+      
       
       queryClient.invalidateQueries({ queryKey: ['repair-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['customer-repair-jobs'] });
