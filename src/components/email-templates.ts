@@ -75,7 +75,7 @@ Please log in and make sure the following are up to date:
 
 Repair centers with complete profiles receive significantly more customer enquiries.
 
-Log in now to update your profile: https://fixbudi.lovable.app/dashboard
+Log in now to update your profile: https://fixbudi.com/dashboard
 
 Thank you,
 The FixBudi Team`,
@@ -133,7 +133,7 @@ Key Changes:
 
 These updates are designed to improve transparency and ensure a fair experience for all partners and customers.
 
-Please review the full updated terms at: https://fixbudi.lovable.app/terms
+Please review the full updated terms at: https://fixbudi.com/terms
 
 If you have questions, reach out to support@fixbudi.com.
 

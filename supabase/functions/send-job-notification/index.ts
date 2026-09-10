@@ -327,7 +327,7 @@ serve(async (req) => {
       throw new Error("Missing required fields");
     }
 
-    const app_url = Deno.env.get("APP_URL") || "https://fixbudi.lovable.app";
+    const app_url = Deno.env.get("APP_URL") || "https://fixbudi.com";
 
     const templateData = {
       customer_name: customer_name || "Customer",
