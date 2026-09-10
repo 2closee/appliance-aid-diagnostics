@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const SITE_URL = (Deno.env.get("APP_URL") ?? "https://fixbudi.lovable.app").replace(/\/$/, "");
+const SITE_URL = (Deno.env.get("APP_URL") ?? "https://fixbudi.com").replace(/\/$/, "");
 
 const escape = (value: string) =>
   value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

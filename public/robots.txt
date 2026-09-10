@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://fixbudi.lovable.app/sitemap.xml
+Sitemap: https://fixbudi.com/sitemap.xml

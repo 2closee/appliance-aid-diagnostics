@@ -1,57 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://fixbudi.lovable.app/</loc>
+    <loc>https://fixbudi.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://fixbudi.lovable.app/diagnostic</loc>
+    <loc>https://fixbudi.com/diagnostic</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://fixbudi.lovable.app/self-test</loc>
+    <loc>https://fixbudi.com/self-test</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://fixbudi.lovable.app/repair-centers</loc>
+    <loc>https://fixbudi.com/repair-centers</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://fixbudi.lovable.app/blog</loc>
+    <loc>https://fixbudi.com/blog</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://fixbudi.lovable.app/join</loc>
+    <loc>https://fixbudi.com/join</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://fixbudi.lovable.app/ovapass</loc>
+    <loc>https://fixbudi.com/ovapass</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://fixbudi.lovable.app/faq</loc>
+    <loc>https://fixbudi.com/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://fixbudi.lovable.app/contact-support</loc>
+    <loc>https://fixbudi.com/contact-support</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://fixbudi.lovable.app/terms</loc>
+    <loc>https://fixbudi.com/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://fixbudi.lovable.app/privacy</loc>
+    <loc>https://fixbudi.com/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

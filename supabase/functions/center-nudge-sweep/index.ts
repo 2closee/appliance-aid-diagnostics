@@ -117,7 +117,7 @@ serve(async (req) => {
       });
     }
 
-    const appUrl = Deno.env.get("APP_URL") ?? "https://fixbudi.lovable.app";
+    const appUrl = Deno.env.get("APP_URL") ?? "https://fixbudi.com";
     const link = `${appUrl}/partner-login`;
     const results: any[] = [];
     const sentThisRun = new Map<number, number>();

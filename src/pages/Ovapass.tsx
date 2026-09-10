@@ -129,14 +129,14 @@ const Ovapass = () => {
           content="Use your own bike to pick up and deliver phones and laptops for FixBudi repair centers. Register in minutes."
         />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://fixbudi.lovable.app/ovapass" />
+        <meta property="og:url" content="https://fixbudi.com/ovapass" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Ride with Ovapass — Earn Delivering for FixBudi" />
         <meta
           name="twitter:description"
           content="Use your own bike to pick up and deliver phones and laptops for FixBudi repair centers. Register in minutes."
         />
-        <link rel="canonical" href="https://fixbudi.lovable.app/ovapass" />
+        <link rel="canonical" href="https://fixbudi.com/ovapass" />
       </Helmet>
 
       <Navigation />

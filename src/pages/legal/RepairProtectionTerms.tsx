@@ -17,7 +17,7 @@ const RepairProtectionTerms = () => {
           name="description"
           content="How FixBudi Repair Protection works: 90 days of same-fault cover on phone and laptop repairs, free re-repair and free pickup and return. Full terms and pricing."
         />
-        <link rel="canonical" href="https://fixbudi.lovable.app/legal/repair-protection" />
+        <link rel="canonical" href="https://fixbudi.com/legal/repair-protection" />
       </Helmet>
 
       <Navigation />
