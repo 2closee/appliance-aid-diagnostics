@@ -153,6 +153,8 @@ serve(async (req) => {
       await supabase.from('conversations').update({ repair_job_id: jobId }).eq('id', conversationId);
     }
 
+    if (jobId) await linkClockToJob(supabase, conversationId, jobId);
+
     if (mode === 'offer') {
       const quotedCost = Number(body.quoted_cost);
       if (!quotedCost || quotedCost <= 0) throw new Error('A valid quoted_cost is required');
