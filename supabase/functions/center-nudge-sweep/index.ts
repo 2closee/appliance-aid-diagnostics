@@ -75,47 +75,30 @@ serve(async (req) => {
 
     const candidates: Candidate[] = [];
 
-    // 1. Unanswered customer messages
-    const { data: conversations } = await admin
-      .from("conversations")
-      .select("id, repair_center_id, repair_job_id, created_at");
-    const convIds = (conversations ?? []).map((c) => c.id);
-    const { data: messages } = convIds.length
-      ? await admin.from("messages").select("conversation_id, sender_type, content, created_at").in("conversation_id", convIds).order("created_at", { ascending: true })
-      : { data: [] as any[] };
+    // One reminder per waiting request: every running one-hour response clock.
+    const { data: clocks } = await admin
+      .from("center_response_clocks")
+      .select("id, repair_center_id, conversation_id, repair_job_id, expires_at, started_at")
+      .eq("status", "running");
 
-    for (const conv of conversations ?? []) {
-      const msgs = (messages ?? []).filter((m) => m.conversation_id === conv.id);
-      if (!msgs.length) continue;
-      const last = msgs[msgs.length - 1];
-      if (last.sender_type !== "customer") continue;
-      if (last.created_at > msgCutoff) continue;
+    for (const clock of clocks ?? []) {
+      // Give the centre a moment before the first reminder.
+      if (clock.started_at && clock.started_at > msgCutoff) continue;
+
+      const minutesLeft = Math.max(
+        0,
+        Math.round((new Date(clock.expires_at).getTime() - now) / 60000),
+      );
+
       candidates.push({
-        center_id: Number(conv.repair_center_id),
-        reason: "unanswered_message",
-        job_id: conv.repair_job_id ?? null,
-        conversation_id: conv.id,
-        detail: "a customer message is waiting for your reply",
+        center_id: Number(clock.repair_center_id),
+        reason: "response_clock",
+        job_id: clock.repair_job_id ?? null,
+        conversation_id: clock.conversation_id ?? null,
+        detail: `a customer is waiting for your price — ${minutesLeft} min left before it passes to another centre`,
       });
     }
 
-    // 2. Jobs waiting for a price
-    const { data: jobs } = await admin
-      .from("repair_jobs")
-      .select("id, repair_center_id, appliance_type, issue_description, job_status, quoted_cost, created_at")
-      .is("quoted_cost", null)
-      .not("job_status", "in", "(completed,cancelled)")
-      .lte("created_at", quoteCutoff);
-
-    for (const j of jobs ?? []) {
-      candidates.push({
-        center_id: Number(j.repair_center_id),
-        reason: "quote_pending",
-        job_id: j.id,
-        conversation_id: null,
-        detail: `a customer is waiting for your price on a ${j.appliance_type ?? "device"}`,
-      });
-    }
 
     const appUrl = Deno.env.get("APP_URL") ?? "https://fixbudi.com";
     const link = `${appUrl}/partner-login`;
