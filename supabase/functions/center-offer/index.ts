@@ -48,6 +48,11 @@ serve(async (req) => {
       .maybeSingle();
     if (!staff) throw new Error('Forbidden: not staff at this repair center');
 
+    // Block centres that already lost this request to the one-hour clock.
+    if (mode !== 'findings') {
+      await assertCentreStillOnTheClock(supabase, { conversationId });
+    }
+
     // Find the linked job, if any.
     let jobId: string | null = conversation.repair_job_id || null;
     if (!jobId) {
