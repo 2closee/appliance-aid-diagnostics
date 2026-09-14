@@ -160,7 +160,7 @@ serve(async (req) => {
         await admin.from("messages").insert({
           conversation_id: clock.conversation_id,
           sender_id: clock.customer_id,
-          sender_type: "system",
+          sender_type: "repair_center",
           content:
             "No price was sent within the hour, so this request has been passed to another repair centre.",
           is_auto_reply: true,
