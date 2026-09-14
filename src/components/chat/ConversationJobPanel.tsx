@@ -55,9 +55,10 @@ const STATUS_LABELS: Record<string, string> = {
 interface ConversationJobPanelProps {
   conversationId: string;
   repairCenterId?: number;
+  clockExpired?: boolean;
 }
 
-export const ConversationJobPanel = ({ conversationId, repairCenterId }: ConversationJobPanelProps) => {
+export const ConversationJobPanel = ({ conversationId, repairCenterId, clockExpired }: ConversationJobPanelProps) => {
   const { isRepairCenterStaff } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
