@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { assertCentreStillOnTheClock, markClockAnswered } from "../_shared/responseClock.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -58,6 +59,9 @@ serve(async (req) => {
     }
     logStep("Staff verified");
 
+    // Block centres that already lost this request to the one-hour clock.
+    await assertCentreStillOnTheClock(supabase, { repairJobId: repair_job_id });
+
     // Update job with quote
     const { error: updateError } = await supabase
       .from('repair_jobs')
@@ -71,6 +75,8 @@ serve(async (req) => {
 
     if (updateError) throw updateError;
     logStep("Quote saved to database");
+
+    await markClockAnswered(supabase, { repairJobId: repair_job_id });
 
     // Send email notification to customer
     try {
