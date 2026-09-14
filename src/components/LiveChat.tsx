@@ -384,6 +384,13 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
           </div>
         )}
 
+        {/* One-hour response countdown, shared by both sides */}
+        <ResponseClockStrip
+          conversationId={conversationId}
+          isRepairCenterStaff={isRepairCenterStaff}
+          onClockChange={handleClockChange}
+        />
+
         {/* AI technician brief + full diagnostic transcript */}
         <DiagnosticBriefPanel brief={aiBrief} transcript={aiTranscript} />
 
@@ -391,7 +398,9 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
         <ConversationJobPanel
           conversationId={conversationId}
           repairCenterId={repairCenterId ?? resolvedCenterId ?? undefined}
+          clockExpired={clockExpired}
         />
+
 
         <ScrollArea className="flex-1 p-4" ref={scrollRef}>
           <div className="space-y-4">
