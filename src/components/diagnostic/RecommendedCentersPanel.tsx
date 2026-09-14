@@ -99,6 +99,8 @@ export const RecommendedCentersPanel = ({
           transcript,
           diagnosticConversationId,
           attachments,
+          requestKey: diagnosticConversationId || `diag-${user.id}-${appliance || 'device'}`,
+
         },
       });
 
