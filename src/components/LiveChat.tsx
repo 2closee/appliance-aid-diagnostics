@@ -13,6 +13,7 @@ import { formatDistanceToNow } from "date-fns";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import DiagnosticBriefPanel from "@/components/chat/DiagnosticBriefPanel";
 import ConversationJobPanel from "@/components/chat/ConversationJobPanel";
+import ResponseClockStrip, { type ResponseClockRow } from "@/components/chat/ResponseClockStrip";
 import { playChime } from "@/lib/chime";
 
 interface Message {
