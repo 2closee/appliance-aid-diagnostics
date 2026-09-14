@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { assertCentreStillOnTheClock, linkClockToJob, markClockAnswered } from "../_shared/responseClock.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,6 +47,11 @@ serve(async (req) => {
       .eq('is_active', true)
       .maybeSingle();
     if (!staff) throw new Error('Forbidden: not staff at this repair center');
+
+    // Block centres that already lost this request to the one-hour clock.
+    if (mode !== 'findings') {
+      await assertCentreStillOnTheClock(supabase, { conversationId });
+    }
 
     // Find the linked job, if any.
     let jobId: string | null = conversation.repair_job_id || null;
@@ -147,6 +153,8 @@ serve(async (req) => {
       await supabase.from('conversations').update({ repair_job_id: jobId }).eq('id', conversationId);
     }
 
+    if (jobId) await linkClockToJob(supabase, conversationId, jobId);
+
     if (mode === 'offer') {
       const quotedCost = Number(body.quoted_cost);
       if (!quotedCost || quotedCost <= 0) throw new Error('A valid quoted_cost is required');
@@ -213,6 +221,11 @@ serve(async (req) => {
         related_entity_id: jobId,
       });
     }
+
+    // The centre responded in time — stop the countdown on both sides.
+    await markClockAnswered(supabase, { conversationId, repairJobId: jobId });
+
+
 
     return new Response(JSON.stringify({ repair_job_id: jobId }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -24,6 +24,7 @@ export type Database = {
           message_wait_minutes: number
           online_window_minutes: number
           quote_wait_minutes: number
+          response_window_minutes: number
           sms_template: string
           updated_at: string
           working_hours_end: number
@@ -38,6 +39,7 @@ export type Database = {
           message_wait_minutes?: number
           online_window_minutes?: number
           quote_wait_minutes?: number
+          response_window_minutes?: number
           sms_template?: string
           updated_at?: string
           working_hours_end?: number
@@ -52,6 +54,7 @@ export type Database = {
           message_wait_minutes?: number
           online_window_minutes?: number
           quote_wait_minutes?: number
+          response_window_minutes?: number
           sms_template?: string
           updated_at?: string
           working_hours_end?: number
@@ -515,6 +518,63 @@ export type Database = {
           },
         ]
       }
+      center_response_clocks: {
+        Row: {
+          answered_at: string | null
+          attempt_number: number
+          conversation_id: string | null
+          created_at: string
+          customer_id: string
+          diagnostic_conversation_id: string | null
+          expires_at: string
+          handed_off_to: number | null
+          id: string
+          no_candidate_notified: boolean
+          repair_center_id: number
+          repair_job_id: string | null
+          request_key: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          answered_at?: string | null
+          attempt_number?: number
+          conversation_id?: string | null
+          created_at?: string
+          customer_id: string
+          diagnostic_conversation_id?: string | null
+          expires_at: string
+          handed_off_to?: number | null
+          id?: string
+          no_candidate_notified?: boolean
+          repair_center_id: number
+          repair_job_id?: string | null
+          request_key: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          answered_at?: string | null
+          attempt_number?: number
+          conversation_id?: string | null
+          created_at?: string
+          customer_id?: string
+          diagnostic_conversation_id?: string | null
+          expires_at?: string
+          handed_off_to?: number | null
+          id?: string
+          no_candidate_notified?: boolean
+          repair_center_id?: number
+          repair_job_id?: string | null
+          request_key?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       certification_courses: {
         Row: {
           certification_id: string
@@ -642,9 +702,11 @@ export type Database = {
           customer_id: string
           diagnostic_conversation_id: string | null
           diagnostic_summary: string | null
+          handoff_reason: string | null
           id: string
           repair_center_id: number
           repair_job_id: string | null
+          response_clock_id: string | null
           source: string | null
           status: string
           updated_at: string
@@ -656,9 +718,11 @@ export type Database = {
           customer_id: string
           diagnostic_conversation_id?: string | null
           diagnostic_summary?: string | null
+          handoff_reason?: string | null
           id?: string
           repair_center_id: number
           repair_job_id?: string | null
+          response_clock_id?: string | null
           source?: string | null
           status?: string
           updated_at?: string
@@ -670,9 +734,11 @@ export type Database = {
           customer_id?: string
           diagnostic_conversation_id?: string | null
           diagnostic_summary?: string | null
+          handoff_reason?: string | null
           id?: string
           repair_center_id?: number
           repair_job_id?: string | null
+          response_clock_id?: string | null
           source?: string | null
           status?: string
           updated_at?: string

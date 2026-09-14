@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { formatDistanceToNow } from "date-fns";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import DiagnosticBriefPanel from "@/components/chat/DiagnosticBriefPanel";
 import ConversationJobPanel from "@/components/chat/ConversationJobPanel";
+import ResponseClockStrip, { type ResponseClockRow } from "@/components/chat/ResponseClockStrip";
 import { playChime } from "@/lib/chime";
 
 interface Message {
@@ -56,6 +57,10 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
   const [aiBrief, setAiBrief] = useState<string | null>(null);
   const [aiTranscript, setAiTranscript] = useState<any>(null);
   const [resolvedCenterId, setResolvedCenterId] = useState<number | null>(null);
+  const [clockExpired, setClockExpired] = useState(false);
+  const handleClockChange = useCallback((clock: ResponseClockRow | null) => {
+    setClockExpired(clock?.status === 'expired');
+  }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -384,6 +389,13 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
           </div>
         )}
 
+        {/* One-hour response countdown, shared by both sides */}
+        <ResponseClockStrip
+          conversationId={conversationId}
+          isRepairCenterStaff={isRepairCenterStaff}
+          onClockChange={handleClockChange}
+        />
+
         {/* AI technician brief + full diagnostic transcript */}
         <DiagnosticBriefPanel brief={aiBrief} transcript={aiTranscript} />
 
@@ -391,7 +403,9 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
         <ConversationJobPanel
           conversationId={conversationId}
           repairCenterId={repairCenterId ?? resolvedCenterId ?? undefined}
+          clockExpired={clockExpired}
         />
+
 
         <ScrollArea className="flex-1 p-4" ref={scrollRef}>
           <div className="space-y-4">
