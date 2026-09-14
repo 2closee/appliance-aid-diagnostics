@@ -222,6 +222,11 @@ serve(async (req) => {
       });
     }
 
+    // The centre responded in time — stop the countdown on both sides.
+    await markClockAnswered(supabase, { conversationId, repairJobId: jobId });
+
+
+
     return new Response(JSON.stringify({ repair_job_id: jobId }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
