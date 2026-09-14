@@ -57,6 +57,10 @@ const LiveChat = ({ conversationId, repairCenterName, repairCenterId, diagnostic
   const [aiBrief, setAiBrief] = useState<string | null>(null);
   const [aiTranscript, setAiTranscript] = useState<any>(null);
   const [resolvedCenterId, setResolvedCenterId] = useState<number | null>(null);
+  const [clockExpired, setClockExpired] = useState(false);
+  const handleClockChange = useCallback((clock: ResponseClockRow | null) => {
+    setClockExpired(clock?.status === 'expired');
+  }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
