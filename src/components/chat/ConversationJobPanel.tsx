@@ -140,10 +140,19 @@ export const ConversationJobPanel = ({ conversationId, repairCenterId, clockExpi
 
   // ---- Repair center staff view ----
   if (isRepairCenterStaff) {
+    if (clockExpired) {
+      return (
+        <div className="p-3 border-b bg-background flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          {statusStrip}
+          <span className="text-sm text-muted-foreground">Passed to another centre — you can no longer price this job.</span>
+        </div>
+      );
+    }
     return (
       <div className="p-3 border-b bg-background flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         {statusStrip}
         <div className="flex gap-2 flex-wrap">
+
           <Dialog open={offerOpen} onOpenChange={setOfferOpen}>
             <DialogTrigger asChild>
               <Button size="sm" disabled={busy}>
