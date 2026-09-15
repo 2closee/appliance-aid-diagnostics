@@ -164,7 +164,11 @@ export default function CenterActivity() {
                   {String(n.reason).replace(/_/g, " ")}
                 </span>
                 <span className="text-muted-foreground">
-                  {n.status} • {n.created_at ? format(new Date(n.created_at), "d MMM, HH:mm") : ""}
+                  {n.outcome === "sent" ? "delivered" : n.outcome ?? (n.provider_ok ? "delivered" : "failed")}
+                  {" • "}
+                  {n.sent_at || n.created_at
+                    ? format(new Date(n.sent_at ?? n.created_at), "d MMM, HH:mm")
+                    : ""}
                 </span>
               </div>
             ))}
