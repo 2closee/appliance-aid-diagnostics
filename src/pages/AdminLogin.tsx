@@ -26,15 +26,11 @@ const AdminLogin = () => {
 
     if (isAdmin) {
       navigate("/admin", { replace: true });
-    } else {
-      toast({
-        title: "Access denied",
-        description: "This account does not have admin privileges.",
-        variant: "destructive",
-      });
-      supabase.auth.signOut();
     }
-  }, [user, isAdmin, isLoading, rolesLoaded, navigate, toast]);
+    // A non-admin visitor keeps their session — we simply refuse access below.
+  }, [user, isAdmin, isLoading, rolesLoaded, navigate]);
+
+  const signedInWithoutAccess = !isLoading && !!user && rolesLoaded && !isAdmin;
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
