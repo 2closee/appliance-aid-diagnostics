@@ -26,15 +26,11 @@ const AdminLogin = () => {
 
     if (isAdmin) {
       navigate("/admin", { replace: true });
-    } else {
-      toast({
-        title: "Access denied",
-        description: "This account does not have admin privileges.",
-        variant: "destructive",
-      });
-      supabase.auth.signOut();
     }
-  }, [user, isAdmin, isLoading, rolesLoaded, navigate, toast]);
+    // A non-admin visitor keeps their session — we simply refuse access below.
+  }, [user, isAdmin, isLoading, rolesLoaded, navigate]);
+
+  const signedInWithoutAccess = !isLoading && !!user && rolesLoaded && !isAdmin;
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +61,20 @@ const AdminLogin = () => {
               Restricted access. Authorized administrators only.
             </p>
           </div>
+
+          {signedInWithoutAccess && (
+            <Card>
+              <CardContent className="pt-6 space-y-3 text-center">
+                <p className="text-sm">
+                  This page is only for Fixbudi administrators. You are still signed in to your own
+                  account — nothing has changed.
+                </p>
+                <Button className="w-full" onClick={() => navigate("/")}>
+                  Go to my account
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>

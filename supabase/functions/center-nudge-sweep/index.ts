@@ -99,6 +99,62 @@ serve(async (req) => {
       });
     }
 
+    const clockJobIds = new Set((clocks ?? []).map((c) => c.repair_job_id).filter(Boolean));
+    const clockConversationIds = new Set((clocks ?? []).map((c) => c.conversation_id).filter(Boolean));
+
+    // Direct chats where the customer spoke last and nobody at the centre replied.
+    const { data: openConversations } = await admin
+      .from("conversations")
+      .select("id, repair_center_id, repair_job_id, status, updated_at")
+      .not("repair_center_id", "is", null)
+      .neq("status", "closed")
+      .neq("status", "missed")
+      .lte("updated_at", msgCutoff)
+      .order("updated_at", { ascending: false })
+      .limit(100);
+
+    for (const conv of openConversations ?? []) {
+      if (clockConversationIds.has(conv.id)) continue;
+      const { data: lastMessages } = await admin
+        .from("messages")
+        .select("sender_type, created_at, is_auto_reply")
+        .eq("conversation_id", conv.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const last = (lastMessages ?? [])[0];
+      if (!last || last.sender_type !== "customer") continue;
+      if (last.created_at > msgCutoff) continue;
+
+      candidates.push({
+        center_id: Number(conv.repair_center_id),
+        reason: "unanswered_message",
+        job_id: conv.repair_job_id ?? null,
+        conversation_id: conv.id,
+        detail: "a customer sent you a message and is still waiting for a reply",
+      });
+    }
+
+    // Jobs sitting without a price.
+    const { data: unpricedJobs } = await admin
+      .from("repair_jobs")
+      .select("id, repair_center_id, job_status, quoted_cost, created_at")
+      .is("quoted_cost", null)
+      .in("job_status", ["requested", "quote_requested", "quote_pending_review", "diagnostics_requested"])
+      .lte("created_at", quoteCutoff)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    for (const job of unpricedJobs ?? []) {
+      if (!job.repair_center_id) continue;
+      if (clockJobIds.has(job.id)) continue;
+      candidates.push({
+        center_id: Number(job.repair_center_id),
+        reason: "awaiting_quote",
+        job_id: job.id,
+        conversation_id: null,
+        detail: "a repair request is still waiting for your price",
+      });
+    }
 
     const appUrl = Deno.env.get("APP_URL") ?? "https://fixbudi.com";
     const link = `${appUrl}/partner-login`;

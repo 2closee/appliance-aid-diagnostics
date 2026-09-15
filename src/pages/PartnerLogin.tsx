@@ -13,17 +13,21 @@ import { useAuth } from "@/hooks/useAuth";
 const PartnerLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isRepairCenterStaff, isAdmin, rolesLoaded } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
+  // Only send people to the partner portal when the account really belongs to a
+  // repair centre. A customer who lands here keeps their account and is told so.
+  const signedInWithoutAccess = !isLoading && !!user && rolesLoaded && !isRepairCenterStaff && !isAdmin;
+
   useEffect(() => {
-    if (!isLoading && user) {
+    if (!isLoading && user && rolesLoaded && (isRepairCenterStaff || isAdmin)) {
       navigate("/repair-center-admin", { replace: true });
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, rolesLoaded, isRepairCenterStaff, isAdmin, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +45,7 @@ const PartnerLogin = () => {
         return;
       }
 
-      navigate("/repair-center-admin", { replace: true });
+      // The effect above routes on once we know this account belongs to a centre.
     } finally {
       setIsSigningIn(false);
     }
@@ -58,6 +62,21 @@ const PartnerLogin = () => {
               Partner portal for approved Fixbudi repair centers.
             </p>
           </div>
+
+          {signedInWithoutAccess && (
+            <Card>
+              <CardContent className="pt-6 space-y-3 text-center">
+                <p className="text-sm">
+                  You are signed in with a customer account, so this partner portal is not available to you.
+                  Your account is untouched.
+                </p>
+                <Button className="w-full" onClick={() => navigate("/")}>
+                  Go to my account
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
 
           <Card>
             <CardHeader>
