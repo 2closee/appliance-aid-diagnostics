@@ -56,9 +56,14 @@ export default function CenterActivity() {
       return;
     }
     const res = data as any;
+    const waiting = res?.checked ?? 0;
+    const results = (res?.results ?? []) as any[];
+    const messages = dryRun
+      ? results.filter((r) => r.would_send).length
+      : results.filter((r) => r.sent).length;
     toast({
       title: dryRun ? "Preview complete" : "Reminders sent",
-      description: `${res?.candidates ?? 0} centre(s) waiting on a customer, ${res?.sent ?? 0} text message(s) ${
+      description: `${waiting} centre(s) waiting on a customer, ${messages} text message(s) ${
         dryRun ? "would be sent" : "sent"
       }.`,
     });
