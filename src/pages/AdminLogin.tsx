@@ -62,6 +62,20 @@ const AdminLogin = () => {
             </p>
           </div>
 
+          {signedInWithoutAccess && (
+            <Card>
+              <CardContent className="pt-6 space-y-3 text-center">
+                <p className="text-sm">
+                  This page is only for Fixbudi administrators. You are still signed in to your own
+                  account — nothing has changed.
+                </p>
+                <Button className="w-full" onClick={() => navigate("/")}>
+                  Go to my account
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Administrator sign in</CardTitle>
