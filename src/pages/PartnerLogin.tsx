@@ -45,7 +45,7 @@ const PartnerLogin = () => {
         return;
       }
 
-      navigate("/repair-center-admin", { replace: true });
+      // The effect above routes on once we know this account belongs to a centre.
     } finally {
       setIsSigningIn(false);
     }
@@ -62,6 +62,21 @@ const PartnerLogin = () => {
               Partner portal for approved Fixbudi repair centers.
             </p>
           </div>
+
+          {signedInWithoutAccess && (
+            <Card>
+              <CardContent className="pt-6 space-y-3 text-center">
+                <p className="text-sm">
+                  You are signed in with a customer account, so this partner portal is not available to you.
+                  Your account is untouched.
+                </p>
+                <Button className="w-full" onClick={() => navigate("/")}>
+                  Go to my account
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
 
           <Card>
             <CardHeader>
